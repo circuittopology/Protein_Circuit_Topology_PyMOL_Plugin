@@ -8,7 +8,8 @@ Note! this does not produce a contact map but a matrix of the non-zero values in
 """
 
 from collections import Counter
-from Bio.PDB import Selection,NeighborSearch, Chain
+from typing import Tuple, Optional
+from Bio.PDB import Selection, NeighborSearch, Chain
 import numpy as np
 
 def get_cmap(
@@ -17,7 +18,7 @@ def get_cmap(
             cutoff_distance: float = 4.5,
             cutoff_numcontacts: int = 5,
             exclude_neighbour: int = 3
-    ) -> tuple[np.ndarray, np.ndarray, str, list[str]]:
+    ) -> Optional[Tuple[np.ndarray, np.ndarray, str, np.ndarray]]:
     """
     Function that generates a Residue contact map for a single chain or a whole model.
     Note! returns of the indices of nonzero values in the contact map.

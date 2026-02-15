@@ -26,13 +26,13 @@ from functions.exporting.export_cmap3 import export_cmap3
 from functions.exporting.export_psc import export_psc
 
 from utils.non_polymer import has_non_polymer_atoms
+from utils.config import WARN_MSG, CHECKBOX_WARN
 
 # Slight rewrite to match their notebook code because we had bugs
 def run_multi_analysis(self):
     # check for non-polymer atoms
     if has_non_polymer_atoms():
-        QtWidgets.QMessageBox.warning(self, "Warning",
-                                        "The opened file contains non-polymer atoms, which can interfere with Circuit Topology. Please use the 'Remove Non-Polymer Atoms' button to remove them.")
+        QtWidgets.QMessageBox.warning(self, "Warning", WARN_MSG)
 
     vals = self.get_multiple_values()
     # Yes/No options (retrieving once rather than every time in for loop)
@@ -64,7 +64,11 @@ def run_multi_analysis(self):
 
     if not output_dir:
         if multi_export_cmap3 or multi_export_mat or multi_psc:
-            QtWidgets.QMessageBox.warning(self, "Error", f"An output directory has not been selected: {output_dir}")
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Error",
+                f"An output directory has not been selected: {output_dir}"
+            )
             return
 
     number_of_files = len(os.listdir(path))
@@ -81,8 +85,8 @@ def run_multi_analysis(self):
     multi_filtering_dist = vals["filtering_distance"]
     multi_filter_mode = vals["length_filter_mode"]
 
-    if not multi_circuit_plot and not multi_matrix_plot and not multi_stats_plot and not multi_export_cmap3 and not multi_export_mat and not multi_psc:
-        QtWidgets.QMessageBox.warning(self, "Error", "No checkboxes for plots or exporting have been ticked.")
+    if not (multi_circuit_plot or multi_matrix_plot or multi_stats_plot or multi_export_cmap3 or multi_export_mat or multi_psc):
+        QtWidgets.QMessageBox.warning(self, "Error", CHECKBOX_WARN)
         return
 
     if multi_circuit_plot or multi_matrix_plot or multi_stats_plot or multi_export_cmap3 or multi_export_mat:
@@ -113,7 +117,10 @@ def run_multi_analysis(self):
 
         if len(multi_obj_chains) > 1:
             multi_level = "model"
-            print(f"The object {multi_obj} has multiple chains. Performing multi-chain CT analysis...")
+            print(
+                "The object %s has multiple chains. Performing multi-chain CT analysis...",
+                multi_obj
+            )
         else:
             multi_level = "chain"
 
@@ -126,13 +133,13 @@ def run_multi_analysis(self):
             try:
                 idx, protid = energy_cmap(index=idx, numbering=numbering, res_names=res_names, protid=protid,
                                             potential_sign=multi_energy_mode)
-            except IndexError as e:
+            except IndexError:
                 print(
                     f"There is no contact map for {multi_obj} that can satisfy the provided energy filtering. Skipping...")
         if multi_len_filtering and multi_level == "chain":
             try:
                 idx = length_filter(index=idx, distance=multi_filtering_dist, mode=multi_filter_mode)
-            except IndexError as e:
+            except IndexError:
                 print(
                     f"There is no contact map for {multi_obj} that can satisfy the provided length filtering. Skipping...")
 
