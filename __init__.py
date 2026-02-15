@@ -120,7 +120,7 @@ def __init_plugin__(app=None):
         addmenuitemqt('Protein Circuit Topology Plugin', run_plugin_gui)
         print('ProteinCT plugin initialized')
         return
-    except Exception as e:
+    except Exception:
         if sys_type == "Windows":
             result = win_install()
             if result:

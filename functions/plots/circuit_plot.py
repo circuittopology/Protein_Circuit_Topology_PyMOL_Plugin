@@ -9,30 +9,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def circuit_plot(
-        index: np.ndarray,
-        protid: str,
-        numbering: np.ndarray
-    ) -> None:
+
+def circuit_plot(index: np.ndarray, protid: str, numbering: np.ndarray) -> None:
     """
-    Function for creating a circuit topology diagram
+    Plots the circuit topology of a protein as a series of arcs.
 
-    Parameters
-    index : np.ndarray
-        Residue contact map
-    numbering : np.ndarray
-        Numerical ID’s for the residues in the chain
-    protid : str
-        Protein ID
-
-    Returns
-    None
+    Args:
+        index (numpy.ndarray): Array of contact indices.
+        protid (str): Protein identifier.
+        numbering (list or numpy.ndarray): List of residue numbers/identifiers.
     """
     plt.ion()
 
     if len(np.shape(numbering)) > 1:
         numbering = numbering[:,1]
-
+        
     nseg = len(numbering)
     segment = list(range(0,nseg))  
     ax = plt.subplots()[1]
@@ -55,13 +46,14 @@ def circuit_plot(
             yy[where_nans] = 0
             plt.plot(xx,yy,
                     color ='k')
-
+    
     else:
         chains = np.unique(np.array(index)[:,[2,3]])
         enum = np.array(range(len(chains)))
         colours = ['r','b','g']
-
+        
         for row in index:
+
             X = np.array([int(row[0]),int(row[1])])
             r = (X[1]-X[0])/2
             center = np.mean(X)
@@ -76,5 +68,6 @@ def circuit_plot(
             else:
                 color1 = colours[enum[chains == row[2]][0]%3]
                 zorder = 10
+                    
             plt.plot(xx,yy,
                     color = color1, zorder = zorder)

@@ -3,33 +3,25 @@ Created on Mon May 24 17:00:09 2021
 
 @author: DuaneM
 
-Function for creating the chain object used in Bio.PDB and all the functions.
-Can specify which chain
+Function for creating the chain object used in Bio.PDB and all the functions. Can specify which chain
 
 """
-
-from typing import Tuple
 import warnings
+from typing import Tuple, Union
 from Bio.PDB import MMCIFParser, PDBParser
-from Bio.PDB import Chain
+from Bio.PDB.Chain import Chain
 from Bio import BiopythonWarning
 
-def retrieve_chain(input_file: str, chainid: int | str = 0)  -> Tuple[Chain.Chain, str]:
+def retrieve_chain(input_file: str, chainid: Union[int, str] = 0) -> Tuple[Chain, str]:
     """
-    Imports a pdb and creates a chain object used by BioPython to analyze
-structures and removes heteroatoms.
-    Parameters
-    input_file : str
-        Name of the PDB/mmCIF file.
-    chainid : int or str
-        Specify which chain to import. Either chain ID can be used or the
-        number. Default is set to the first chain in the PDB file.
-    Returns
-    chain : Bio.PDB.Chain.Chain
-        The chain object corresponding to the specified chain.
-    protid : str
-        ID of the protein currently in the chain object, combined with the
-        chain identifier
+    Retrieves a specific chain from a PDB or MMCIF file.
+
+    Args:
+        input_file (str): Path to the input PDB or MMCIF file.
+        chainid (int or str, optional): The chain ID to retrieve. Can be an integer index or a string ID. Defaults to 0.
+
+    Returns:
+        tuple: A tuple containing the chain object (Bio.PDB.Chain.Chain) and the protein ID (str).
     """
     # determines which format is used
     if input_file.endswith('cif'):

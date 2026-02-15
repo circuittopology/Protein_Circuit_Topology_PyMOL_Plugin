@@ -1,13 +1,27 @@
 from pathlib import Path
 import sys
+from typing import Sequence, Union
+import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 # pylint: disable=wrong-import-position
 from utils.topology import get_topology_vector
 
-def get_folding_score(mat, index, numbering):
+def get_folding_score(
+    mat: np.ndarray,
+    index: np.ndarray,
+    numbering: Union[Sequence[int], np.ndarray]
+) -> float:
     """
     Calculate the folding score based on the given relations, using topology data.
+
+    Args:
+        mat (numpy.ndarray): The topological relationship matrix.
+        index (numpy.ndarray): Array of contact indices.
+        numbering (list or numpy.ndarray): List of residue numbers/identifiers.
+
+    Returns:
+        float: The calculated folding score.
     """
     # Get the topology vectors for parallel, series, and crossover relations
     parallel_relations = get_topology_vector(mat, index, 'P', numbering)

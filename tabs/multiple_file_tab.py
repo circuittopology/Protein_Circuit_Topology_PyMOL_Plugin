@@ -1,12 +1,21 @@
 import sys
 from pathlib import Path
+from typing import Any
 from pymol.Qt import QtWidgets, QtCore
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 # pylint: disable=wrong-import-position
 from utils.helpers import make_info_button
 
-def init_multi_file_tab(self):
+def init_multi_file_tab(self: Any) -> None:
+    """
+    Initializes the 'Multi-File Analysis' tab in the GUI.
+    Sets up widgets for directory selection, trajectory handling,
+    parameter input, analysis options, and exporting.
+
+    Args:
+        self: The main GUI class instance.
+    """
     scroll_area = QtWidgets.QScrollArea(self.multi_file_tab)
     scroll_area.setWidgetResizable(True)
 
@@ -21,13 +30,15 @@ def init_multi_file_tab(self):
     self.input_dir_button_multi.clicked.connect(self.choose_input_dir_multi)
     self.input_dir_label_multi = QtWidgets.QLabel("No input directory selected")
     self.input_dir_label_multi.setWordWrap(True)
-    self.input_dir_label_multi.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+    self.input_dir_label_multi.setSizePolicy(
+        QtWidgets.QSizePolicy.Expanding,
+        QtWidgets.QSizePolicy.Preferred
+    )
     self.input_dir_label_multi.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
     dir_lay.addWidget(self.input_dir_button_multi)
     dir_lay.addWidget(self.input_dir_label_multi)
     scroll_layout.addWidget(dir_grp)
 
-    # Added the ability to convert a .xtc and .pdb file to a folder of .pdbs inside the GUI. Works nice and fast.
     traj_grp = QtWidgets.QGroupBox("Import a trajectory and PDB")
     traj_lay = QtWidgets.QVBoxLayout(traj_grp)
 
@@ -72,7 +83,11 @@ def init_multi_file_tab(self):
     self.min_contacts_multi.setValue(5)
     mc_row = QtWidgets.QHBoxLayout()
     mc_row.addWidget(QtWidgets.QLabel("Minimum contacts:"))
-    mc_row.addWidget(make_info_button("Minimum atomic contacts required to define a valid connection."))
+    mc_row.addWidget(
+        make_info_button(
+            "Minimum atomic contacts required to define a valid connection."
+            )
+    )
     mc_row.addStretch()
     mc_row.addWidget(self.min_contacts_multi)
     params_lay.addLayout(mc_row)
@@ -89,11 +104,15 @@ def init_multi_file_tab(self):
 
     scroll_layout.addWidget(params_grp)
 
-    # Added the single frame analysis to the GUI
-    # Timeframe analysis toggle
-    self.checkbox_single_frame_analysis = QtWidgets.QCheckBox("Enable per-frame trajectory analysis")
+    self.checkbox_single_frame_analysis = QtWidgets.QCheckBox(
+        "Enable per-frame trajectory analysis"
+    )
     self.checkbox_single_frame_analysis.setToolTip(
-        "Per-frame trajectory analysis should only be used when processing trajectories (not multiple files). It is also possible to select the imported trajectory PDB object from the dropdown menu in single-file analysis and use PyMOL's built-in controls to sift through individual frames and analyse them.")
+        """Per-frame trajectory analysis should only be used when processing trajectories
+        (not multiple files). It is also possible to select the imported trajectory PDB object
+        from the dropdown menu in single-file analysis and use PyMOL's built-in controls to
+        sift through individual frames and analyse them."""
+    )
     self.checkbox_single_frame_analysis.setChecked(False)
     self.checkbox_single_frame_analysis.toggled.connect(self.toggle_frame_controls)
     scroll_layout.addWidget(self.checkbox_single_frame_analysis)
@@ -132,7 +151,14 @@ def init_multi_file_tab(self):
     length_row = QtWidgets.QHBoxLayout()
     length_row.addWidget(self.checkbox_length_filtering)
     length_row.addWidget(make_info_button(
-        "Filter contacts by sequence distance. Length filtering only applies to multiple-file analysis.\nFor per-frame analysis, ticking this option will have no effect.\nNOTE:\n1) MANIPULATING LENGTH FILTERING CAN RETURN EMPTY CONTACT MAPS.\n2) THE CURRENT CIRCUIT TOPOLOGY ANALYSIS TOOL DOES NOT SUPPORT LENGTH FILTERING FOR MULTI-CHAIN PROTEINS.\nTHE ANALYSIS WILL SKIP LENGTH FILTERING STEP FOR MULTI-CHAIN PROTEINS."))
+        """Filter contacts by sequence distance.
+        Length filtering only applies to multiple-file analysis.
+        For per-frame analysis, ticking this option will have no effect.
+        NOTE:
+        1) MANIPULATING LENGTH FILTERING CAN RETURN EMPTY CONTACT MAPS.
+        2) THE CURRENT CIRCUIT TOPOLOGY ANALYSIS TOOL DOES NOT SUPPORT LENGTH FILTERING FOR MULTI-CHAIN PROTEINS.
+        THE ANALYSIS WILL SKIP LENGTH FILTERING STEP FOR MULTI-CHAIN PROTEINS."""
+    ))
     length_row.addStretch()
     filters_lay.addLayout(length_row)
     distance_row = QtWidgets.QHBoxLayout()
@@ -149,7 +175,14 @@ def init_multi_file_tab(self):
     energy_row = QtWidgets.QHBoxLayout()
     energy_row.addWidget(self.checkbox_energy_filtering)
     energy_row.addWidget(make_info_button(
-        "Keep only attractive or only repulsive interactions. Energy filtering only applies to multiple-file analysis.\nFor per-frame analysis, ticking this option will have no effect.\nNOTE: THE CURRENT CIRCUIT TOPOLOGY ANALYSIS TOOL DOES NOT SUPPORT ENERGY FILTERING FOR MULTI-CHAIN PROTEINS.\nTHE ANALYSIS WILL SKIP ENERGY FILTERING STEP FOR MULTI-CHAIN PROTEINS."))
+        """Keep only attractive or only repulsive interactions.
+        Energy filtering only applies to multiple-file analysis.
+        For per-frame analysis, ticking this option will have no effect.
+        NOTE:
+        THE CURRENT CIRCUIT TOPOLOGY ANALYSIS TOOL DOES NOT SUPPORT ENERGY FILTERING
+        FOR MULTI-CHAIN PROTEINS. THE ANALYSIS WILL SKIP ENERGY FILTERING STEP
+        FOR MULTI-CHAIN PROTEINS."""
+    ))
     energy_row.addStretch()
     filters_lay.addLayout(energy_row)
     filters_lay.addWidget(self.dropdown_energy_mode)

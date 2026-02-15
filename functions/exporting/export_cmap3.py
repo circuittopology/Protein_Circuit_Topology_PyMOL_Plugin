@@ -6,31 +6,19 @@ Created on Mon May 24 17:00:09 2021
 For transforming Residue contact map indices to a contact map and exporting that to a csv file.
 """
 import os
+from typing import Sequence
 import numpy as np
 import pandas as pd
 
-def export_cmap3(
-        index: np.ndarray,
-        protid: str,
-        numbering: np.ndarray,
-        output_dir: str
-    ) -> None:
+def export_cmap3(index: np.ndarray, protid: str, numbering: Sequence[int], output_dir: str) -> None:
     """
-    Function for transforming the index to a residue contact map matrix and
-    exporting it to a csv in output_dir.
+    Exports a residue contact map (as a binary matrix) to a CSV file.
 
-    Parameters
-    index : np.ndarray
-        Residue contact map
-    protid : str
-        Protein ID
-    numbering: np.ndarray
-        Numerical ID’s for the residues in the chain
-    output_dir : str
-        Directory to save the csv file to
-
-    Returns
-    None
+    Args:
+        index (numpy.ndarray): Array of contact indices.
+        protid (str): Protein identifier.
+        numbering (Sequence[int]): List of residue numbers/identifiers.
+        output_dir (str): The directory to save the CSV file.
     """
     os.makedirs(output_dir, exist_ok=True)
     cmap = np.zeros([len(numbering),len(numbering)],dtype='int')

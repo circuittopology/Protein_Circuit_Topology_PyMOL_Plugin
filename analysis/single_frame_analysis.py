@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 import os
+from typing import Any
 
 from pymol import cmd
 from pymol.Qt import QtWidgets
@@ -23,8 +24,13 @@ from functions.exporting.export_mat import export_mat
 
 from utils.non_polymer import has_non_polymer_atoms
 
-# Another version of an analysis, this one is for a single frame. Eventually we should combine all analysis types into one function to make it nicer
-def run_single_frame_analysis(self):
+def run_single_frame_analysis(self: Any) -> None:
+    """
+    Runs circuit topology analysis for a single frame of a trajectory or a single PDB file from a directory.
+
+    Args:
+        self: The main GUI class instance.
+    """
     # check for non-polymer atoms
     if has_non_polymer_atoms():
         QtWidgets.QMessageBox.warning(self, "Warning",
@@ -141,8 +147,15 @@ def run_single_frame_analysis(self):
     # and now that we are done, we can remove it
     if vals["directory"]:
         cmd.delete(frame_obj)
-        
+
 # Enables single frame analysis based on the checkbox 
-def toggle_frame_controls(self, enabled):
+def toggle_frame_controls(self: Any, enabled: bool) -> None:
+    """
+    Toggles the enabled state of the frame selector and run button.
+
+    Args:
+        self: The main GUI class instance.
+        enabled (bool): True to enable, False to disable.
+    """
     self.frame_selector_spinbox.setEnabled(enabled)
     self.run_single_frame_button.setEnabled(enabled)

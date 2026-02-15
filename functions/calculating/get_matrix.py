@@ -8,23 +8,17 @@ using either a single chain or a whole model.
 """
 import numpy as np
 
-def get_matrix(index: np.ndarray, protid: str) -> tuple[np.ndarray, list]:
+def get_matrix(index: np.ndarray, protid: str):
     """
-    Uses the index/cmap to create a topological relations matrix. Both chain index
-    and model index are valid inputs.
+    Creates a topological relationship matrix for a residue contact map.
 
-    Parameters
-    index: np.ndarray
-        Consisting out of indices for res-res contacts.
-    protid: str
-        Protein identifier.
+    Args:
+        index (numpy.ndarray): Array containing contact indices.
+        protid (str): Protein identifier.
 
-    Returns
-    mat: np.ndarray
-        Numerical topological relation matrix
-    stats: list
-        Either a list of the number of P,S and C contacts or a list of the number
-        of P,S,C,I,T,L contacts
+    Returns:
+        tuple: A tuple containing the relationship matrix (numpy.ndarray) and statistics (list).
+               If the index shape indicates multiple chains, it returns (matrix, stats, chainstats).
     """
     if index.shape == (0,):
         mat = np.zeros((len(index), len(index)),dtype = 'int')
@@ -32,12 +26,11 @@ def get_matrix(index: np.ndarray, protid: str) -> tuple[np.ndarray, list]:
         return mat,psc
     #Determines whether index came from model or single chain
     if np.shape(index)[1] == 2:
-
-        # create a numerical and character matrix based on the amount
-        # of nonzero values found in the previous function
+        #create a numerical and character matrix based on the amount of nonzero values found in the previous function
         mat = np.zeros((len(index), len(index)),dtype = 'int')
 
-        # Change the values based on the type of connection
+        #Change the values based on the type of connection
+
         P = 0
         S = 0
         X = 0
@@ -48,18 +41,18 @@ def get_matrix(index: np.ndarray, protid: str) -> tuple[np.ndarray, list]:
             for y in range(x+1,len(index)):
                 k = index[y,0]
                 l = index[y,1]
-                # series
+                #series
                 if (j < k):
-                    S += 1
+                    S=S+1
                     mat[x, y]=1
                     mat[y, x]=1
 
-                # parallel    
+                #parallel    
                 elif (i>k and j<l):
-                    P += 1
+                    P=P+1
                     mat[x, y]=2
                     mat[y, x]=3
-
+                
                 #5: CP
                 #6: CP-1    
                 elif (i==k and j<l):

@@ -1,13 +1,18 @@
 """
 Utility functions for updating GUI elements in the PyMOL plugin.
 """
+from typing import Any
 from pymol import cmd
 
 PYMOL_OBJ = ('object:molecule', 'selection')
 
-def update_output_widgets_multi(self):
+def update_output_widgets_multi(self: Any) -> None:
     """
-    Update visibility of output widgets for multi-file export options.
+    Updates the visibility of output widgets in the multi-file analysis
+    tab based on checkbox states.
+
+    Args:
+        self: The main GUI class instance.
     """
     cmap_check = self.checkbox_export_cmap3_multi.isChecked()
     matrix_check = self.checkbox_export_matrix_multi.isChecked()
@@ -19,16 +24,20 @@ def update_output_widgets_multi(self):
     self.output_dir_button_multi.setVisible(show)
     self.output_dir_label_multi.setVisible(show)
 
-def update_output_widgets_local(self):
+def update_output_widgets_local(self: Any) -> None:
     """
-    Update visibility of output widgets for local CT analysis options.
+    Updates the visibility of output widgets in the local analysis tab based on checkbox states.
+
+    Args:
+        self: The main GUI class instance.
     """
-    show = (self.checkbox_local_matrix.isChecked() or self.checkbox_local_cmap3.isChecked())
+    show = (
+            self.checkbox_local_matrix.isChecked() or self.checkbox_local_cmap3.isChecked())
     self.output_local_txt.setVisible(show)
     self.output_local_button.setVisible(show)
     self.output_local_label.setVisible(show)
 
-def update_output_widgets(self):
+def update_output_widgets(self: Any) -> None:
     """
     Update visibility of output widgets for single-file export options.
     """
@@ -45,9 +54,12 @@ def update_output_widgets(self):
     self.output_dir_button.setVisible(show)
     self.output_dir_label.setVisible(show)
 
-def update_local_list(self):
+def update_local_list(self: Any) -> None:
     """
-    Update the list of local objects in PyMOL available for local CT analysis.
+    Updates the list of available objects in the local analysis dropdown.
+
+    Args:
+        self: The main GUI class instance.
     """
     all_objects = cmd.get_names('all')
     new_objects = [obj for obj in all_objects if cmd.get_type(obj) in PYMOL_OBJ]
@@ -62,9 +74,12 @@ def update_local_list(self):
         self.local_dropdown_objects.addItems(["Select a file."])
         self.local_dropdown_objects.addItems(self.current_local_objects)
 
-def update_list(self):
+def update_list(self: Any) -> None:
     """
-    Update the list of objects in PyMOL available for single-file analysis.
+    Updates the list of available objects in the single-file analysis dropdown.
+
+    Args:
+        self: The main GUI class instance.
     """
     all_objects = cmd.get_names('all')
     new_objects = [obj for obj in all_objects if cmd.get_type(obj) in PYMOL_OBJ]

@@ -14,7 +14,8 @@ Key responsibilities:
 """
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
+
 from pymol import cmd  # pylint: disable=import-error, no-name-in-module
 from pymol.Qt import QtWidgets, QtCore  # pylint: disable=import-error, no-name-in-module
 
@@ -55,10 +56,8 @@ from tabs.local_tab import init_local_tab
 from tabs.single_file_tab import init_single_file_tab
 from tabs.multiple_file_tab import init_multi_file_tab
 
-# Extend PyMOL command set with a helper if missing; allows other modules to use cmd.object_exists
 if not hasattr(cmd, "object_exists"):
     setattr(cmd, "object_exists", object_exists)
-
 
 class CTDialog(QtWidgets.QDialog):
     """
@@ -80,8 +79,6 @@ class CTDialog(QtWidgets.QDialog):
     local_tab, single_file_tab, multi_file_tab : QtWidgets.QWidget
         Tab pages created and initialized during UI setup.
     """
-
-    # --- Thin wrapper slots delegating to helper functions (get_values group) ---
     @QtCore.pyqtSlot()
     def get_values(self):
         """Return settings from the single-file tab UI controls."""
@@ -102,7 +99,7 @@ class CTDialog(QtWidgets.QDialog):
         """Return visualization-specific values from the UI."""
         return get_vis_vals(self)
 
-    # --- File clearing helpers ---
+    # clear_file.py
     @QtCore.pyqtSlot()
     def clear_selected_local_file(self):
         """Clear the selected local file control value(s)."""
@@ -113,7 +110,7 @@ class CTDialog(QtWidgets.QDialog):
         """Clear the selected single-file control value(s)."""
         clear_selected_single_file(self)
 
-    # --- Directory / file chooser wrappers ---
+    # directory.py
     @QtCore.pyqtSlot()
     def choose_file(self):
         """Open a file chooser to select a single input file (single-file tab)."""
@@ -144,7 +141,7 @@ class CTDialog(QtWidgets.QDialog):
         """Open a directory chooser for specifying the output folder (multi-file)."""
         choose_output_dir_multi(self)
 
-    # --- Object change handlers ---
+    # object_change.py
     @QtCore.pyqtSlot()
     def handle_local_object_change(self, obj_name: Optional[str]=None):
         """
@@ -157,6 +154,7 @@ class CTDialog(QtWidgets.QDialog):
         """
         if obj_name is None:
             obj_name = self.local_dropdown_objects.currentText()
+        cast(str, obj_name)
         handle_local_object_change(self, obj_name)
 
     @QtCore.pyqtSlot()
@@ -171,15 +169,16 @@ class CTDialog(QtWidgets.QDialog):
         """
         if obj_name is None:
             obj_name = self.dropdown_objects.currentText()
+        cast(str, obj_name)
         handle_standard_object_change(self, obj_name)
 
-    # --- Non-polymer warnings ---
+    # non_polymer.py
     @QtCore.pyqtSlot()
     def show_warning_dialog(self):
         """Display a warning dialog when a non-polymeric selection is detected."""
         show_warning_dialog(self)
 
-    # --- Residue range helpers ---
+    # residues.py
     @QtCore.pyqtSlot()
     def get_residue_range(self, obj_name: Optional[str]=None):
         """
@@ -191,7 +190,8 @@ class CTDialog(QtWidgets.QDialog):
             The object to query. If not supplied, reads from the local object dropdown.
         """
         if obj_name is None:
-            obj_name = self.local_dropdown_objets.currentText()
+            obj_name = self.local_dropdown_objects.currentText()
+        cast(str, obj_name)
         get_residue_range(self, obj_name)
 
     @QtCore.pyqtSlot()
@@ -199,7 +199,7 @@ class CTDialog(QtWidgets.QDialog):
         """Apply the current residue-range widget values to the model or internal state."""
         update_residue_range(self)
 
-    # --- Helper wrappers ---
+    # helpers.py
     @QtCore.pyqtSlot()
     def update_chain_combo_box(self):
         """Refresh the chain selection combobox based on the currently selected object."""
@@ -210,7 +210,7 @@ class CTDialog(QtWidgets.QDialog):
         """Initialize any repeating timers used by the GUI (e.g., polling PyMOL state)."""
         init_timers(self)
 
-    # --- UI update wrappers ---
+    # updates.py
     @QtCore.pyqtSlot()
     def update_list(self):
         """Refresh the object list shown in the single-file tab."""
@@ -236,7 +236,7 @@ class CTDialog(QtWidgets.QDialog):
         """Update widgets that display or depend on the output path (multi-file)."""
         update_output_widgets_multi(self)
 
-    # --- Trajectory helpers ---
+    # trajectory.py
     @QtCore.pyqtSlot()
     def select_mol_file(self):
         """Select a molecular file used by the trajectory tools."""
@@ -252,7 +252,7 @@ class CTDialog(QtWidgets.QDialog):
         """Export frames from an opened trajectory according to UI parameters."""
         export_frames_from_traj(self)
 
-    # --- Tab initializers ---
+    # tabs
     @QtCore.pyqtSlot()
     def init_local_tab(self):
         """Initialize widgets and layout for the local analysis tab."""
@@ -268,7 +268,7 @@ class CTDialog(QtWidgets.QDialog):
         """Initialize widgets and layout for the multi-file analysis tab."""
         init_multi_file_tab(self)
 
-    # --- Analysis entrypoints ---
+    # analysis functions
     @QtCore.pyqtSlot()
     def run_local_ct(self):
         """Run local circuit-topology analysis using current local-tab settings."""
@@ -313,7 +313,6 @@ class CTDialog(QtWidgets.QDialog):
         """
         toggle_frame_controls(self, enabled=enabled)
 
-    # --- Construction and UI lifecycle ---
     def __init__(self, parent=None):
         """
         Construct the dialog and perform UI initialization.
@@ -324,16 +323,13 @@ class CTDialog(QtWidgets.QDialog):
         """
         super().__init__(parent)
 
-        # Maintain sets of observed object names to avoid redundant UI updates
         self.current_objects = set()
         self.current_local_objects = set()
 
-        # Dialog appearance
         self.setWindowTitle("Circuit Topology Tool")
         self.setGeometry(100, 100, 480, 540)
         self.setStyleSheet(SECTION_STYLESHEET)
 
-        # Build and initialize UI
         self.init_ui()
         self.init_timers()
 
@@ -341,17 +337,14 @@ class CTDialog(QtWidgets.QDialog):
         """Create the top-level tab widget and initialize each feature tab."""
         self.tab_widget = QtWidgets.QTabWidget()
 
-        # Create tab containers (content populated by respective init_* functions)
         self.local_tab = QtWidgets.QWidget()
         self.single_file_tab = QtWidgets.QWidget()
         self.multi_file_tab = QtWidgets.QWidget()
 
-        # Add tabs with descriptive labels (user-facing)
         self.tab_widget.addTab(self.local_tab, "Local Circuit Topology")
         self.tab_widget.addTab(self.single_file_tab, "Single‑File Analysis")
         self.tab_widget.addTab(self.multi_file_tab, "Multi‑File Analysis")
 
-        # Populate each tab via modular initializers
         self.init_local_tab()
         self.init_single_file_tab()
         self.init_multi_file_tab()

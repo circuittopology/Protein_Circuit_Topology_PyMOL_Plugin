@@ -6,48 +6,35 @@ Created on Mon May 24 17:00:09 2021
 Function for creating a Residue-Residue based contact map for either a single chain or a whole model.
 Note! this does not produce a contact map but a matrix of the non-zero values in that contact map. 
 """
-
+from typing import List, Tuple
 from collections import Counter
-from typing import Tuple, Optional
-from Bio.PDB import Selection, NeighborSearch, Chain
 import numpy as np
+from Bio.PDB import Selection,NeighborSearch
+from Bio.PDB.Chain import Chain
+from Bio.PDB.Model import Model
 
 def get_cmap(
-            chain: Chain.Chain,
+            chain: Chain | Model,
             level: str = 'chain',
             cutoff_distance: float = 4.5,
             cutoff_numcontacts: int = 5,
-            exclude_neighbour: int = 3
-    ) -> Optional[Tuple[np.ndarray, np.ndarray, str, np.ndarray]]:
+            exclude_neighbour: int = 3) -> Tuple[np.ndarray, np.ndarray, str, List[str]] | None:
     """
-    Function that generates a Residue contact map for a single chain or a whole model.
-    Note! returns of the indices of nonzero values in the contact map.
+    Creates a residue-residue contact map (as a list of contacts) for a single chain or a whole model.
 
-    Parameters
-    chain : Bio.PDB.Chain.Chain
-        Chain object created in the retrieve_chain() function.
-    level : str
-        specify level of contact map. ‘chain’ for single chain analysis and
-        ‘model’ for multi-chain analysis.
-    cutoff_distance : float
-        maximum distance (Angstrom) between 2 atoms that will count as an
-        atom-atom contact
-    cutoff_numcontacts : int
-        Minimum number of contacts between two residues to count as a
-        residue contact
-    exclude_neighbour : int
-        Number of residue neighbors to exclude from contacts.
-    
-    Returns
-    index : np.ndarray
-        Array consisting out of the indices of the res-res contacts
-    numbering : np.ndarray
-        Original ID’s of each of the residues
-    protid : str
-        ID of the protein + the chain used. When ‘model’ option activated, no
-        chain identifier in the protid.
-    res_names : list[str]
-        Three letter name code for each residue in the chain/model.
+    Args:
+        chain (Bio.PDB.Chain.Chain or Bio.PDB.Model.Model): The chain or model object to analyze.
+        level (str, optional): 'chain' for single chain analysis, 'model' for whole model analysis. Defaults to 'chain'.
+        cutoff_distance (float, optional): Maximum distance (in Angstroms) between atoms to consider a contact. Defaults to 4.5.
+        cutoff_numcontacts (int, optional): Minimum number of atomic contacts required to define a residue-residue contact. Defaults to 5.
+        exclude_neighbour (int, optional): Minimum sequence separation (in residues) to consider a contact. Defaults to 3.
+
+    Returns:
+        tuple: A tuple containing:
+            - index (numpy.ndarray): Array of contact indices (and chain IDs if level='model').
+            - numbering (numpy.ndarray): Array of residue numbers (and chain IDs if level='model').
+            - protid (str): Protein identifier.
+            - res_names (list): List of residue names.
     """
     if level == 'chain':
 
@@ -76,8 +63,8 @@ def get_cmap(
             if abs(res1-res2) > exclude_neighbour:
                 index_list.append((res1,res2))
 
-        # sort residue contacts and check if they occur more than
-        # the minimum set in cutoff_numcontacts
+        #sort residue contacts and check if they occur more
+        # than the minimum set in cutoff_numcontacts
         index_list.sort()
         count = Counter(index_list)
 

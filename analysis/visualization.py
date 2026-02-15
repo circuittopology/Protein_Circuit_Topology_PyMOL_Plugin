@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from typing import Any
 from pymol import cmd
 from pymol.Qt import QtWidgets
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -14,7 +15,14 @@ from functions.importing.retrieve_chain import retrieve_chain
 from utils.topology import get_topology_vector, color_by_topology
 
 # Function that only visualizes the topology on the molecule inside PyMOL
-def visualize_molecule(self, contact_type):
+def visualize_molecule(self: Any, contact_type: str) -> None:
+    """
+    Visualizes the circuit topology on the selected molecule in PyMOL by coloring residues based on contact density.
+
+    Args:
+        self: The main GUI class instance.
+        contact_type (str): The type of contact to visualize ('P', 'S', 'X').
+    """
     vals = self.get_vis_vals()
 
     # Only supported for an object already inside PyMOL

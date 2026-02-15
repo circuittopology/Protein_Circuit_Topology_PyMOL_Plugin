@@ -1,12 +1,21 @@
 import sys
 from pathlib import Path
+from typing import Any
 from pymol.Qt import QtWidgets, QtCore
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 # pylint: disable=wrong-import-position
 from utils.helpers import make_info_button
 
-def init_single_file_tab(self):
+def init_single_file_tab(self: Any) -> None:
+    """
+    Initializes the 'Single-File Analysis' tab in the GUI.
+    Sets up widgets for file selection, parameter input, analysis options,
+    visualization, and exporting.
+
+    Args:
+        self: The main GUI class instance.
+    """
     t1_layout = QtWidgets.QVBoxLayout(self.single_file_tab)
 
     # Visual grouper for importing files/objects into the GUI for single-file analysis
@@ -15,7 +24,9 @@ def init_single_file_tab(self):
 
     self.dir_button = QtWidgets.QPushButton("Choose file …")
     self.clear_file_button = QtWidgets.QPushButton("Clear selection")
-    info_btn_single_clear = make_info_button("Clear the current file/object and unload it from PyMOL.")
+    info_btn_single_clear = make_info_button(
+        "Clear the current file/object and unload it from PyMOL."
+    )
     self.clear_file_button.setToolTip("Clear the current file/object and unload it from PyMOL.")
     self.clear_file_button.clicked.connect(self.clear_selected_single_file)
     self.dir_label = QtWidgets.QLabel("No file selected")
@@ -53,7 +64,9 @@ def init_single_file_tab(self):
     dist_row = QtWidgets.QHBoxLayout()
     dist_row.addWidget(QtWidgets.QLabel("Cutoff distance (Å):"))
     dist_row.addWidget(make_info_button(
-        "Set the distance threshold (in Å) for considering two residues as contacting. (Range: 0.1–20.0)"))
+        """Set the distance threshold (in Å) for considering two residues as contacting.
+        (Range: 0.1–20.0)"""
+    ))
     dist_row.addStretch()
     dist_row.addWidget(self.cutoff_distance_spin)
     params_lay.addLayout(dist_row)
@@ -66,7 +79,9 @@ def init_single_file_tab(self):
     mc_row = QtWidgets.QHBoxLayout()
     mc_row.addWidget(QtWidgets.QLabel("Number of contacts:"))
     mc_row.addWidget(make_info_button(
-        "Minimum number of atomic contacts required to define a valid residue connection. (Range: 5-45)"))
+        """Minimum number of atomic contacts required to define a valid residue connection.
+        (Range: 5-45)"""
+    ))
     mc_row.addStretch()
     mc_row.addWidget(self.min_contacts_spin)
     params_lay.addLayout(mc_row)
@@ -131,7 +146,10 @@ def init_single_file_tab(self):
     self.output_dir_button = QtWidgets.QPushButton("Choose output directory …")
     self.output_dir_label = QtWidgets.QLabel("No output directory selected")
     self.output_dir_label.setWordWrap(True)
-    self.output_dir_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+    self.output_dir_label.setSizePolicy(
+        QtWidgets.QSizePolicy.Expanding,
+        QtWidgets.QSizePolicy.Preferred
+    )
     self.output_dir_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
     self.output_txt = QtWidgets.QLabel("Output directory:")
 
@@ -157,7 +175,9 @@ def init_single_file_tab(self):
     self.checkbox_folding_score = QtWidgets.QCheckBox("Enable Folding Score")
     fold_lay_adj = QtWidgets.QHBoxLayout()
     fold_lay_adj.addWidget(make_info_button(
-        "Quantifies how well a protein’s structure is compact and stable based on its contact patterns"))
+        """Quantifies how well a protein’s structure is compact and stable
+        based on its contact patterns"""
+    ))
     fold_lay_adj.addStretch()
     fold_lay_adj.addWidget(self.checkbox_folding_score)
     fold_lay.addLayout(fold_lay_adj)
@@ -168,7 +188,11 @@ def init_single_file_tab(self):
     self.remove_non_polymer_button_tab1 = QtWidgets.QPushButton("Remove Non-Polymer Atoms")
     self.remove_non_polymer_button_tab1.clicked.connect(self.show_warning_dialog)
     info_button_tab1 = make_info_button(
-        "The Circuit Topology tool only processes protein atoms. If your loaded PyMOL object contains non-polymer atoms, the tool will not be able to handle them. Upon clicking this button, non-polymer atoms will be removed. Be aware that heteroatoms in CIF files can interfere with Circuit Topology.")
+        """The Circuit Topology tool only processes protein atoms.
+        If your loaded PyMOL object contains non-polymer atoms, the tool will not be able to
+        handle them. Upon clicking this button, non-polymer atoms will be removed.
+        Be aware that heteroatoms in CIF files can interfere with Circuit Topology."""
+        )
     remove_row_tab1.addWidget(self.remove_non_polymer_button_tab1)
     remove_row_tab1.addWidget(info_button_tab1)
     remove_row_tab1.addStretch()

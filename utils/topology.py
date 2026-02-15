@@ -1,16 +1,25 @@
+from typing import Sequence, Union, Optional
+import numpy as np
 from pymol import cmd
 
-import numpy as np
-
 def get_topology_vector(
-    mat: np.ndarray[int, int],  # topology matrix,
-    index: np.ndarray[int, int],  # index array
-    topology_type: str,  # "P", "S", "X"
-    numbering: np.ndarray[int]  # residues indexes from pdb or cif file
-):
+    mat: np.ndarray,
+    index: np.ndarray,
+    topology_type: str,
+    numbering: Union[Sequence[int], np.ndarray]
+) -> Optional[np.ndarray]:
     """
-    The get_topology_vector that Vasiliy provided that we modified to take the actual contact values
-    instead of the indices when coloring.
+    Calculates a topology vector representing the density of a specific contact type
+    for each residue.
+
+    Args:
+        mat (numpy.ndarray): The topological relationship matrix.
+        index (numpy.ndarray): Array of contact indices.
+        topology_type (str): The type of topology to calculate ('P', 'S', 'X').
+        numbering (list or numpy.ndarray): List of residue numbers/identifiers.
+
+    Returns:
+        numpy.ndarray: The calculated topology vector.
     """
     if topology_type == 'S':
         vec = np.sum((mat == 1), axis=1)
@@ -34,13 +43,24 @@ def get_topology_vector(
     return topology_vector
 
 
-def color_by_topology(molecule_name, topology_vector, numbering, topology_type):
+def color_by_topology(
+    molecule_name: str,
+    topology_vector: np.ndarray,
+    numbering: Union[Sequence[int], np.ndarray],
+    topology_type: str
+) -> None:
     """
-    Function that takes the topology vector from the get_topology_vector function and 
-    recolors the selected PyMOL object based on the topology_type (e.g., 'P', 'S', 'X').
-    
-    Output is also printed (minimum and maximum contacts of topology_type) to inform the user
-    of the color scheme.
+    Colors a PyMOL object based on a topology vector.
+
+    Args:
+        molecule_name (str):
+            The name of the PyMOL object to color.
+        topology_vector (numpy.ndarray):
+            The topology vector containing values for coloring.
+        numbering (list or numpy.ndarray):
+            List of residue numbers corresponding to the vector.
+        topology_type (str): 
+            The type of topology being visualized ('P', 'S', 'X'), used for color selection.
     """
     # Specify color palette for spectrum and colors for ramp
     if topology_type == "P":

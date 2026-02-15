@@ -1,11 +1,21 @@
 import os
+from typing import Any
 
 from pymol import cmd
 from pymol.Qt import QtWidgets, QtCore
 
-from .non_polymer import new_file_has_non_polymer_atoms
+from utils.non_polymer import new_file_has_non_polymer_atoms
+from utils.config import WARN_MSG
 
-def choose_file(self):
+
+def choose_file(self: Any) -> None:
+    """
+    Opens a file dialog to select a structure file (PDB or CIF) for single-file analysis.
+    Loads the file into PyMOL and checks for non-polymer atoms.
+
+    Args:
+        self: The main GUI class instance.
+    """
     file_filter = "Structure Files (*.pdb *.cif)"
     file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Input File", "", file_filter)
 
@@ -19,13 +29,19 @@ def choose_file(self):
 
         # check for non-polymer atoms
         if new_file_has_non_polymer_atoms(obj_name):
-            QtWidgets.QMessageBox.warning(self, "Warning",
-                                            "The opened file contains non-polymer atoms, which can interfere with Circuit Topology.  Please use the 'Remove Non-Polymer Atoms' button to remove them.")
+            QtWidgets.QMessageBox.warning(self, "Warning", WARN_MSG)
 
     else:
         self.selected_file = None
 
-def choose_local_file(self):
+def choose_local_file(self: Any) -> None:
+    """
+    Opens a file dialog to select a structure file (PDB or CIF) for local analysis.
+    Loads the file into PyMOL and checks for non-polymer atoms.
+
+    Args:
+        self: The main GUI class instance.
+    """
     file_filter = "Structure Files (*.pdb *.cif)"
     file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Input File", "", file_filter)
 
@@ -38,13 +54,18 @@ def choose_local_file(self):
         self.local_selected_obj_name = obj_name
         # check for non-polymer atoms
         if new_file_has_non_polymer_atoms(obj_name):
-            QtWidgets.QMessageBox.warning(self, "Warning",
-                                            "The opened file contains non-polymer atoms, which can interfere with Circuit Topology. Please use the 'Remove Non-Polymer Atoms' button to remove them.")
+            QtWidgets.QMessageBox.warning(self, "Warning", WARN_MSG)
 
     else:
         self.local_selected_file = None
 
-def choose_local_output_dir(self):
+def choose_local_output_dir(self: Any) -> None:
+    """
+    Opens a directory dialog to select the output directory for local analysis results.
+
+    Args:
+        self: The main GUI class instance.
+    """
     dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Output Directory")
     if dir_path:
         self.selected_output_dir_local = dir_path
@@ -52,7 +73,13 @@ def choose_local_output_dir(self):
     else:
         self.selected_output_dir_local = None
 
-def choose_output_dir(self):
+def choose_output_dir(self: Any) -> None:
+    """
+    Opens a directory dialog to select the output directory for single-file analysis results.
+
+    Args:
+        self: The main GUI class instance.
+    """
     dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Output Directory")
     if dir_path:
         self.selected_output_dir = dir_path
@@ -60,7 +87,13 @@ def choose_output_dir(self):
     else:
         self.selected_output_dir = None
 
-def choose_output_dir_multi(self):
+def choose_output_dir_multi(self: Any) -> None:
+    """
+    Opens a directory dialog to select the output directory for multi-file analysis results.
+
+    Args:
+        self: The main GUI class instance.
+    """
     dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Output Directory")
     if dir_path:
         self.selected_output_dir_multi = dir_path
@@ -68,8 +101,14 @@ def choose_output_dir_multi(self):
     else:
         self.selected_output_dir_multi = None
 
-# Added: Gets the pdb files and their range for single frame analysis after getting the output directory
-def choose_input_dir_multi(self):
+def choose_input_dir_multi(self: Any) -> None:
+    """
+    Opens directory dialog to select the input directory containing PDBs for multi-file analysis.
+    Updates the frame selector spinbox based on the number of PDB files found.
+
+    Args:
+        self: The main GUI class instance.
+    """
     dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Input Directory")
     if dir_path:
         self.selected_input_dir_multi = dir_path
@@ -81,7 +120,14 @@ def choose_input_dir_multi(self):
         self.selected_input_dir_multi = None
 
 
-def set_label_text_elided(file_path, label):
+def set_label_text_elided(file_path: str, label: QtWidgets.QLabel) -> None:
+    """
+    Sets the text of a QLabel to an elided version of the file path if it's too long.
+
+    Args:
+        file_path (str): The full file path.
+        label (QLabel): The label widget to update.
+    """
     font_metrics = label.fontMetrics()
 
     available_width = label.width() - 10
@@ -91,6 +137,5 @@ def set_label_text_elided(file_path, label):
         QtCore.Qt.ElideMiddle,
         available_width
     )
-    
     label.setText(elided_text)
     label.setToolTip(file_path)

@@ -7,29 +7,17 @@ Function applying a length filter to an existing residue contact map index
 """
 import numpy as np
 
-def length_filter(
-        index: np.ndarray,
-        distance: np.ndarray,
-        mode: str = '<'
-    ) -> np.ndarray:
+def length_filter(index: np.ndarray, distance: int, mode: str = '<') -> np.ndarray:
     """
-    Function that filters out either long range contacts or long range contacts out
-    of cmap
+    Filters contact indices based on sequence separation distance.
 
-    Parameters
-    index: np.ndarray
-        Residue contact map
-    distance: np.ndarray
-        threshold for length filtering in the number of residues between contacts.
-    mode: str
-        Setting for only including short range contacts (‘<’) and excluding long
-        range contacts or including long range contacts (‘>’) and excluding
-        short range contacts
-    
-    Returns
-    entangled: np.ndarray
-        Percentage of entangled contacts (P & X) across the diagonal.
-        Measure of globularity
+    Args:
+        index (numpy.ndarray): Array of contact indices.
+        distance (int): The distance threshold for filtering.
+        mode (str, optional): The filtering mode ('<' for less than or equal to, '>' for greater than or equal to). Defaults to '<'.
+
+    Returns:
+        numpy.ndarray: The filtered array of contact indices.
     """
     if index.shape == (0,):
         print('Error - index empty')

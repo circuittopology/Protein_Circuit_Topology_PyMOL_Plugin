@@ -1,12 +1,16 @@
-import sys
-from pathlib import Path
 from pymol.Qt import QtWidgets, QtCore
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
-# pylint: disable=wrong-import-position
-from utils.helpers import make_info_button
+from typing import Any
+from ..utils.helpers import make_info_button
 
-def init_local_tab(self):
+
+def init_local_tab(self: Any) -> None:
+    """
+    Initializes the 'Local Circuit Topology' tab in the GUI.
+    Sets up widgets for file selection, parameter input, analysis options, and exporting.
+
+    Args:
+        self: The main GUI class instance.
+    """
     # Local tab's layout
     local_layout = QtWidgets.QVBoxLayout(self.local_tab)
 

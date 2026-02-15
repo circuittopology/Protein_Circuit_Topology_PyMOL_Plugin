@@ -4,6 +4,7 @@ Utility functions for handling trajectory files in the PyMOL plugin.
 import os
 import sys
 from pathlib import Path
+from typing import Any
 from pymol import cmd
 from pymol.Qt import QtWidgets
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -11,17 +12,19 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # pylint: disable=wrong-import-position
 from utils.non_polymer import remove_non_polymer_atoms
 
-def select_mol_file(self):
+def select_mol_file(self: Any) -> None:
     """
-    Gets the trajectory corresponding molecule file (PDB)
+    Opens a file dialog to select a structure file (PDB or CIF) for trajectory analysis.
+    Loads the file into PyMOL.
 
-    Note: CIF files are generally not used for trajectory analysis in PyMOL.
+    Args:
+        self: The main GUI class instance.
     """
     fname, _ = QtWidgets.QFileDialog.getOpenFileName(
         self,
         "Select PDB file",
         "",
-        "Structure files (*.pdb)"
+        "Structure files (*.pdb *.cif)"
     )
     if fname:
         self.traj_mol_path = fname
@@ -32,16 +35,16 @@ def select_mol_file(self):
         self.protein_name = mol_name
 
 # Gets the trajectory file
-def select_xtc_file(self):
+def select_xtc_file(self: Any) -> None:
     """
-    Gets the trajectory file (XTC/DCD/TRR/NC)
+    Opens a file dialog to select a trajectory file (XTC, DCD, TRR, NC).
+    Loads the trajectory into PyMOL and removes non-polymer atoms.
+
+    Args:
+        self: The main GUI class instance.
     """
-    fname, _ = QtWidgets.QFileDialog.getOpenFileName(
-        self,
-        "Select trajectory file",
-        "",
-        "Trajectory files (*.xtc *.dcd *.trr *.nc)"
-    )
+    fname, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select trajectory file", "",
+                                                        "Trajectory files (*.xtc *.dcd *.trr *.nc)")
     if fname:
         self.traj_xtc_path = fname
         self.traj_xtc_label.setText(fname)
@@ -49,9 +52,14 @@ def select_xtc_file(self):
         cmd.load_traj(fname, object=self.protein_name, state=1)
         remove_non_polymer_atoms()
 
-def export_frames_from_traj(self):
+# Converts a CIF/PDB and .XTC file to a directory of PDBs
+def export_frames_from_traj(self: Any) -> None:
     """
-    Exports all frames from the molecule trajectory as individual PDB files in a selected directory.
+    Exports each frame of the loaded trajectory as a separate PDB file.
+    Prompts the user for confirmation and an output directory.
+
+    Args:
+        self: The main GUI class instance.
     """
     try:
         mol = getattr(self, 'traj_mol_path', None)

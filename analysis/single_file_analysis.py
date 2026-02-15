@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from typing import Any
 from pymol import cmd
 from pymol.Qt import QtWidgets, QtCore
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -21,7 +22,14 @@ from functions.exporting.export_mat import export_mat
 from utils.non_polymer import has_non_polymer_atoms
 from utils.folding_score import get_folding_score
 
-def run_standard_analysis(self):
+def run_standard_analysis(self: Any) -> None:
+    """
+    Runs the standard single-file circuit topology analysis.
+    Handles data retrieval, calculation, plotting, and exporting.
+
+    Args:
+        self: The main GUI class instance.
+    """
     # check for non-polymer atoms
     if has_non_polymer_atoms():
         QtWidgets.QMessageBox.warning(self, "Warning",

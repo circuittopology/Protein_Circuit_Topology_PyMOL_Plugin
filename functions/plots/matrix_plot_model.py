@@ -10,22 +10,13 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
 
-def matrix_plot_model(
-            mat: np.ndarray,
-            protid: str
-        ) -> None:
+def matrix_plot_model(mat: np.ndarray, protid: str) -> None:
     """
-    Function for plotting a circuit topology relations matrix. Note! This is
-    specifically for matrices derived from a whole model/multi chain CT.
+    Plots the topological relationship matrix for a whole model (multiple chains).
 
-    Parameters
-    mat: np.ndarray
-        Topological relations matrix retrieved from get_matrix
-    protid : str
-        Protein ID
-
-    Returns
-    None
+    Args:
+        mat (numpy.ndarray): The topological relationship matrix.
+        protid (str): Protein identifier.
     """
     newcolors = np.array([[218/255, 219/255, 228/255,1], #Grey (-)
                         [172/255,200/255,247/255,1],    #Blue (P)
@@ -34,9 +25,7 @@ def matrix_plot_model(
                         [72/255,81/255,153/255,1],      # Dark Purple (I)   
                         [156/255,204/255,102/255,1],    #Green (T)
                         [255/255,199/255,89/255,1]])     #Yellow (L)
-
     newcmp = ListedColormap(newcolors)
-
     fig, ax = plt.subplots() 
     color = plt.get_cmap(newcmp, 7)
 

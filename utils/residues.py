@@ -1,6 +1,16 @@
 from pymol import cmd
+from typing import Any, Optional
 
-def get_residue_range(self, obj_name):
+
+def get_residue_range(self: Any, obj_name: Optional[str]) -> None:
+    """
+    Retrieves the residue range for each chain in the specified object.
+    Updates the chain combo box and residue range spinbox.
+
+    Args:
+        self: The main GUI class instance.
+        obj_name (str): The name of the object to analyze.
+    """
     if not obj_name or obj_name == "Select a file.":
         return
     try:
@@ -24,7 +34,13 @@ def get_residue_range(self, obj_name):
         self.box_res_id.setRange(0, 0)
         self.box_res_id.setValue(0)
 
-def update_residue_range(self):
+def update_residue_range(self: Any) -> None:
+    """
+    Updates the residue range spinbox based on the currently selected chain.
+
+    Args:
+        self: The main GUI class instance.
+    """
     try:
         selected_chain = self.chain_combo_box.currentText()
         min_resi, max_resi = self.curr_chain_residues[selected_chain]

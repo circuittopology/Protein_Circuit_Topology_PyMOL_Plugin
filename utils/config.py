@@ -1,3 +1,7 @@
+"""
+Configuration file for UI stylesheets and constants.
+"""
+
 SECTION_STYLESHEET = """QGroupBox {font-weight: bold; border: 1px solid palette(dark); border-radius: 6px; margin-top: 6px; padding-top: 4px;}
 QGroupBox::title {subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px;}"""
 
@@ -13,3 +17,9 @@ LOCAL_CT_WARN = (
 CHECKBOX_WARN = (
     "No checkboxes for plotting or exporting have been ticked!"
 )
+
+CONTACT_MAP = {
+    "Series (S)": "S",
+    "Parallel (P)": "P",
+    "Inverse parallel (P-)": "IP",
+}

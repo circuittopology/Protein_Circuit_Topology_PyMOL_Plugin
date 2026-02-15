@@ -9,28 +9,15 @@ import os
 import numpy as np
 import pandas as pd
 
-def export_mat(
-        index: np.ndarray,
-        mat: np.ndarray,
-        protid: str,
-        output_dir: str
-    ) -> None:
+def export_mat(index: np.ndarray, mat: np.ndarray, protid: str, output_dir: str) -> None:
     """
-    Function for exporting topological relations matrix to csv located in
-    output_dir.
+    Exports the topological relationship matrix to a CSV file.
 
-    Parameters
-    index : np.ndarray
-        Residue contact map
-    mat : np.ndarray
-        Topological relations matrix retrieved from get_matrix
-    protid : str
-        Protein ID
-    output_dir : str
-        Directory to save the csv file to
-
-    Returns
-    None
+    Args:
+        index (numpy.ndarray): Array of contact indices.
+        mat (numpy.ndarray): The topological relationship matrix.
+        protid (str): Protein identifier.
+        output_dir (str): The directory to save the CSV file.
     """
     os.makedirs(output_dir, exist_ok=True)
     if mat.shape == (0,0):
@@ -44,7 +31,7 @@ def export_mat(
         names = []
         for i in range(len(index)):
             names.append(f'[{index[i,0]} - {index[i,1]}]')
-
+ 
         df = pd.DataFrame(c,columns=names,index=names)
         fpath = os.path.join(output_dir, f"{protid}_mat.csv")
         df.to_csv(fpath,sep=';')
@@ -58,7 +45,7 @@ def export_mat(
         names = []
         for i in range(len(index)):
             names.append(f'[{index[i,0]}({index[i,2]}) - {index[i,1]}({index[i,3]})]')
-
+ 
         df = pd.DataFrame(c,columns=names,index=names)
         fpath = os.path.join(output_dir, f"{protid}_mat.csv")
         df.to_csv(fpath,sep=';')

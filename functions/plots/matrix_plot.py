@@ -10,20 +10,15 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
 
-def matrix_plot(
-        mat: np.ndarray,
-        protid: str
-    ) -> None:
+def matrix_plot(mat: np.ndarray, protid: str) -> None:
     """
-    Function for plotting a circuit topology relations matrix
-    Parameters
-    mat: np.ndarray
-        Topological relations matrix retrieved from get_matrix
-    protid : str
-        Protein ID
-    Returns
-    None
+    Plots the topological relationship matrix for a single chain.
+
+    Args:
+        mat (numpy.ndarray): The topological relationship matrix.
+        protid (str): Protein identifier.
     """
+
     #create custom colormap
     newcolors = np.array([[218/255, 219/255, 228/255,1], #grey - 
                       [131/255, 139/255, 197/255,1],    #purple S

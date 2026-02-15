@@ -1,8 +1,16 @@
 import os
+from typing import Any
 from pymol import cmd
 from pymol.Qt import QtWidgets
 
-def show_warning_dialog(self):
+def show_warning_dialog(self: Any) -> None:
+    """
+    Shows a warning dialog before removing non-polymer atoms.
+    Allows the user to proceed, cancel, or disable the warning for the session.
+
+    Args:
+        self: The main GUI class instance.
+    """
     # check if user selected don't show again
     if os.environ.get("DISABLE_NON_POLYMER_WARNING") == "1":
         remove_non_polymer_atoms()
@@ -31,7 +39,10 @@ def show_warning_dialog(self):
         print("User cancelled.")
 
 # generic
-def remove_non_polymer_atoms():
+def remove_non_polymer_atoms() -> None:
+    """
+    Removes all non-polymer atoms from the PyMOL session.
+    """
     before_atoms = cmd.count_atoms("all")
     cmd.remove("not polymer")
     cmd.refresh()
@@ -40,12 +51,27 @@ def remove_non_polymer_atoms():
     cmd.zoom("all")
 
 # generic
-def has_non_polymer_atoms():
+def has_non_polymer_atoms() -> bool:
+    """
+    Checks if there are any non-polymer atoms in the PyMOL session.
+
+    Returns:
+        bool: True if non-polymer atoms exist, False otherwise.
+    """
     atom_count = cmd.count_atoms("not polymer")
     return atom_count > 0
 
 # generic
-def new_file_has_non_polymer_atoms(obj_name):
+def new_file_has_non_polymer_atoms(obj_name: str) -> bool:
+    """
+    Checks if a specific object contains non-polymer atoms.
+
+    Args:
+        obj_name (str): The name of the object to check.
+
+    Returns:
+        bool: True if the object contains non-polymer atoms, False otherwise.
+    """
     cmd.refresh()
     atom_count = cmd.count_atoms(f"{obj_name} and not polymer")
     return atom_count > 0

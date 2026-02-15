@@ -2,6 +2,7 @@ import os
 import sys
 from pathlib import Path
 import matplotlib.pyplot as plt
+from typing import Any
 
 from pymol import cmd
 from pymol.Qt import QtWidgets
@@ -29,7 +30,14 @@ from utils.non_polymer import has_non_polymer_atoms
 from utils.config import WARN_MSG, CHECKBOX_WARN
 
 # Slight rewrite to match their notebook code because we had bugs
-def run_multi_analysis(self):
+def run_multi_analysis(self: Any) -> None:
+    """
+    Runs the multi-file circuit topology analysis.
+    Iterates through files in the selected directory, performs analysis, and generates plots/exports.
+
+    Args:
+        self: The main GUI class instance.
+    """
     # check for non-polymer atoms
     if has_non_polymer_atoms():
         QtWidgets.QMessageBox.warning(self, "Warning", WARN_MSG)

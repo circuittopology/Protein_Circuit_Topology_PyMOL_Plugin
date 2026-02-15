@@ -5,29 +5,19 @@ Created on Mon May 24 17:00:09 2021
 
 Function that plots the amount of psc and entangled contacts
 """
+from typing import Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
-def stats_plot(
-        entangled: np.ndarray,
-        psc: list,
-        protid: str
-    ) -> None:
+def stats_plot(entangled: np.ndarray, psc: Sequence[float], protid: str) -> None:
     """
-    Function for plotting a of the fractions of different types of CT relations and
-    entanglement across the cmap diagonal
+    Plots the fraction of entangled contacts versus distance from
+    the diagonal and a pie chart of contact types.
 
-    Parameters
-    entangled : np.ndarray
-        Percentage of entangled contacts (P & X) across the diagonal.
-        Measure of globularity
-    psc : list
-        Amount of parallel, series, cross contacts in chain
-    protid : str
-        Protein ID
-
-    Returns
-    None
+    Args:
+        entangled (numpy.ndarray): Array of entangled contact fractions.
+        psc (Sequence[float]): List of contact type counts (P, S, C, etc.).
+        protid (str): Protein identifier.
     """
     psc = psc[1:]
     fig,(ax1,ax2)= plt.subplots(1,2)
@@ -45,5 +35,5 @@ def stats_plot(
     ax2.legend(legend_labels, bbox_to_anchor=(.5, -0.5, 0.5, 0.5))
     plt.show()
 
-def autopct_funct(pct):
+def autopct_funct(pct: float) -> str:
     return f'{pct:.1f}%' if pct >= 1.0 else ''

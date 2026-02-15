@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 from pymol import cmd
 from pymol.Qt import QtWidgets
@@ -21,7 +22,14 @@ from functions.exporting.export_mat import export_mat
 from utils.non_polymer import has_non_polymer_atoms
 from utils.config import WARN_MSG, LOCAL_CT_WARN, CHECKBOX_WARN
 
-def run_local_ct(self):
+def run_local_ct(self: Any) -> None:
+    """
+    Runs the local circuit topology analysis based on user-selected parameters.
+    Handles data retrieval, calculation, plotting, and exporting.
+
+    Args:
+        self: The main GUI class instance.
+    """
     # check for non-polymer atoms
     if has_non_polymer_atoms():
         QtWidgets.QMessageBox.warning(self, "Warning", WARN_MSG)

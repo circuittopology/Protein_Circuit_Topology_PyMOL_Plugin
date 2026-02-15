@@ -9,15 +9,13 @@ import numpy as np
 
 def get_stats(mat: np.ndarray) -> np.ndarray:
     """
-    Calculates the amount of entangled contacts across the diagonal.
+    Calculates the percentage of entangled contacts (Parallel and Cross) further along the diagonal.
 
-    Parameters
-    mat: np.ndarray
-        Topological relations matrix retrieved from get_matrix
-    Returns
-    entangled: np.ndarray
-        Percentage of entangled contacts (P & X) across the diagonal.
-        Measure of globularity
+    Args:
+        mat (numpy.ndarray): The topological relationship matrix.
+
+    Returns:
+        numpy.ndarray: An array containing the percentage of entangled contacts for each diagonal.
     """
     if mat.shape == (0,0):
         print('Error - mat empty')
