@@ -1,0 +1,53 @@
+name: Lint and Release
+
+on:
+  push:
+    tags:
+      - '*'
+  release:
+    types: [published]
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/astral-sh/uv:0.9.24-python3.13-bookworm-slim
+    
+    permissions:
+      contents: write
+
+    steps:
+      - name: Install Git
+        run: apk add --no-cache git
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Pylint
+        run: |
+          find . -name "*.py" -not -path "./.*" | xargs uvx pylint
+
+      - name: Zip Repository & Generate Checksum
+        id: zip
+        run: |
+          FILENAME="release-${{ github.ref_name }}.zip"
+
+          # (ignores .git and .gitignore automatically)
+          git archive --format=zip --output="$FILENAME" HEAD
+
+          sha256sum "$FILENAME" > "$FILENAME.sha256"
+
+          echo "zip_file=$FILENAME" >> $GITHUB_OUTPUT
+          echo "checksum_file=$FILENAME.sha256" >> $GITHUB_OUTPUT
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{ steps.zip.outputs.zip_file }}
+            ${{ steps.zip.outputs.checksum_file }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
