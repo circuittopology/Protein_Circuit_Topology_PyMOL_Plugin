@@ -1,0 +1,28 @@
+name: Linter
+
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/astral-sh/uv:0.9.24-python3.13-bookworm-slim
+    
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Pylint
+        run: |
+          find . -name "*.py" -not -path "./.*" | xargs uvx pylint
