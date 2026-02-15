@@ -17,6 +17,7 @@ A PyMOL plugin for analyzing protein circuit topology (CT) with an intuitive gra
 3. Use the Plugin Manager to install the circuit_topology_plugin.zip file as a new plugin.
 4. Start using it
 
+## Citation
 Users are requested to cite the following article: 
 
 Article title: 
