@@ -22,7 +22,7 @@ def show_warning_dialog(self: Any) -> None:
     msg_box.setIcon(QtWidgets.QMessageBox.Warning)
 
     continue_btn = msg_box.addButton("Continue", QtWidgets.QMessageBox.AcceptRole)
-    cancel_btn = msg_box.addButton("Cancel", QtWidgets.QMessageBox.RejectRole)
+    msg_box.addButton("Cancel", QtWidgets.QMessageBox.RejectRole)
     never_show_btn = msg_box.addButton("Don't show again", QtWidgets.QMessageBox.DestructiveRole)
 
     msg_box.exec_()
@@ -47,7 +47,8 @@ def remove_non_polymer_atoms() -> None:
     cmd.remove("not polymer")
     cmd.refresh()
     after_atoms = cmd.count_atoms("all")
-    print(f"Removed all non-polymer atoms!\n Atom count has changed from {before_atoms} to {after_atoms}")
+    print(f"""Removed all non-polymer atoms!
+          Atom count has changed from {before_atoms} to {after_atoms}""")
     cmd.zoom("all")
 
 # generic
