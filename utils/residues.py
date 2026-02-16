@@ -1,6 +1,5 @@
-from pymol import cmd
 from typing import Any, Optional
-
+from pymol import cmd
 
 def get_residue_range(self: Any, obj_name: Optional[str]) -> None:
     """

@@ -23,6 +23,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Miniforge
+        run: |
+          apt-get install -y --no-install-recommends curl ca-certificates
+          curl -fsSL -o Miniforge3.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+          bash Miniforge3.sh -b -p /opt/conda
+          echo "/opt/conda/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          /opt/conda/bin/conda install -y -c conda-forge -c schrodinger pymol-bundle
+
       - name: Run Pylint
         run: |
           find . -name "*.py" -not -path "./.*" | xargs uvx pylint
