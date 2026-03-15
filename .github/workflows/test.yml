@@ -12,8 +12,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     container:
-      image: astral/uv:0.10.10-python3.12-trixie-slim
-    
+      image: astral/uv:0.10.10-python3.10-trixie-slim
+
     permissions:
       contents: read
 
@@ -32,7 +32,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          /opt/conda/bin/conda install -y -c conda-forge -c schrodinger pymol-bundle
+          /opt/conda/bin/conda install -y -c conda-forge -c schrodinger python=3.10 pymol-bundle
 
       - name: Run Ruff
         run: |
