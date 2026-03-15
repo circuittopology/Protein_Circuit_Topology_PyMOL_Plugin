@@ -12,7 +12,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/astral-sh/uv:0.9.24-python3.13-bookworm-slim
+      image: astral/uv:0.10.10-python3.10-alpine3.23
     
     permissions:
       contents: read
@@ -25,7 +25,7 @@ jobs:
 
       - name: Install Miniforge
         run: |
-          apt-get install -y --no-install-recommends curl ca-certificates
+          apk add curl ca-certificates
           curl -fsSL -o Miniforge3.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
           bash Miniforge3.sh -b -p /opt/conda
           echo "/opt/conda/bin" >> $GITHUB_PATH
@@ -34,6 +34,6 @@ jobs:
         run: |
           /opt/conda/bin/conda install -y -c conda-forge -c schrodinger pymol-bundle
 
-      - name: Run Pylint
+      - name: Run Ruff
         run: |
-          find . -name "*.py" -not -path "./.*" | xargs uvx pylint
+          uvx ruff check --fix --exit-zero
