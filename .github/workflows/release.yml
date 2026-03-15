@@ -9,7 +9,7 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     container:
-      image: astral/uv:0.10.10-python3.10-trixie-slim
+      image: astral/uv:0.10.10-python3.13-trixie-slim
     
     permissions:
       contents: write
