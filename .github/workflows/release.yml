@@ -9,7 +9,7 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     container:
-      image: astral/uv:0.10.10-python3.13-alpine3.22
+      image: astral/uv:0.10.10-python3.13-alpine3.23
 
     permissions:
       contents: write
