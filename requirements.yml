@@ -1,5 +1,3 @@
-channels:
-  - conda-forge
 dependencies:
-  - pandas
-  - matplotlib
+  - conda-forge::pandas=2.3.3
+  - conda-forge::matplotlib=3.9.1
