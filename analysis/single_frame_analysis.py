@@ -4,10 +4,8 @@ import os
 from typing import Any
 
 from pymol import cmd
-from pymol.Qt import QtWidgets
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
-# pylint: disable=wrong-import-position
+from PyQt5.QtWidgets import QMessageBox
+
 from functions.calculating.get_cmap import get_cmap
 from functions.calculating.get_matrix import get_matrix
 from functions.calculating.get_stats import get_stats
@@ -24,6 +22,9 @@ from functions.exporting.export_mat import export_mat
 
 from utils.non_polymer import has_non_polymer_atoms
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+
 def run_single_frame_analysis(self: Any) -> None:
     """
     Runs circuit topology analysis for a single frame of a trajectory or a single PDB file from a directory.
@@ -33,7 +34,7 @@ def run_single_frame_analysis(self: Any) -> None:
     """
     # check for non-polymer atoms
     if has_non_polymer_atoms():
-        QtWidgets.QMessageBox.warning(self, "Warning",
+        QMessageBox.warning(self, "Warning",
                                         "The opened file contains non-polymer atoms, which can interfere with Circuit Topology. Please use the 'Remove Non-Polymer Atoms' button to remove them.")
 
     vals = self.get_multiple_values()
@@ -44,14 +45,14 @@ def run_single_frame_analysis(self: Any) -> None:
     # Check for missing or empty file lists
     if traj_dir:
         if not hasattr(self, "avail_dir_traj_files") or not self.avail_dir_traj_files:
-            QtWidgets.QMessageBox.critical(self, "Error", "No trajectory files found in the selected trajectory directory.")
+            QMessageBox.critical(self, "Error", "No trajectory files found in the selected trajectory directory.")
             return
     elif pdb_dir:
         if not hasattr(self, "available_mol_files") or not self.available_mol_files:
-            QtWidgets.QMessageBox.critical(self, "Error", "No PDB files found in the selected directory.")
+            QMessageBox.critical(self, "Error", "No PDB files found in the selected directory.")
             return
     else:
-        QtWidgets.QMessageBox.critical(self, "Error", "No input source selected (trajectory or directory).")
+        QMessageBox.critical(self, "Error", "No input source selected (trajectory or directory).")
         return
 
 
@@ -63,7 +64,7 @@ def run_single_frame_analysis(self: Any) -> None:
 
     # Check to see if GUI has at least one checkbox ticked for the 'run analysis' part
     if not circuit_plot_enabled and not matrix_plot_enabled and not export_cmap3_enabled and not export_mat_enabled and not stats_plot_enabled:
-        QtWidgets.QMessageBox.warning(self, "Error", "No checkboxes for plotting or exporting have been ticked!")
+        QMessageBox.warning(self, "Error", "No checkboxes for plotting or exporting have been ticked!")
         return
 
     # Correctly retrieve the frame
@@ -98,7 +99,7 @@ def run_single_frame_analysis(self: Any) -> None:
     else:
         frame_level = "chain"
 
-    idx, numbering, protid, res_names = get_cmap(frame_chain, level=frame_level, cutoff_distance=frame_dist,
+    idx, numbering, protid, _ = get_cmap(frame_chain, level=frame_level, cutoff_distance=frame_dist,
                                                     cutoff_numcontacts=frame_numcontacts,
                                                     exclude_neighbour=frame_neighbour)
 
@@ -106,7 +107,7 @@ def run_single_frame_analysis(self: Any) -> None:
     if frame_level == "chain":
         mat, psc = get_matrix(idx, protid)
     else:
-        mat, frame_stats, frame_chain_stats = get_matrix(index=idx, protid=protid)
+        mat, frame_stats, _ = get_matrix(index=idx, protid=protid)
 
     # plotting
     if circuit_plot_enabled:
@@ -130,8 +131,8 @@ def run_single_frame_analysis(self: Any) -> None:
             temp_file_name = f"{frame_obj}_chain_{c}_export.pdb"
             cmd.save(temp_file_name, f"{frame_obj} and chain {c}", state=cmd.get_state())
             temp_fpath = os.path.abspath(temp_file_name)
-            curr_chain, p = retrieve_chain(temp_fpath)
-            temp_idx, temp_n, p, res_names = get_cmap(curr_chain, cutoff_distance=frame_dist,
+            curr_chain, _ = retrieve_chain(temp_fpath)
+            temp_idx, temp_n, _, _ = get_cmap(curr_chain, cutoff_distance=frame_dist,
                                                         cutoff_numcontacts=frame_numcontacts,
                                                         exclude_neighbour=frame_neighbour)
             temp_file_base = os.path.basename(temp_fpath)

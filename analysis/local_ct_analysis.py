@@ -4,10 +4,8 @@ from pathlib import Path
 from typing import Any
 
 from pymol import cmd
-from pymol.Qt import QtWidgets
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
-# pylint: disable=wrong-import-position
+from PyQt5.QtWidgets import QMessageBox
+
 from functions.calculating.local_ct import local_ct
 from functions.calculating.get_cmap import get_cmap
 from functions.calculating.get_matrix import get_matrix
@@ -22,6 +20,9 @@ from functions.exporting.export_mat import export_mat
 from utils.non_polymer import has_non_polymer_atoms
 from utils.config import WARN_MSG, LOCAL_CT_WARN, CHECKBOX_WARN
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+
 def run_local_ct(self: Any) -> None:
     """
     Runs the local circuit topology analysis based on user-selected parameters.
@@ -32,7 +33,7 @@ def run_local_ct(self: Any) -> None:
     """
     # check for non-polymer atoms
     if has_non_polymer_atoms():
-        QtWidgets.QMessageBox.warning(self, "Warning", WARN_MSG)
+        QMessageBox.warning(self, "Warning", WARN_MSG)
 
     vals = self.get_local_values()
     # Retrieve imported file as a selected object in PyMOL
@@ -41,7 +42,7 @@ def run_local_ct(self: Any) -> None:
     selected_obj = f"{curr_local_obj} and chain {curr_chain}"
 
     if (selected_obj == "Select a file." or not selected_obj):
-        QtWidgets.QMessageBox.warning(self, "Error", LOCAL_CT_WARN)
+        QMessageBox.warning(self, "Error", LOCAL_CT_WARN)
         return
 
     local_ct_plot = vals["local_topology_plot"]
@@ -53,7 +54,7 @@ def run_local_ct(self: Any) -> None:
 
     # Check to see if GUI has at least one checkbox ticked for the 'run analysis' part
     if not (local_ct_plot or local_ct_enabled or export_cmap3_enabled or export_mat_enabled):
-        QtWidgets.QMessageBox.warning(self, "Error", CHECKBOX_WARN)
+        QMessageBox.warning(self, "Error", CHECKBOX_WARN)
         return
 
     file_name = f"{selected_obj}_export.pdb"
@@ -66,9 +67,13 @@ def run_local_ct(self: Any) -> None:
     if os.path.exists(file_name):
         os.remove(os.path.abspath(file_name))
 
-    idx, numbering, protid, _ = get_cmap(local_chain, cutoff_distance=local_dist,
-                                                    cutoff_numcontacts=local_numcontacts,
-                                                    exclude_neighbour=local_neighbour)
+    idx, numbering, protid, _ = get_cmap(
+        chain=local_chain,
+        cutoff_distance=local_dist,
+        cutoff_numcontacts=local_numcontacts,
+        exclude_neighbour=local_neighbour
+    )
+
     mat, _ = get_matrix(idx, protid)
     if local_ct_plot:
         local_topology_plot(idx, mat, numbering, protid, residue_id, contact)

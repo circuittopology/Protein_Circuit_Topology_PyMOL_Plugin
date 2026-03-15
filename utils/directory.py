@@ -2,7 +2,8 @@ import os
 from typing import Any
 
 from pymol import cmd
-from pymol.Qt import QtWidgets, QtCore
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QFileDialog, QMessageBox, QLabel
 
 from utils.non_polymer import new_file_has_non_polymer_atoms
 from utils.config import WARN_MSG
@@ -17,7 +18,7 @@ def choose_file(self: Any) -> None:
         self: The main GUI class instance.
     """
     file_filter = "Structure Files (*.pdb *.cif)"
-    file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Input File", "", file_filter)
+    file_path, _ = QFileDialog.getOpenFileName(self, "Select Input File", "", file_filter)
 
     if file_path:
         self.selected_file = file_path
@@ -29,7 +30,7 @@ def choose_file(self: Any) -> None:
 
         # check for non-polymer atoms
         if new_file_has_non_polymer_atoms(obj_name):
-            QtWidgets.QMessageBox.warning(self, "Warning", WARN_MSG)
+            QMessageBox.warning(self, "Warning", WARN_MSG)
 
     else:
         self.selected_file = None
@@ -43,7 +44,7 @@ def choose_local_file(self: Any) -> None:
         self: The main GUI class instance.
     """
     file_filter = "Structure Files (*.pdb *.cif)"
-    file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Input File", "", file_filter)
+    file_path, _ = QFileDialog.getOpenFileName(self, "Select Input File", "", file_filter)
 
     if file_path:
         self.local_selected_file = file_path
@@ -54,7 +55,7 @@ def choose_local_file(self: Any) -> None:
         self.local_selected_obj_name = obj_name
         # check for non-polymer atoms
         if new_file_has_non_polymer_atoms(obj_name):
-            QtWidgets.QMessageBox.warning(self, "Warning", WARN_MSG)
+            QMessageBox.warning(self, "Warning", WARN_MSG)
 
     else:
         self.local_selected_file = None
@@ -66,7 +67,7 @@ def choose_local_output_dir(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Output Directory")
+    dir_path = QFileDialog.getExistingDirectory(self, "Select Output Directory")
     if dir_path:
         self.selected_output_dir_local = dir_path
         set_label_text_elided(dir_path, self.output_local_label)
@@ -80,7 +81,7 @@ def choose_output_dir(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Output Directory")
+    dir_path = QFileDialog.getExistingDirectory(self, "Select Output Directory")
     if dir_path:
         self.selected_output_dir = dir_path
         set_label_text_elided(dir_path, self.output_dir_label)
@@ -94,7 +95,7 @@ def choose_output_dir_multi(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Output Directory")
+    dir_path = QFileDialog.getExistingDirectory(self, "Select Output Directory")
     if dir_path:
         self.selected_output_dir_multi = dir_path
         set_label_text_elided(dir_path, self.output_dir_label_multi)
@@ -109,7 +110,7 @@ def choose_input_dir_multi(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Input Directory")
+    dir_path = QFileDialog.getExistingDirectory(self, "Select Input Directory")
     if dir_path:
         self.selected_input_dir_multi = dir_path
         set_label_text_elided(dir_path, self.input_dir_label_multi)
@@ -120,7 +121,7 @@ def choose_input_dir_multi(self: Any) -> None:
         self.selected_input_dir_multi = None
 
 
-def set_label_text_elided(file_path: str, label: QtWidgets.QLabel) -> None:
+def set_label_text_elided(file_path: str, label: QLabel) -> None:
     """
     Sets the text of a QLabel to an elided version of the file path if it's too long.
 
@@ -132,10 +133,6 @@ def set_label_text_elided(file_path: str, label: QtWidgets.QLabel) -> None:
 
     available_width = label.width() - 10
 
-    elided_text = font_metrics.elidedText(
-        file_path, 
-        QtCore.Qt.ElideMiddle,
-        available_width
-    )
+    elided_text = font_metrics.elidedText(file_path, Qt.ElideMiddle, available_width)
     label.setText(elided_text)
     label.setToolTip(file_path)

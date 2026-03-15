@@ -40,7 +40,7 @@ def get_matrix(index: np.ndarray, protid: str):
             j = index[x,1]
             for y in range(x+1,len(index)):
                 k = index[y,0]
-                l = index[y,1]
+                _l = index[y,1]
                 #series
                 if (j < k):
                     S=S+1
@@ -48,34 +48,34 @@ def get_matrix(index: np.ndarray, protid: str):
                     mat[y, x]=1
 
                 #parallel    
-                elif (i>k and j<l):
+                elif (i>k and j<_l):
                     P=P+1
                     mat[x, y]=2
                     mat[y, x]=3
                 
                 #5: CP
                 #6: CP-1    
-                elif (i==k and j<l):
+                elif (i==k and j<_l):
                     mat[x, y]=5
                     mat[y, x]=6
                     P += 1
 
-                elif (i==k and l<j):
+                elif (i==k and _l<j):
                     mat[x, y]=6
                     mat[y, x]=5
                     P += 1
 
-                elif (k>i and j==l):
+                elif (k>i and j==_l):
                     mat[x,y]=6
                     mat[y,x]=5
                     P += 1
 
-                elif(i>k and l==j):
+                elif(i>k and _l==j):
                     mat[x,y]=5
                     mat[y,x]=6
                     P += 1
                 #inverse parallel
-                elif (k>i and l<j):
+                elif (k>i and _l<j):
                     P += 1
                     mat[x, y]=3
                     mat[y, x]=2
@@ -85,11 +85,11 @@ def get_matrix(index: np.ndarray, protid: str):
                     mat[y,x]=7
                     S += 1
                 #Cross
-                if (k>i and k<j and j<l):
+                if (k>i and k<j and j<_l):
                     X += 1
                     mat[x, y]=4
                     mat[y, x]=4
-                elif (i>k and i< l and j> l):
+                elif (i>k and i< _l and j> _l):
                     X += 1
                     mat[x, y]=4
                     mat[y, x]=4
@@ -130,7 +130,7 @@ def get_matrix(index: np.ndarray, protid: str):
                 chain2 = False
 
                 k = index[y][0]
-                l = index[y][1]
+                _l = index[y][1]
                 chaink = index[y][2]
                 chainl = index[y][3]
                 
@@ -150,37 +150,37 @@ def get_matrix(index: np.ndarray, protid: str):
                             chainstats[chaink]['s'] += 1
                             
                         #parallel
-                        elif k < i and j < l:
+                        elif k < i and j < _l:
                             P += 1
                             mat[x,y] = 1
                             mat[y,x] = 1
                             chainstats[chaink]['p'] += 1
                                 
-                        elif i < k and l < j:
+                        elif i < k and _l < j:
                             P += 1
                             mat[x,y] = 1
                             mat[y,x] = 1
                             chainstats[chaink]['p'] += 1
                             
-                        elif (i==k and j<l):
+                        elif (i==k and j<_l):
                             mat[x, y]=1
                             mat[y, x]=1
                             P += 1
                             chainstats[chaink]['p'] += 1
                             
-                        elif (i==k and l<j):
+                        elif (i==k and _l<j):
                             mat[x, y]=1
                             mat[y, x]=1
                             P += 1
                             chainstats[chaink]['p'] += 1
                             
-                        elif (k>i and j==l):
+                        elif (k>i and j==_l):
                             mat[x,y]=1
                             mat[y,x]=1
                             P += 1
                             chainstats[chaink]['p'] += 1
                             
-                        elif(i>k and l==j):
+                        elif(i>k and _l==j):
                             mat[x,y]=1
                             mat[y,x]=1
                             P += 1
@@ -193,13 +193,13 @@ def get_matrix(index: np.ndarray, protid: str):
                             chainstats[chaink]['s'] += 1
                             
                         #Cross
-                        if (k>i and k<j and j<l):
+                        if (k>i and k<j and j<_l):
                             X += 1
                             mat[x, y]=3
                             mat[y, x]=3
                             chainstats[chaink]['x'] += 1
                             
-                        elif (i>k and i< l and j> l):
+                        elif (i>k and i< _l and j> _l):
                             X += 1
                             mat[x, y]=3
                             mat[y, x]=3
@@ -267,7 +267,7 @@ def get_matrix(index: np.ndarray, protid: str):
                     chainstats[list(set1.intersection(set2))[0]]['l'] += 1
                     chainstats[list(set1.intersection(set2))[1]]['l'] += 1
                 else:
-                    print('error - ',i,chaini,j,chainj,k,chaink,l,chainl)
+                    print('error - ',i,chaini,j,chainj,k,chaink,_l,chainl)
 
         stats = [protid,P,S,X,I2,I3,I4,T2,T3,L]
         return mat,stats,chainstats

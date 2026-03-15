@@ -1,12 +1,15 @@
 import sys
 from pathlib import Path
 from typing import Any
+
 from pymol import cmd
-from pymol.Qt import QtWidgets, QtCore
+from pymol.Qt import QtCore
+from PyQt5.QtWidgets import QPushButton
+
+from utils.config import INFO_BUTTON_STYLE
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
-# pylint: disable=wrong-import-position
-from utils.config import INFO_BUTTON_STYLE
 
 def update_chain_combo_box(self: Any) -> None:
     """
@@ -18,7 +21,7 @@ def update_chain_combo_box(self: Any) -> None:
     self.chain_combo_box.clear()
     self.chain_combo_box.addItems(self.curr_chain_residues.keys())
 
-def make_info_button(tooltip: str) -> QtWidgets.QPushButton:
+def make_info_button(tooltip: str) -> QPushButton:
     """
     Creates a small info button with a tooltip.
 
@@ -28,7 +31,7 @@ def make_info_button(tooltip: str) -> QtWidgets.QPushButton:
     Returns:
         QPushButton: The configured info button.
     """
-    btn = QtWidgets.QPushButton("ⓘ")
+    btn = QPushButton("ⓘ")
     btn.setFixedWidth(20)
     btn.setFlat(True)
     btn.setStyleSheet(INFO_BUTTON_STYLE)

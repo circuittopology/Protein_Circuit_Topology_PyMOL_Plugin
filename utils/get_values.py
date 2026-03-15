@@ -1,11 +1,11 @@
 from pathlib import Path
 import sys
 from typing import Any, Dict
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
-# pylint: disable=wrong-import-position
 
 from utils.config import CONTACT_MAP
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 def get_vis_vals(self: Any) -> Dict[str, Any]:
     """

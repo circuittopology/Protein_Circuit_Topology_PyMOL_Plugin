@@ -5,12 +5,14 @@ import os
 import sys
 from pathlib import Path
 from typing import Any
+
 from pymol import cmd
-from pymol.Qt import QtWidgets
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
+
+from utils.non_polymer import remove_non_polymer_atoms
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
-# pylint: disable=wrong-import-position
-from utils.non_polymer import remove_non_polymer_atoms
 
 def select_mol_file(self: Any) -> None:
     """
@@ -20,12 +22,7 @@ def select_mol_file(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    fname, _ = QtWidgets.QFileDialog.getOpenFileName(
-        self,
-        "Select PDB file",
-        "",
-        "Structure files (*.pdb *.cif)"
-    )
+    fname, _ = QFileDialog.getOpenFileName(self, "Select PDB file", "", "Structure files (*.pdb *.cif)")
     if fname:
         self.traj_mol_path = fname
         self.traj_mol_label.setText(fname)
@@ -43,8 +40,7 @@ def select_xtc_file(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    fname, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select trajectory file", "",
-                                                        "Trajectory files (*.xtc *.dcd *.trr *.nc)")
+    fname, _ = QFileDialog.getOpenFileName(self, "Select trajectory file", "", "Trajectory files (*.xtc *.dcd *.trr *.nc)")
     if fname:
         self.traj_xtc_path = fname
         self.traj_xtc_label.setText(fname)
@@ -68,21 +64,18 @@ def export_frames_from_traj(self: Any) -> None:
             self.traj_status_label.setText("Please select both a PDB and a trajectory file.")
             return
 
-        confirm = QtWidgets.QMessageBox.question(
+        confirm = QMessageBox.question(
             self,
             "Confirm Export",
             "Are you sure you want to export all frames?\n\nThis will create a large number of PDB files!",
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+            QMessageBox.Yes | QMessageBox.No
         )
 
-        if confirm != QtWidgets.QMessageBox.Yes:
+        if confirm != QMessageBox.Yes:
             self.traj_status_label.setText("Export cancelled.")
             return
 
-        outdir = QtWidgets.QFileDialog.getExistingDirectory(
-            self,
-            "Select folder to save frames in the widget above"
-        )
+        outdir = QFileDialog.getExistingDirectory(self, "Select folder to save frames in the widget above")
         if not outdir:
             return
 

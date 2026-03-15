@@ -42,7 +42,6 @@ def retrieve_chain(input_file: str, chainid: Union[int, str] = 0) -> Tuple[Chain
             structure = PDBParser(PERMISSIVE=1).get_structure(input_file.replace('.pdb', ''), input_filepath)
 
     model = structure[0]
-    chainlist = model.get_list()
     # removes heteroresidues from protein
     residue_to_remove = []
     chain_to_remove = []

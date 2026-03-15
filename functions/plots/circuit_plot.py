@@ -23,9 +23,7 @@ def circuit_plot(index: np.ndarray, protid: str, numbering: np.ndarray) -> None:
 
     if len(np.shape(numbering)) > 1:
         numbering = numbering[:,1]
-        
-    nseg = len(numbering)
-    segment = list(range(0,nseg))  
+
     ax = plt.subplots()[1]
     plt.plot()
     plt.xlim(0,len(numbering)+1)

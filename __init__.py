@@ -15,13 +15,15 @@ manual intervention is necessary.
 import os
 from pathlib import Path
 import sys
-# pylint: disable=import-error, no-name-in-module, wrong-import-position
+import platform
+
 from pymol.plugins import addmenuitemqt
 
+from initialization_checks import (
+    register_pymol_functions, install_failed, get_requirements, check_installed_packages, is_path_user, pymol_install, win_install, mac_install, linux_install
+)
 PROJECT_ROOT = Path(__file__).resolve().parents[0]
 sys.path.insert(0, str(PROJECT_ROOT))
-# Import platform-aware installation and registration utilities
-from initialization_checks import *  # brings register_pymol_functions, install helpers, etc.
 
 # Determine environment and requirement locations
 PYMOL_ENV_PATH = sys.executable
@@ -103,7 +105,7 @@ def __init_plugin__(app=None):
         # Try using PyMOL's terminal-driven conda approach
         result = pymol_install()
 
-        if result == True:
+        if result:
             try:
                 print('Checking ProteinCT plugin initialization')
                 register_pymol_functions()

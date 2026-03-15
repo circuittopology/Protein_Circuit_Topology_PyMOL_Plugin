@@ -5,10 +5,8 @@ import matplotlib.pyplot as plt
 from typing import Any
 
 from pymol import cmd
-from pymol.Qt import QtWidgets
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
-# pylint: disable=wrong-import-position
+from PyQt5.QtWidgets import QMessageBox
+
 from functions.calculating.get_matrix import get_matrix
 from functions.calculating.get_cmap import get_cmap
 from functions.calculating.energy_cmap import energy_cmap
@@ -29,6 +27,9 @@ from functions.exporting.export_psc import export_psc
 from utils.non_polymer import has_non_polymer_atoms
 from utils.config import WARN_MSG, CHECKBOX_WARN
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+
 # Slight rewrite to match their notebook code because we had bugs
 def run_multi_analysis(self: Any) -> None:
     """
@@ -40,7 +41,7 @@ def run_multi_analysis(self: Any) -> None:
     """
     # check for non-polymer atoms
     if has_non_polymer_atoms():
-        QtWidgets.QMessageBox.warning(self, "Warning", WARN_MSG)
+        QMessageBox.warning(self, "Warning", WARN_MSG)
 
     vals = self.get_multiple_values()
     # Yes/No options (retrieving once rather than every time in for loop)
@@ -56,7 +57,7 @@ def run_multi_analysis(self: Any) -> None:
     multi_traj_dir = vals["traj_directory"]
     multi_plot_psc = vals["plot_psc"]
     if not multi_input_dir and not multi_traj_dir:
-        QtWidgets.QMessageBox.warning(self, "Error", "No input directory selected!")
+        QMessageBox.warning(self, "Error", "No input directory selected!")
         return
 
     if multi_traj_dir:
@@ -65,18 +66,14 @@ def run_multi_analysis(self: Any) -> None:
         path = multi_input_dir
 
     if not os.path.exists(path):
-        QtWidgets.QMessageBox.warning(self, "Error", f"The input directory does not exist: {path}")
+        QMessageBox.warning(self, "Error", f"The input directory does not exist: {path}")
         return
 
     output_dir = vals["output_directory"]
 
     if not output_dir:
         if multi_export_cmap3 or multi_export_mat or multi_psc:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "Error",
-                f"An output directory has not been selected: {output_dir}"
-            )
+            QMessageBox.warning(self, "Error", f"An output directory has not been selected: {output_dir}")
             return
 
     number_of_files = len(os.listdir(path))
@@ -94,16 +91,16 @@ def run_multi_analysis(self: Any) -> None:
     multi_filter_mode = vals["length_filter_mode"]
 
     if not (multi_circuit_plot or multi_matrix_plot or multi_stats_plot or multi_export_cmap3 or multi_export_mat or multi_psc):
-        QtWidgets.QMessageBox.warning(self, "Error", CHECKBOX_WARN)
+        QMessageBox.warning(self, "Error", CHECKBOX_WARN)
         return
 
     if multi_circuit_plot or multi_matrix_plot or multi_stats_plot or multi_export_cmap3 or multi_export_mat:
-        confirm = QtWidgets.QMessageBox.question(self,
-                                                    "Continue multi-file analysis",
-                                                    f"Are you sure you want to continue with multi-file analysis?\n\nIt will create a plot / export a .csv for each of your {number_of_files} files!",
-                                                    QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        confirm = QMessageBox.question(self,
+                                        "Continue multi-file analysis",
+                                        f"Are you sure you want to continue with multi-file analysis?\n\nIt will create a plot / export a .csv for each of your {number_of_files} files!",
+                                        QMessageBox.Yes | QMessageBox.No)
 
-        if confirm != QtWidgets.QMessageBox.Yes:
+        if confirm != QMessageBox.Yes:
             print("Multi-file analysis was aborted.")
             return
 
@@ -125,10 +122,7 @@ def run_multi_analysis(self: Any) -> None:
 
         if len(multi_obj_chains) > 1:
             multi_level = "model"
-            print(
-                "The object %s has multiple chains. Performing multi-chain CT analysis...",
-                multi_obj
-            )
+            print("The object %s has multiple chains. Performing multi-chain CT analysis...", multi_obj)
         else:
             multi_level = "chain"
 
@@ -142,14 +136,12 @@ def run_multi_analysis(self: Any) -> None:
                 idx, protid = energy_cmap(index=idx, numbering=numbering, res_names=res_names, protid=protid,
                                             potential_sign=multi_energy_mode)
             except IndexError:
-                print(
-                    f"There is no contact map for {multi_obj} that can satisfy the provided energy filtering. Skipping...")
+                print(f"There is no contact map for {multi_obj} that can satisfy the provided energy filtering. Skipping...")
         if multi_len_filtering and multi_level == "chain":
             try:
                 idx = length_filter(index=idx, distance=multi_filtering_dist, mode=multi_filter_mode)
             except IndexError:
-                print(
-                    f"There is no contact map for {multi_obj} that can satisfy the provided length filtering. Skipping...")
+                print(f"There is no contact map for {multi_obj} that can satisfy the provided length filtering. Skipping...")
 
         if multi_level == "chain":
             mat, psc = get_matrix(index=idx, protid=protid)

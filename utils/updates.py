@@ -2,6 +2,7 @@
 Utility functions for updating GUI elements in the PyMOL plugin.
 """
 from typing import Any
+
 from pymol import cmd
 
 PYMOL_OBJ = ('object:molecule', 'selection')

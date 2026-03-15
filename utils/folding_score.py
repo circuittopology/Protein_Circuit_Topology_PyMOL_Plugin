@@ -1,11 +1,13 @@
 from pathlib import Path
 import sys
 from typing import Sequence, Union
+
 import numpy as np
+
+from utils.topology import get_topology_vector
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
-# pylint: disable=wrong-import-position
-from utils.topology import get_topology_vector
 
 def get_folding_score(
     mat: np.ndarray,

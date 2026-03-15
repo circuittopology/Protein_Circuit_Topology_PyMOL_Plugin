@@ -3,8 +3,6 @@ import numpy as np
 
 def local_topology_plot(index,mat,numbering,protid,siteid,relation):
         plt.ion()
-        nseg = len(numbering)
-        segment = list(range(0,nseg))  
         ax = plt.subplots()[1]
         plt.plot()
         plt.xlim(0,len(numbering)+1)
@@ -30,8 +28,6 @@ def local_topology_plot(index,mat,numbering,protid,siteid,relation):
                         color ='k')
         
         plt.ion()
-        nseg = len(numbering)
-        segment = list(range(0,nseg))  
         ax = plt.subplots()[1]
         plt.plot()
         plt.xlim(0,len(numbering)+1)
@@ -67,8 +63,6 @@ def local_topology_plot(index,mat,numbering,protid,siteid,relation):
                         color ='k')
                         
         plt.ion()
-        nseg = len(numbering)
-        segment = list(range(0,nseg))  
         ax = plt.subplots()[1]
         plt.plot()
         plt.xlim(0,len(numbering)+1)

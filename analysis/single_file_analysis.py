@@ -2,11 +2,11 @@ import os
 import sys
 from pathlib import Path
 from typing import Any
+
 from pymol import cmd
-from pymol.Qt import QtWidgets, QtCore
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
-# pylint: disable=wrong-import-position
+from PyQt5.QtWidgets import QMessageBox, QDialog, QVBoxLayout, QLabel, QPushButton
+from PyQt5.QtCore import Qt
+
 from functions.calculating.get_cmap import get_cmap
 from functions.calculating.get_matrix import get_matrix
 
@@ -22,6 +22,9 @@ from functions.exporting.export_mat import export_mat
 from utils.non_polymer import has_non_polymer_atoms
 from utils.folding_score import get_folding_score
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+
 def run_standard_analysis(self: Any) -> None:
     """
     Runs the standard single-file circuit topology analysis.
@@ -32,14 +35,15 @@ def run_standard_analysis(self: Any) -> None:
     """
     # check for non-polymer atoms
     if has_non_polymer_atoms():
-        QtWidgets.QMessageBox.warning(self, "Warning",
-                                        "The opened file contains non-polymer atoms, which can interfere with Circuit Topology. Please use the 'Remove Non-Polymer Atoms' button to remove them.")
+        QMessageBox.warning(
+            self, "Warning",
+            "The opened file contains non-polymer atoms, which can interfere with Circuit Topology. Please use the 'Remove Non-Polymer Atoms' button to remove them."
+        )
 
     vals = self.get_values()
     selected_obj = self.dropdown_objects.currentText()
     if (selected_obj == "Select a file." or not selected_obj):
-        QtWidgets.QMessageBox.warning(self, "Error",
-                                        "To process your object with Circuit Topology, please select it from the dropdown menu!")
+        QMessageBox.warning(self, "Error", "To process your object with Circuit Topology, please select it from the dropdown menu!")
         return
     # Retrieving checkbox values
     folding_score_enabled = vals["folding_score"]
@@ -50,8 +54,7 @@ def run_standard_analysis(self: Any) -> None:
 
     # Check to see if GUI has at least one checkbox ticked for the 'run analysis' part
     if not circuit_plot_enabled and not matrix_plot_enabled and not export_cmap3_enabled and not export_mat_enabled and not folding_score_enabled:
-        QtWidgets.QMessageBox.warning(self, "Error",
-                                        "No checkboxes for plots, CT folding score or exporting have been ticked.")
+        QMessageBox.warning(self, "Error", "No checkboxes for plots, CT folding score or exporting have been ticked.")
         return
 
     chains = cmd.get_chains(selected_obj)
@@ -94,7 +97,7 @@ def run_standard_analysis(self: Any) -> None:
 
             cmd.save(file_name, f"{selected_obj} and chain {c}", state=cmd.get_state())
             folding_chain, p = retrieve_chain(file_name)
-            i, n, p, res_names = get_cmap(folding_chain, cutoff_distance=single_dist,
+            i, n, p, _= get_cmap(folding_chain, cutoff_distance=single_dist,
                                             cutoff_numcontacts=single_numcontacts, exclude_neighbour=single_neighbour)
             m, psc = get_matrix(i, p)
 
@@ -113,15 +116,15 @@ def run_standard_analysis(self: Any) -> None:
                     os.remove(os.path.abspath(file_name))
 
                 # Show the score in a pop-up tab (QDialog)
-                dialog = QtWidgets.QDialog(self)
+                dialog = QDialog(self)
                 dialog.setWindowTitle("CT Folding Score")
-                layout = QtWidgets.QVBoxLayout()
+                layout = QVBoxLayout()
 
-                label = QtWidgets.QLabel(f"CT Folding Score: {folding_score}")
-                label.setAlignment(QtCore.Qt.AlignCenter)
+                label = QLabel(f"CT Folding Score: {folding_score}")
+                label.setAlignment(Qt.AlignCenter)
                 layout.addWidget(label)
 
-                ok_button = QtWidgets.QPushButton("OK")
+                ok_button = QPushButton("OK")
                 ok_button.clicked.connect(dialog.accept)
                 layout.addWidget(ok_button)
 

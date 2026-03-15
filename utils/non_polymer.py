@@ -1,7 +1,8 @@
 import os
 from typing import Any
+
 from pymol import cmd
-from pymol.Qt import QtWidgets
+from PyQt5.QtWidgets import QMessageBox
 
 def show_warning_dialog(self: Any) -> None:
     """
@@ -16,14 +17,14 @@ def show_warning_dialog(self: Any) -> None:
         remove_non_polymer_atoms()
         return
 
-    msg_box = QtWidgets.QMessageBox(self)
+    msg_box = QMessageBox(self)
     msg_box.setWindowTitle("Warning")
     msg_box.setText("All non-polymer elements will be removed.")
-    msg_box.setIcon(QtWidgets.QMessageBox.Warning)
+    msg_box.setIcon(QMessageBox.Warning)
 
-    continue_btn = msg_box.addButton("Continue", QtWidgets.QMessageBox.AcceptRole)
-    msg_box.addButton("Cancel", QtWidgets.QMessageBox.RejectRole)
-    never_show_btn = msg_box.addButton("Don't show again", QtWidgets.QMessageBox.DestructiveRole)
+    continue_btn = msg_box.addButton("Continue", QMessageBox.AcceptRole)
+    msg_box.addButton("Cancel", QMessageBox.RejectRole)
+    never_show_btn = msg_box.addButton("Don't show again", QMessageBox.DestructiveRole)
 
     msg_box.exec_()
 

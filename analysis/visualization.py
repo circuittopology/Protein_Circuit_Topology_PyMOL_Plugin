@@ -2,17 +2,19 @@ import os
 import sys
 from pathlib import Path
 from typing import Any
+
 from pymol import cmd
-from pymol.Qt import QtWidgets
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
-# pylint: disable=wrong-import-position
+from PyQt5.QtWidgets import QMessageBox
+
 from functions.calculating.get_cmap import get_cmap
 from functions.calculating.get_matrix import get_matrix
 
 from functions.importing.retrieve_chain import retrieve_chain
 
 from utils.topology import get_topology_vector, color_by_topology
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 # Function that only visualizes the topology on the molecule inside PyMOL
 def visualize_molecule(self: Any, contact_type: str) -> None:
@@ -29,7 +31,7 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
     selected_obj = self.dropdown_objects.currentText()
 
     if selected_obj == "Select a file." or not selected_obj:
-        QtWidgets.QMessageBox.warning(self, "Error",
+        QMessageBox.warning(self, "Error",
                                         "Please select an object inside PyMOL for the Circuit Topology analysis!")
         return
 
@@ -46,7 +48,7 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
             vis_neighbour = vals["exclude_neighbour"]
             visual_chain, protid = retrieve_chain(file_name)
 
-            idx, numbering, protid, res_names = get_cmap(visual_chain, cutoff_distance=vis_dist,
+            idx, numbering, protid, _ = get_cmap(visual_chain, cutoff_distance=vis_dist,
                                                             cutoff_numcontacts=vis_numcontacts,
                                                             exclude_neighbour=vis_neighbour)
             mat, psc = get_matrix(idx, protid)

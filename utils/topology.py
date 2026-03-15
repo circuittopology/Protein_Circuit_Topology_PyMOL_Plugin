@@ -1,4 +1,5 @@
 from typing import Sequence, Union, Optional
+
 import numpy as np
 from pymol import cmd
 

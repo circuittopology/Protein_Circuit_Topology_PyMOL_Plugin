@@ -80,7 +80,7 @@ def energy_cmap(
 
     #determine type of filtering
     if potential_sign == '+':
-        energy_cmap = (energy_cmap > 0) * 1s
+        energy_cmap = (energy_cmap > 0) * 1
     elif potential_sign == '-':
         energy_cmap = (energy_cmap < 0) * 1
     else:
