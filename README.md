@@ -27,3 +27,21 @@ Matīss Dimiņš, Alexander Bazba, Ádám Mogyorósi, Ella Kennon, Tomás Díaz 
 
 Abstract
 Circuit Topology (CT) is a fundamental property of folded polymer chains and provides a unique and powerful topological framework for analysis of proteins, with applications in functional annotation, disease marker identification, protein engineering, and drug development. While an open-source Python-based implementation of the framework, called ProteinCT, exists, its usability is limited for researchers unfamiliar with scripting environments. Here, we present the ProteinCT tool as a plugin for the molecular visualization platform PyMOL, packaged together with a graphical user interface (GUI), easy automatic installation, and novel features developed through strong integration with PyMOL’s application programming interface (API). Our plugin packs the existing ProteinCT tool and its features into a .zip plugin for PyMOL that can be easily imported and automatically installed. A clear and visually intuitive GUI is included as part of the plugin. Our solution aims to connect the underlying functionality of the ProteinCT tool with PyMOL. This will provide protein researchers a tool for analysing protein topology. By analysing a representative protein trajectory, it is verified that the original functionality of the ProteinCT tool is retained in this plugin; that the GUI is functional, easy to use, and visually clear; and that additional functionality has been seamlessly integrated with PyMOL’s API, thus making protein circuit topology widely accessible to a broad range of users in structural biology and related fields.
+
+## Dependency constraints
+Below you can find the dependency constraints for all the core packages used by PyMOL and the plugin.  
+  
+Currently these have been pinned to specific verified versions. These are very strict but could definitely be relaxed in the future.  
+```yml
+dependencies:
+  - conda-forge::python=3.10.18
+  - conda-forge::pyqt=5.15.11
+  - conda-forge::qt-main=5.15.15
+  - conda-forge::pyqt5-sip=12.17.0
+  - conda-forge::biopython=1.85
+  - conda-forge::numpy=1.26.4
+  - conda-forge::pandas=2.3.3
+  - conda-forge::matplotlib=3.9.1
+  - schrodinger::pymol=3.1.6.1
+  - schrodinger::pymol-bundle=3.1.6.1
+```
