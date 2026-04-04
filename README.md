@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains a PyMOL plugin for analyzing protein circuit topology (CT) via a graphical user interface (GUI). It packages the [ProteinCT](https://github.com/circuittopology) library and additional tools into an easy-to-install and easy-to-use plugin, allowing researchers to explore protein topology without scripting.
+This repository contains a PyMOL plugin for analyzing protein circuit topology (CT) via a graphical user interface (GUI). It packages the [ProteinCT](https://github.com/circuittopology/circuit_topology) library and additional tools into an easy-to-install and easy-to-use plugin, allowing researchers to explore protein topology without scripting.
 
 ## Key Features
 
