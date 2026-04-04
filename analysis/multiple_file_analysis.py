@@ -1,6 +1,4 @@
 import os
-import sys
-from pathlib import Path
 import matplotlib.pyplot as plt
 from typing import Any
 
@@ -27,8 +25,6 @@ from functions.exporting.export_psc import export_psc
 from utils.non_polymer import has_non_polymer_atoms
 from utils.config import WARN_MSG, CHECKBOX_WARN
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
 
 # Slight rewrite to match their notebook code because we had bugs
 def run_multi_analysis(self: Any) -> None:

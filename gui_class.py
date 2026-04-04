@@ -12,8 +12,6 @@ Key responsibilities:
 - Expose Qt slots that delegate to functions defined in the plugin's utilities.
 - Manage UI initialization, timers and basic dialog state.
 """
-import sys
-from pathlib import Path
 from typing import Optional, cast
 
 from pymol import cmd
@@ -40,9 +38,6 @@ from analysis.visualization import visualize_molecule
 from tabs.local_tab import init_local_tab
 from tabs.single_file_tab import init_single_file_tab
 from tabs.multiple_file_tab import init_multi_file_tab
-
-PROJECT_ROOT = Path(__file__).resolve().parents[0]
-sys.path.insert(0, str(PROJECT_ROOT))
 
 if not hasattr(cmd, "object_exists"):
     setattr(cmd, "object_exists", object_exists)

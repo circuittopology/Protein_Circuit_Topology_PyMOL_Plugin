@@ -1,5 +1,3 @@
-import sys
-from pathlib import Path
 import os
 from typing import Any
 
@@ -22,8 +20,6 @@ from functions.exporting.export_mat import export_mat
 
 from utils.non_polymer import has_non_polymer_atoms
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
 
 def run_single_frame_analysis(self: Any) -> None:
     """

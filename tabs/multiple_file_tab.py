@@ -1,16 +1,13 @@
-import sys
-from pathlib import Path
 from typing import Any
 
 from PyQt5.QtWidgets import (
-    QScrollArea, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QPushButton, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, QSizePolicy
+    QScrollArea, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel,
+    QPushButton, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, QSizePolicy
 )
 from PyQt5.QtCore import Qt
 
 from utils.helpers import make_info_button
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
 
 def init_multi_file_tab(self: Any) -> None:
     """

@@ -1,6 +1,4 @@
 import os
-import sys
-from pathlib import Path
 from typing import Any
 
 from pymol import cmd
@@ -22,8 +20,6 @@ from functions.exporting.export_mat import export_mat
 from utils.non_polymer import has_non_polymer_atoms
 from utils.folding_score import get_folding_score
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
 
 def run_standard_analysis(self: Any) -> None:
     """

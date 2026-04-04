@@ -1,14 +1,10 @@
-import sys
-from pathlib import Path
-from  typing import Any
+from typing import Any
 
 from PyQt5.QtWidgets import QMessageBox
 
 from utils.non_polymer import new_file_has_non_polymer_atoms
 from utils.config import WARN_MSG
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
 
 def handle_standard_object_change(self: Any, obj_name: str) -> None:
     """

@@ -1,15 +1,11 @@
-import sys
-from pathlib import Path
 from typing import Any
 
 from pymol import cmd
-from pymol.Qt import QtCore
+from PyQt5.Qt import QtCore
 from PyQt5.QtWidgets import QPushButton
 
 from utils.config import INFO_BUTTON_STYLE
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
 
 def update_chain_combo_box(self: Any) -> None:
     """

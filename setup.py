@@ -17,7 +17,7 @@ from setuptools import setup, find_packages
 # Setup for the plugin
 setup(
     name="circuit_topology_lacdr",
-    version="0.0",
+    version="v0.0.1",
     description = "PyMOL plugin for Circuit Topology GUI",
     author="LACDR",
     packages=find_packages(),

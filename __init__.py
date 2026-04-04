@@ -19,11 +19,21 @@ import platform
 
 from pymol.plugins import addmenuitemqt
 
-from initialization_checks import (
-    register_pymol_functions, install_failed, get_requirements, check_installed_packages, is_path_user, pymol_install, win_install, mac_install, linux_install
-)
 PROJECT_ROOT = Path(__file__).resolve().parents[0]
-sys.path.insert(0, str(PROJECT_ROOT))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from initialization_checks import (  # noqa: E402
+    register_pymol_functions,
+    install_failed,
+    get_requirements,
+    check_installed_packages,
+    is_path_user,
+    pymol_install,
+    win_install,
+    mac_install, 
+    linux_install
+)
 
 # Determine environment and requirement locations
 PYMOL_ENV_PATH = sys.executable

@@ -413,10 +413,6 @@ def register_pymol_functions():
     the PyMOL `cmd` object so that the commands become available to users
     as top-level PyMOL commands.
     """
-    # pylint: disable=wrong-import-position, import-outside-toplevel
-    from pathlib import Path
-    proj_root = Path(__file__).resolve().parents[0]
-    sys.path.insert(0, str(proj_root))
     # Plots functions
     from functions.plots.circuit_plot import circuit_plot
     cmd.extend("circuit_plot", circuit_plot)
