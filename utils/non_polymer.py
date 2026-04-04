@@ -1,4 +1,3 @@
-import os
 from typing import Any
 
 from pymol import cmd
@@ -12,8 +11,7 @@ def show_warning_dialog(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    # check if user selected don't show again
-    if os.environ.get("DISABLE_NON_POLYMER_WARNING") == "1":
+    if getattr(self, '_suppress_non_polymer_warning', False):
         remove_non_polymer_atoms()
         return
 
@@ -33,8 +31,7 @@ def show_warning_dialog(self: Any) -> None:
     if clicked == continue_btn:
         remove_non_polymer_atoms()
     elif clicked == never_show_btn:
-        os.environ["DISABLE_NON_POLYMER_WARNING"] = "1"
-        print("User chose to never show this warning again.")
+        self._suppress_non_polymer_warning = True
         remove_non_polymer_atoms()
     else:
         print("User cancelled.")

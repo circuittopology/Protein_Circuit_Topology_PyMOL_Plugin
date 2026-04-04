@@ -1,11 +1,10 @@
 """
 Utility functions for updating GUI elements in the PyMOL plugin.
 """
-from typing import Any
+from typing import Any, List, Optional
 
 from pymol import cmd
 
-PYMOL_OBJ = ('object:molecule', 'selection')
 
 def update_output_widgets_multi(self: Any) -> None:
     """
@@ -45,25 +44,21 @@ def update_output_widgets(self: Any) -> None:
     show = (
         self.checkbox_export_cmap3.isChecked()
         or self.checkbox_export_matrix.isChecked()
-        or self.checkbox_export_matrix_multi.isChecked()
-        or self.checkbox_export_cmap3_multi.isChecked()
-        or self.checkbox_export_psc_multi.isChecked()
-        or self.checkbox_local_cmap3.isChecked()
-        or self.checkbox_local_matrix.isChecked()
     )
     self.output_txt.setVisible(show)
     self.output_dir_button.setVisible(show)
     self.output_dir_label.setVisible(show)
 
-def update_local_list(self: Any) -> None:
+def update_local_list(self: Any, new_objects: Optional[List[str]] = None) -> None:
     """
     Updates the list of available objects in the local analysis dropdown.
 
     Args:
         self: The main GUI class instance.
+        new_objects: Pre-fetched object list. If None, queries PyMOL.
     """
-    all_objects = cmd.get_names('all')
-    new_objects = [obj for obj in all_objects if cmd.get_type(obj) in PYMOL_OBJ]
+    if new_objects is None:
+        new_objects = cmd.get_object_list()
 
     if new_objects != self.current_local_objects:
         self.current_local_objects = new_objects
@@ -75,15 +70,16 @@ def update_local_list(self: Any) -> None:
         self.local_dropdown_objects.addItems(["Select a file."])
         self.local_dropdown_objects.addItems(self.current_local_objects)
 
-def update_list(self: Any) -> None:
+def update_list(self: Any, new_objects: Optional[List[str]] = None) -> None:
     """
     Updates the list of available objects in the single-file analysis dropdown.
 
     Args:
         self: The main GUI class instance.
+        new_objects: Pre-fetched object list. If None, queries PyMOL.
     """
-    all_objects = cmd.get_names('all')
-    new_objects = [obj for obj in all_objects if cmd.get_type(obj) in PYMOL_OBJ]
+    if new_objects is None:
+        new_objects = cmd.get_object_list()
 
     if new_objects != self.current_objects:
         self.current_objects = new_objects

@@ -1,4 +1,5 @@
 import os
+import tempfile
 from typing import Any
 
 from pymol import cmd
@@ -31,18 +32,20 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
                                         "Please select an object inside PyMOL for the Circuit Topology analysis!")
         return
 
-    if selected_obj != "Select a file.":  # If the object is inside PyMOL
-        chains = cmd.get_chains(selected_obj)
-        print("Chains found: ", chains)
+    chains = cmd.get_chains(selected_obj)
+    print("Chains found: ", chains)
 
-        for chain_id in chains:
-            file_name = f"{selected_obj}_chain_{chain_id}_export.pdb"
-            cmd.save(file_name, f"{selected_obj} and chain {chain_id}", state=cmd.get_state())
+    for chain_id in chains:
+        tmp = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
+        tmp_path = tmp.name
+        tmp.close()
+        cmd.save(tmp_path, f"{selected_obj} and chain {chain_id}", state=cmd.get_state())
 
+        try:
             vis_dist = vals["cutoff_distance"]
             vis_numcontacts = vals["cutoff_numcontacts"]
             vis_neighbour = vals["exclude_neighbour"]
-            visual_chain, protid = retrieve_chain(file_name)
+            visual_chain, protid = retrieve_chain(tmp_path)
 
             idx, numbering, protid, _ = get_cmap(visual_chain, cutoff_distance=vis_dist,
                                                             cutoff_numcontacts=vis_numcontacts,
@@ -51,18 +54,14 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
             if psc == [protid, 0, 0, 0]:
                 print(
                     f"Cannot create topology matrix for chain {chain_id}, so visualization for this chain cannot be performed!")
-                if os.path.exists(file_name):
-                    os.remove(os.path.abspath(file_name))
                 continue
             print(f"Coloring object based on chain {chain_id} ...")
             top_vec = get_topology_vector(mat=mat, index=idx, topology_type=contact_type, numbering=numbering)
             if top_vec is None:
                 print(f"Invalid contact type for chain {chain_id}. Skipping visualization...")
-                if os.path.exists(file_name):
-                    os.remove(os.path.abspath(file_name))
                 continue
             color_by_topology(molecule_name=selected_obj, topology_vector=top_vec, numbering=numbering,
                                 topology_type=contact_type)
-
-            if os.path.exists(file_name):
-                os.remove(os.path.abspath(file_name))
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)

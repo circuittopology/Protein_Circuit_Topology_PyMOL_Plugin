@@ -1,4 +1,5 @@
 import os
+import tempfile
 import matplotlib.pyplot as plt
 from typing import Any
 
@@ -47,7 +48,7 @@ def run_multi_analysis(self: Any) -> None:
     multi_matrix_plot = vals["matrix_plot"]
     multi_stats_plot = vals["stats_plot"]
     multi_export_cmap3 = vals["export_cmap3"]
-    multi_psc = vals["export_psc"]
+    multi_export_psc = vals["export_psc"]
     multi_export_mat = vals["export_mat"]
     multi_input_dir = vals["directory"]
     multi_traj_dir = vals["traj_directory"]
@@ -68,7 +69,7 @@ def run_multi_analysis(self: Any) -> None:
     output_dir = vals["output_directory"]
 
     if not output_dir:
-        if multi_export_cmap3 or multi_export_mat or multi_psc:
+        if multi_export_cmap3 or multi_export_mat or multi_export_psc:
             QMessageBox.warning(self, "Error", f"An output directory has not been selected: {output_dir}")
             return
 
@@ -86,7 +87,7 @@ def run_multi_analysis(self: Any) -> None:
     multi_filtering_dist = vals["filtering_distance"]
     multi_filter_mode = vals["length_filter_mode"]
 
-    if not (multi_circuit_plot or multi_matrix_plot or multi_stats_plot or multi_export_cmap3 or multi_export_mat or multi_psc):
+    if not (multi_circuit_plot or multi_matrix_plot or multi_stats_plot or multi_export_cmap3 or multi_export_mat or multi_export_psc):
         QMessageBox.warning(self, "Error", CHECKBOX_WARN)
         return
 
@@ -140,20 +141,20 @@ def run_multi_analysis(self: Any) -> None:
                 print(f"There is no contact map for {multi_obj} that can satisfy the provided length filtering. Skipping...")
 
         if multi_level == "chain":
-            mat, multi_psc, _ = get_matrix(index=idx, protid=protid)
-            p.append(multi_psc[1])
-            s.append(multi_psc[2])
-            x.append(multi_psc[3])
-            psclist.append(multi_psc)
+            mat, psc_result, _ = get_matrix(index=idx, protid=protid)
+            p.append(psc_result[1])
+            s.append(psc_result[2])
+            x.append(psc_result[3])
+            psclist.append(psc_result)
         else:
-            mat, multi_psc, multi_chain_stats = get_matrix(index=idx, protid=protid)
-            adj_psc = [multi_psc[0], multi_psc[1], multi_psc[2], multi_psc[3]]
-            p.append(multi_psc[1])
-            s.append(multi_psc[2])
-            x.append(multi_psc[3])
-            adj_psc.append({'I2': multi_psc[4], 'I3': multi_psc[5], 'I4': multi_psc[6]})
-            adj_psc.append({'T2': multi_psc[7], 'T3': multi_psc[8]})
-            adj_psc.append({'L': multi_psc[-1]})
+            mat, psc_result, multi_chain_stats = get_matrix(index=idx, protid=protid)
+            adj_psc = [psc_result[0], psc_result[1], psc_result[2], psc_result[3]]
+            p.append(psc_result[1])
+            s.append(psc_result[2])
+            x.append(psc_result[3])
+            adj_psc.append({'I2': psc_result[4], 'I3': psc_result[5], 'I4': psc_result[6]})
+            adj_psc.append({'T2': psc_result[7], 'T3': psc_result[8]})
+            adj_psc.append({'L': psc_result[-1]})
             psclist.append(adj_psc)
 
         entangled = get_stats(mat)
@@ -168,30 +169,33 @@ def run_multi_analysis(self: Any) -> None:
                 
         if multi_stats_plot:
             if multi_level == "chain":
-                stats_plot(entangled, multi_psc, protid)
+                stats_plot(entangled, psc_result, protid)
             else:
-                stats_plot(entangled, multi_psc, protid)
+                stats_plot(entangled, psc_result, protid)
 
         if multi_export_cmap3:
             for c in multi_obj_chains:
-                temp_multi = f"{multi_obj}_chain_{c}_exp.pdb"
-                cmd.save(temp_multi, f"{multi_obj} and chain {c}", state=cmd.get_state())
-                temp_multi_fpath = os.path.abspath(temp_multi)
-                curr_multi_chain, _ = retrieve_chain(temp_multi_fpath)
-                temp_i, temp_num, _, res_names = get_cmap(curr_multi_chain, cutoff_distance=cutoff_dist_multi,
-                                                            cutoff_numcontacts=multi_num_contacts,
-                                                            exclude_neighbour=multi_neighbours)
-                temp_multi_f_base = os.path.splitext(os.path.basename(temp_multi_fpath))[0]
-                export_cmap3(temp_i, temp_multi_f_base, temp_num, output_dir)
-                if os.path.exists(temp_multi):
-                    os.remove(temp_multi_fpath)
+                tmp = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
+                tmp_path = tmp.name
+                tmp.close()
+                cmd.save(tmp_path, f"{multi_obj} and chain {c}", state=cmd.get_state())
+                try:
+                    curr_multi_chain, _ = retrieve_chain(tmp_path)
+                    temp_i, temp_num, _, res_names = get_cmap(curr_multi_chain, cutoff_distance=cutoff_dist_multi,
+                                                                cutoff_numcontacts=multi_num_contacts,
+                                                                exclude_neighbour=multi_neighbours)
+                    temp_multi_f_base = f"{multi_obj}_chain_{c}"
+                    export_cmap3(temp_i, temp_multi_f_base, temp_num, output_dir)
+                finally:
+                    if os.path.exists(tmp_path):
+                        os.remove(tmp_path)
 
         if multi_export_mat:
             export_mat(idx, mat, multi_obj, output_dir)
 
         cmd.delete(multi_obj)
 
-    if multi_psc:
+    if multi_export_psc:
         export_psc(psclist, output_dir)
     if multi_plot_psc:
         plt.rcParams.update({'font.size': 14})

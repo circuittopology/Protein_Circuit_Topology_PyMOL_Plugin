@@ -1,4 +1,5 @@
 import os
+import tempfile
 from typing import Any
 
 from pymol import cmd
@@ -54,15 +55,16 @@ def run_standard_analysis(self: Any) -> None:
         return
 
     chains = cmd.get_chains(selected_obj)
-    file_name = f"{selected_obj}_export.pdb"
-    cmd.save(file_name, selected_obj)
+    tmp = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
+    tmp_path = tmp.name
+    tmp.close()
+    cmd.save(tmp_path, selected_obj)
     single_dist = vals["cutoff_distance"]
     single_numcontacts = vals["cutoff_numcontacts"]
     single_neighbour = vals["exclude_neighbour"]
     base_file_typeless = selected_obj
-    single_chain, protid = retrieve_chain(file_name)
-    if os.path.exists(file_name):
-        os.remove(os.path.abspath(file_name))
+    single_chain, protid = retrieve_chain(tmp_path)
+    os.remove(tmp_path)
     output_directory = vals["output_directory"]
 
     if len(chains) > 1:
@@ -89,52 +91,49 @@ def run_standard_analysis(self: Any) -> None:
 
     if folding_score_enabled or export_cmap3_enabled:
         for c in chains:
-            file_name = f"{selected_obj}_chain_{c}_export.pdb"
+            tmp = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
+            tmp_path = tmp.name
+            tmp.close()
+            cmd.save(tmp_path, f"{selected_obj} and chain {c}", state=cmd.get_state())
+            try:
+                folding_chain, p = retrieve_chain(tmp_path)
+                i, n, p, _= get_cmap(folding_chain, cutoff_distance=single_dist,
+                                                cutoff_numcontacts=single_numcontacts, exclude_neighbour=single_neighbour)
+                m, psc, _ = get_matrix(i, p)
 
-            cmd.save(file_name, f"{selected_obj} and chain {c}", state=cmd.get_state())
-            folding_chain, p = retrieve_chain(file_name)
-            i, n, p, _= get_cmap(folding_chain, cutoff_distance=single_dist,
-                                            cutoff_numcontacts=single_numcontacts, exclude_neighbour=single_neighbour)
-            m, psc, _ = get_matrix(i, p)
+                if folding_score_enabled:
+                    # To handle incomplete chains
+                    if psc == [p, 0, 0, 0]:
+                        print(f"Cannot create topology matrix for chain {c}, so folding score cannot be calculated!")
+                        continue
 
-            if folding_score_enabled:
-                # To handle incomplete chains
-                if psc == [p, 0, 0, 0]:
-                    print(f"Cannot create topology matrix for chain {c}, so folding score cannot be calculated!")
-                    if os.path.exists(file_name):
-                        os.remove(os.path.abspath(file_name))
-                    continue
+                    print(f"Calculating folding score for chain {c} ...")
+                    folding_score = get_folding_score(m, i, n)
 
-                print(f"Calculating folding score for chain {c} ...")
-                folding_score = get_folding_score(m, i, n)
+                    # Show the score in a pop-up tab (QDialog)
+                    dialog = QDialog(self)
+                    dialog.setWindowTitle("CT Folding Score")
+                    layout = QVBoxLayout()
 
-                if os.path.exists(file_name):
-                    os.remove(os.path.abspath(file_name))
+                    label = QLabel(f"CT Folding Score: {folding_score}")
+                    label.setAlignment(Qt.AlignCenter)
+                    layout.addWidget(label)
 
-                # Show the score in a pop-up tab (QDialog)
-                dialog = QDialog(self)
-                dialog.setWindowTitle("CT Folding Score")
-                layout = QVBoxLayout()
+                    ok_button = QPushButton("OK")
+                    ok_button.clicked.connect(dialog.accept)
+                    layout.addWidget(ok_button)
 
-                label = QLabel(f"CT Folding Score: {folding_score}")
-                label.setAlignment(Qt.AlignCenter)
-                layout.addWidget(label)
+                    dialog.setLayout(layout)
+                    dialog.setFixedSize(200, 100)
+                    dialog.exec_()
 
-                ok_button = QPushButton("OK")
-                ok_button.clicked.connect(dialog.accept)
-                layout.addWidget(ok_button)
-
-                dialog.setLayout(layout)
-                dialog.setFixedSize(200, 100)
-                dialog.exec_()
-
-            if export_cmap3_enabled:
-                file_base = os.path.basename(file_name)
-                typeless_file_base = file_base.split('.')[0]
-                print(f"Exporting contact map as .csv for chain {c} ...")
-                export_cmap3(i, typeless_file_base, n, output_directory)
-                if os.path.exists(file_name):
-                    os.remove(os.path.abspath(file_name))
+                if export_cmap3_enabled:
+                    chain_label = f"{selected_obj}_chain_{c}"
+                    print(f"Exporting contact map as .csv for chain {c} ...")
+                    export_cmap3(i, chain_label, n, output_directory)
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
 
     if export_mat_enabled:
         export_mat(idx, mat, base_file_typeless, output_directory)

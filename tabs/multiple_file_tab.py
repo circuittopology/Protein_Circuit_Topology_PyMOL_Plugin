@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
-from utils.helpers import make_info_button
+from utils.helpers import make_info_button, make_param_row
 
 
 def init_multi_file_tab(self: Any) -> None:
@@ -69,32 +69,26 @@ def init_multi_file_tab(self: Any) -> None:
     self.cutoff_distance_multi.setRange(0.1, 20.0)
     self.cutoff_distance_multi.setValue(4.5)
     self.cutoff_distance_multi.setSingleStep(0.1)
-    cutoff_row = QHBoxLayout()
-    cutoff_row.addWidget(QLabel("Cut-off distance (Å):"))
-    cutoff_row.addWidget(make_info_button("Distance threshold (Å) for two residues to be considered in contact."))
-    cutoff_row.addStretch()
-    cutoff_row.addWidget(self.cutoff_distance_multi)
-    params_lay.addLayout(cutoff_row)
+    params_lay.addLayout(make_param_row(
+        "Cut-off distance (Å):",
+        "Distance threshold (Å) for two residues to be considered in contact.",
+        self.cutoff_distance_multi))
 
     self.min_contacts_multi = QSpinBox()
     self.min_contacts_multi.setRange(5, 45)
     self.min_contacts_multi.setValue(5)
-    mc_row = QHBoxLayout()
-    mc_row.addWidget(QLabel("Minimum contacts:"))
-    mc_row.addWidget(make_info_button("Minimum atomic contacts required to define a valid connection."))
-    mc_row.addStretch()
-    mc_row.addWidget(self.min_contacts_multi)
-    params_lay.addLayout(mc_row)
+    params_lay.addLayout(make_param_row(
+        "Minimum contacts:",
+        "Minimum atomic contacts required to define a valid connection.",
+        self.min_contacts_multi))
 
     self.exclude_neighbor_multi = QSpinBox()
     self.exclude_neighbor_multi.setRange(1, 10)
     self.exclude_neighbor_multi.setValue(3)
-    ex_row = QHBoxLayout()
-    ex_row.addWidget(QLabel("Exclude neighbours:"))
-    ex_row.addWidget(make_info_button("Number of neighbouring residues to ignore."))
-    ex_row.addStretch()
-    ex_row.addWidget(self.exclude_neighbor_multi)
-    params_lay.addLayout(ex_row)
+    params_lay.addLayout(make_param_row(
+        "Exclude neighbours:",
+        "Number of neighbouring residues to ignore.",
+        self.exclude_neighbor_multi))
 
     scroll_layout.addWidget(params_grp)
 

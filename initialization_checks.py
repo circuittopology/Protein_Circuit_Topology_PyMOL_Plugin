@@ -67,17 +67,20 @@ def is_path_user(path: str) -> bool:
         print(f"Warning: Could not determine if path is user-accessible: {e}")
         return False
 
-def pymol_install(env: str = PYMOL_ENV, reqs: str = REQUIREMENTS_FILE):
+def pymol_install(env: str = PYMOL_ENV, reqs: str = REQUIREMENTS_FILE) -> bool:
     """
     Attempts to install dependencies using the PyMOL terminal and conda.
 
     Args:
         env (str, optional): Path to the PyMOL environment. Defaults to PYMOL_ENV.
         reqs (str, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
+
+    Returns:
+        bool: True if the install commands were issued, False on error.
     """
     if not os.path.exists(reqs):
         print(f"Error: Requirements file not found: {reqs}")
-        return
+        return False
 
     reqs_fixed = reqs.replace("\\", "/")
 
@@ -85,6 +88,7 @@ def pymol_install(env: str = PYMOL_ENV, reqs: str = REQUIREMENTS_FILE):
 
     cmd.do('conda init')
     cmd.do(f"conda env update --file {reqs_fixed}")
+    return True
 
 def install_failed(reqs: str = REQUIREMENTS_FILE) -> None:
     """

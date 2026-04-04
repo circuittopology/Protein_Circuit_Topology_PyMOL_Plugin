@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
-from utils.helpers import make_info_button
+from utils.helpers import make_info_button, make_param_row
 
 
 def init_single_file_tab(self: Any) -> None:
@@ -60,43 +60,30 @@ def init_single_file_tab(self: Any) -> None:
     self.cutoff_distance_spin.setRange(0.1, 20.0)
     self.cutoff_distance_spin.setValue(4.5)
     self.cutoff_distance_spin.setSingleStep(0.1)
-
-    dist_row = QHBoxLayout()
-    dist_row.addWidget(QLabel("Cutoff distance (Å):"))
-    dist_row.addWidget(make_info_button(
+    params_lay.addLayout(make_param_row(
+        "Cutoff distance (Å):",
         """Set the distance threshold (in Å) for considering two residues as contacting.
-        (Range: 0.1–20.0)"""
-    ))
-    dist_row.addStretch()
-    dist_row.addWidget(self.cutoff_distance_spin)
-    params_lay.addLayout(dist_row)
+        (Range: 0.1–20.0)""",
+        self.cutoff_distance_spin))
 
     # Minimum number of contacts
     self.min_contacts_spin = QSpinBox()
     self.min_contacts_spin.setRange(5, 45)
     self.min_contacts_spin.setValue(5)
-
-    mc_row = QHBoxLayout()
-    mc_row.addWidget(QLabel("Number of contacts:"))
-    mc_row.addWidget(make_info_button(
+    params_lay.addLayout(make_param_row(
+        "Number of contacts:",
         """Minimum number of atomic contacts required to define a valid residue connection.
-        (Range: 5-45)"""
-    ))
-    mc_row.addStretch()
-    mc_row.addWidget(self.min_contacts_spin)
-    params_lay.addLayout(mc_row)
+        (Range: 5-45)""",
+        self.min_contacts_spin))
 
     # Exclude neighbours
     self.exclude_neighbor_spin = QSpinBox()
     self.exclude_neighbor_spin.setRange(1, 10)
     self.exclude_neighbor_spin.setValue(3)
-
-    ex_row = QHBoxLayout()
-    ex_row.addWidget(QLabel("Exclude neighbours:"))
-    ex_row.addWidget(make_info_button("Number of neighboring residues to exclude (range: 1-10)"))
-    ex_row.addStretch()
-    ex_row.addWidget(self.exclude_neighbor_spin)
-    params_lay.addLayout(ex_row)
+    params_lay.addLayout(make_param_row(
+        "Exclude neighbours:",
+        "Number of neighboring residues to exclude (range: 1-10)",
+        self.exclude_neighbor_spin))
 
     t1_layout.addWidget(params_grp)
 

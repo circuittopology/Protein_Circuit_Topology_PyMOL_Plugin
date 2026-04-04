@@ -47,7 +47,7 @@ Choose the most recent release and download its accompanying `.zip` file.
 
 Once installation is complete, open the plugin's GUI from:
 
-> **Plugin → Protein Circuit Topology**
+> **Plugin → Protein Circuit Topology Plugin**
 
 ## Citation
 

@@ -81,17 +81,11 @@ def color_by_topology(
 
     # color the clone
     residual_values = {str(res): float(val) for res, val in zip(numbering, topology_vector)}
-    num_states = cmd.count_states(topo_obj)
     resi_list = "+".join(map(str, numbering))
     min_val, max_val = float(np.min(topology_vector)), float(np.max(topology_vector))
-    print(f"Applying coloring to {num_states} states in {molecule_name}...")
-
-    for state in range(1, num_states + 1):
-        cmd.frame(state)
-
-        cmd.alter(topo_obj, "b = residual_values.get(str(resi), 0.0)", space={'residual_values': residual_values})
-        selection = f"{topo_obj} and resi {resi_list}"
-        cmd.spectrum("b", color_palette, selection=selection, minimum=min_val, maximum=max_val)
+    cmd.alter(topo_obj, "b = residual_values.get(str(resi), 0.0)", space={'residual_values': residual_values})
+    selection = f"{topo_obj} and resi {resi_list}"
+    cmd.spectrum("b", color_palette, selection=selection, minimum=min_val, maximum=max_val)
     print(
         f"The minimum number of {topology_type} contacts in {molecule_name} for a single residue is {min_val}. It is colored with {colors[0]}.")
     print(

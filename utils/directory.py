@@ -9,98 +9,47 @@ from utils.non_polymer import new_file_has_non_polymer_atoms
 from utils.config import WARN_MSG
 
 
-def choose_file(self: Any) -> None:
-    """
-    Opens a file dialog to select a structure file (PDB or CIF) for single-file analysis.
-    Loads the file into PyMOL and checks for non-polymer atoms.
-
-    Args:
-        self: The main GUI class instance.
-    """
+def _load_structure_file(self, label, attr_file, attr_obj):
+    """Shared helper: open a file dialog, load into PyMOL, check for non-polymer atoms."""
     file_filter = "Structure Files (*.pdb *.cif)"
     file_path, _ = QFileDialog.getOpenFileName(self, "Select Input File", "", file_filter)
-
     if file_path:
-        self.selected_file = file_path
-        set_label_text_elided(file_path, self.dir_label)
+        set_label_text_elided(file_path, label)
         obj_name = os.path.splitext(os.path.basename(file_path))[0]
         cmd.load(file_path, obj_name)
         obj_name = obj_name.replace(" ", "_")
-        self.selected_obj_name = obj_name
-
-        # check for non-polymer atoms
+        setattr(self, attr_file, file_path)
+        setattr(self, attr_obj, obj_name)
         if new_file_has_non_polymer_atoms(obj_name):
             QMessageBox.warning(self, "Warning", WARN_MSG)
-
     else:
-        self.selected_file = None
+        setattr(self, attr_file, None)
+
+
+def _choose_output_dir(self, attr_name, label):
+    """Shared helper: open a directory dialog and store the result."""
+    dir_path = QFileDialog.getExistingDirectory(self, "Select Output Directory")
+    if dir_path:
+        setattr(self, attr_name, dir_path)
+        set_label_text_elided(dir_path, label)
+    else:
+        setattr(self, attr_name, None)
+
+
+def choose_file(self: Any) -> None:
+    _load_structure_file(self, self.dir_label, "selected_file", "selected_obj_name")
 
 def choose_local_file(self: Any) -> None:
-    """
-    Opens a file dialog to select a structure file (PDB or CIF) for local analysis.
-    Loads the file into PyMOL and checks for non-polymer atoms.
-
-    Args:
-        self: The main GUI class instance.
-    """
-    file_filter = "Structure Files (*.pdb *.cif)"
-    file_path, _ = QFileDialog.getOpenFileName(self, "Select Input File", "", file_filter)
-
-    if file_path:
-        self.local_selected_file = file_path
-        set_label_text_elided(file_path, self.local_dir_label)
-        obj_name = os.path.splitext(os.path.basename(file_path))[0]
-        cmd.load(file_path, obj_name)
-        obj_name = obj_name.replace(" ", "_")
-        self.local_selected_obj_name = obj_name
-        # check for non-polymer atoms
-        if new_file_has_non_polymer_atoms(obj_name):
-            QMessageBox.warning(self, "Warning", WARN_MSG)
-
-    else:
-        self.local_selected_file = None
+    _load_structure_file(self, self.local_dir_label, "local_selected_file", "local_selected_obj_name")
 
 def choose_local_output_dir(self: Any) -> None:
-    """
-    Opens a directory dialog to select the output directory for local analysis results.
-
-    Args:
-        self: The main GUI class instance.
-    """
-    dir_path = QFileDialog.getExistingDirectory(self, "Select Output Directory")
-    if dir_path:
-        self.selected_output_dir_local = dir_path
-        set_label_text_elided(dir_path, self.output_local_label)
-    else:
-        self.selected_output_dir_local = None
+    _choose_output_dir(self, "selected_output_dir_local", self.output_local_label)
 
 def choose_output_dir(self: Any) -> None:
-    """
-    Opens a directory dialog to select the output directory for single-file analysis results.
-
-    Args:
-        self: The main GUI class instance.
-    """
-    dir_path = QFileDialog.getExistingDirectory(self, "Select Output Directory")
-    if dir_path:
-        self.selected_output_dir = dir_path
-        set_label_text_elided(dir_path, self.output_dir_label)
-    else:
-        self.selected_output_dir = None
+    _choose_output_dir(self, "selected_output_dir", self.output_dir_label)
 
 def choose_output_dir_multi(self: Any) -> None:
-    """
-    Opens a directory dialog to select the output directory for multi-file analysis results.
-
-    Args:
-        self: The main GUI class instance.
-    """
-    dir_path = QFileDialog.getExistingDirectory(self, "Select Output Directory")
-    if dir_path:
-        self.selected_output_dir_multi = dir_path
-        set_label_text_elided(dir_path, self.output_dir_label_multi)
-    else:
-        self.selected_output_dir_multi = None
+    _choose_output_dir(self, "selected_output_dir_multi", self.output_dir_label_multi)
 
 def choose_input_dir_multi(self: Any) -> None:
     """

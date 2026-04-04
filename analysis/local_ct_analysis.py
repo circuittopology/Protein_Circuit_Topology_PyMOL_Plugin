@@ -1,4 +1,5 @@
 import os
+import tempfile
 from typing import Any
 
 from pymol import cmd
@@ -53,15 +54,16 @@ def run_local_ct(self: Any) -> None:
         QMessageBox.warning(self, "Error", CHECKBOX_WARN)
         return
 
-    file_name = f"{selected_obj}_export.pdb"
-    cmd.save(file_name, selected_obj, state=cmd.get_state())
+    file_name = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
+    tmp_path = file_name.name
+    file_name.close()
+    cmd.save(tmp_path, selected_obj, state=cmd.get_state())
     local_dist = vals["cutoff_distance"]
     local_numcontacts = vals["cutoff_numcontacts"]
     local_neighbour = vals["exclude_neighbour"]
-    base_file_typeless = file_name.split('.', maxsplit=1)[0]
-    local_chain, protid = retrieve_chain(file_name)
-    if os.path.exists(file_name):
-        os.remove(os.path.abspath(file_name))
+    base_file_typeless = f"{curr_local_obj}_chain_{curr_chain}"
+    local_chain, protid = retrieve_chain(tmp_path)
+    os.remove(tmp_path)
 
     idx, numbering, protid, _ = get_cmap(
         chain=local_chain,

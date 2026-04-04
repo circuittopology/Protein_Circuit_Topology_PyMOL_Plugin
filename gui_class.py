@@ -24,7 +24,7 @@ from utils.directory import choose_file, choose_local_file, choose_output_dir, c
 from utils.object_change import handle_standard_object_change, handle_local_object_change
 from utils.non_polymer import show_warning_dialog
 from utils.residues import get_residue_range, update_residue_range
-from utils.helpers import update_chain_combo_box, init_timers, object_exists
+from utils.helpers import update_chain_combo_box, init_timers, _poll_pymol_objects, object_exists
 from utils.config import SECTION_STYLESHEET
 from utils.updates import update_list, update_local_list, update_output_widgets, update_output_widgets_local, update_output_widgets_multi
 from utils.trajectory import select_mol_file, select_xtc_file, export_frames_from_traj
@@ -193,6 +193,11 @@ class CTDialog(QtWidgets.QDialog):
         """Initialize any repeating timers used by the GUI (e.g., polling PyMOL state)."""
         init_timers(self)
 
+    @QtCore.pyqtSlot()
+    def _poll_pymol_objects(self):
+        """Single timer callback that refreshes both object dropdowns."""
+        _poll_pymol_objects(self)
+
     # updates.py
     @QtCore.pyqtSlot()
     def update_list(self):
@@ -306,8 +311,8 @@ class CTDialog(QtWidgets.QDialog):
         """
         super().__init__(parent)
 
-        self.current_objects = set()
-        self.current_local_objects = set()
+        self.current_objects = []
+        self.current_local_objects = []
 
         self.setWindowTitle("Circuit Topology Tool")
         self.setGeometry(100, 100, 480, 540)

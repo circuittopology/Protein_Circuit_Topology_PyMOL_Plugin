@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from pymol import cmd
+from pymol import cmd, stored
 
 def get_residue_range(self: Any, obj_name: Optional[str]) -> None:
     """
@@ -17,9 +17,10 @@ def get_residue_range(self: Any, obj_name: Optional[str]) -> None:
         chains = cmd.get_chains(obj_name)
         self.curr_chain_residues = {}
         for c in chains:
-            resi_list = []
-            cmd.iterate(f"{obj_name} and chain {c} and name CA", "resi_list.append(resv)",
-                        space={"resi_list": resi_list})
+            stored.resi_list = []
+            cmd.iterate(f"{obj_name} and chain {c} and name CA",
+                        "stored.resi_list.append(resv)")
+            resi_list = stored.resi_list
 
             if resi_list:
                 self.curr_chain_residues[c] = [min(resi_list), max(resi_list)]
@@ -41,10 +42,12 @@ def update_residue_range(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
+    selected_chain = self.chain_combo_box.currentText()
+    if not selected_chain:
+        return
     try:
-        selected_chain = self.chain_combo_box.currentText()
         min_resi, max_resi = self.curr_chain_residues[selected_chain]
         self.box_res_id.setRange(min_resi, max_resi)
         self.box_res_id.setValue(min_resi)
-    except KeyError as e:
-        print(f"Error updating residue range: {e}")
+    except KeyError:
+        pass

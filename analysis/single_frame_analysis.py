@@ -1,4 +1,5 @@
 import os
+import tempfile
 from typing import Any
 
 from pymol import cmd
@@ -121,18 +122,20 @@ def run_single_frame_analysis(self: Any) -> None:
     # csv exporting
     if export_cmap3_enabled:
         for c in traj_frame_chains:
-            temp_file_name = f"{frame_obj}_chain_{c}_export.pdb"
-            cmd.save(temp_file_name, f"{frame_obj} and chain {c}", state=cmd.get_state())
-            temp_fpath = os.path.abspath(temp_file_name)
-            curr_chain, _ = retrieve_chain(temp_fpath)
-            temp_idx, temp_n, _, _ = get_cmap(curr_chain, cutoff_distance=frame_dist,
-                                                        cutoff_numcontacts=frame_numcontacts,
-                                                        exclude_neighbour=frame_neighbour)
-            temp_file_base = os.path.basename(temp_fpath)
-            typeless_temp_file = temp_file_base.split('.')[0]
-            export_cmap3(temp_idx, typeless_temp_file, temp_n, frame_output_directory)
-            if os.path.exists(temp_file_name):
-                os.remove(temp_fpath)
+            tmp = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
+            tmp_path = tmp.name
+            tmp.close()
+            cmd.save(tmp_path, f"{frame_obj} and chain {c}", state=cmd.get_state())
+            try:
+                curr_chain, _ = retrieve_chain(tmp_path)
+                temp_idx, temp_n, _, _ = get_cmap(curr_chain, cutoff_distance=frame_dist,
+                                                            cutoff_numcontacts=frame_numcontacts,
+                                                            exclude_neighbour=frame_neighbour)
+                chain_label = f"{frame_obj}_chain_{c}"
+                export_cmap3(temp_idx, chain_label, temp_n, frame_output_directory)
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
 
     if export_mat_enabled:
         export_mat(idx, mat, frame_obj, frame_output_directory)

@@ -19,7 +19,6 @@ def handle_standard_object_change(self: Any, obj_name: str) -> None:
         if new_file_has_non_polymer_atoms(obj_name):
             QMessageBox.warning(self, "Warning", WARN_MSG)
 
-#str
 def handle_local_object_change(self: Any, obj_name: str) -> None:
     """
     Handles changes to the selected object in the local analysis tab.
