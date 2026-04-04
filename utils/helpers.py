@@ -1,7 +1,7 @@
 from typing import Any
 
 from pymol import cmd
-from PyQt5.Qt import QtCore
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QPushButton
 
 from utils.config import INFO_BUTTON_STYLE
@@ -41,7 +41,7 @@ def init_timers(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    self.timer = QtCore.QTimer(self)
+    self.timer = QTimer(self)
     self.timer.timeout.connect(self.update_list)
     self.timer.timeout.connect(self.update_local_list)
     self.timer.start(1000)

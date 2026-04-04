@@ -71,13 +71,13 @@ def run_standard_analysis(self: Any) -> None:
     else:
         level = "chain"
 
-    idx, numbering, protid, res_names = get_cmap(single_chain, level=level, cutoff_distance=single_dist,
+    idx, numbering, protid, _ = get_cmap(single_chain, level=level, cutoff_distance=single_dist,
                                                     cutoff_numcontacts=single_numcontacts,
                                                     exclude_neighbour=single_neighbour)
     if level == "chain":
         mat, psc, _ = get_matrix(idx, protid)
     else:
-        mat, stats, chainstats = get_matrix(idx, protid)
+        mat, _, _ = get_matrix(idx, protid)
     # plots
     if circuit_plot_enabled:
         circuit_plot(index=idx, protid=protid, numbering=numbering)
