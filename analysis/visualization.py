@@ -47,7 +47,7 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
             idx, numbering, protid, _ = get_cmap(visual_chain, cutoff_distance=vis_dist,
                                                             cutoff_numcontacts=vis_numcontacts,
                                                             exclude_neighbour=vis_neighbour)
-            mat, psc = get_matrix(idx, protid)
+            mat, psc, _ = get_matrix(idx, protid)
             if psc == [protid, 0, 0, 0]:
                 print(
                     f"Cannot create topology matrix for chain {chain_id}, so visualization for this chain cannot be performed!")
@@ -56,6 +56,11 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
                 continue
             print(f"Coloring object based on chain {chain_id} ...")
             top_vec = get_topology_vector(mat=mat, index=idx, topology_type=contact_type, numbering=numbering)
+            if top_vec is None:
+                print(f"Invalid contact type for chain {chain_id}. Skipping visualization...")
+                if os.path.exists(file_name):
+                    os.remove(os.path.abspath(file_name))
+                continue
             color_by_topology(molecule_name=selected_obj, topology_vector=top_vec, numbering=numbering,
                                 topology_type=contact_type)
 

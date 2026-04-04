@@ -70,7 +70,7 @@ def run_local_ct(self: Any) -> None:
         exclude_neighbour=local_neighbour
     )
 
-    mat, _ = get_matrix(idx, protid)
+    mat, _, _ = get_matrix(idx, protid)
     if local_ct_plot:
         local_topology_plot(idx, mat, numbering, protid, residue_id, contact)
     if local_ct_enabled:

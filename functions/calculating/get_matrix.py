@@ -7,8 +7,9 @@ Function creating a topological relationship matrix for a Residue contact map,
 using either a single chain or a whole model.
 """
 import numpy as np
+from typing import Tuple
 
-def get_matrix(index: np.ndarray, protid: str):
+def get_matrix(index: np.ndarray, protid: str) -> Tuple[np.ndarray, list, dict]:
     """
     Creates a topological relationship matrix for a residue contact map.
 
@@ -17,13 +18,13 @@ def get_matrix(index: np.ndarray, protid: str):
         protid (str): Protein identifier.
 
     Returns:
-        tuple: A tuple containing the relationship matrix (numpy.ndarray) and statistics (list).
-               If the index shape indicates multiple chains, it returns (matrix, stats, chainstats).
+        tuple: A tuple containing (matrix, stats, chainstats).
+               For single chains, chainstats is an empty dict.
     """
     if index.shape == (0,):
         mat = np.zeros((len(index), len(index)),dtype = 'int')
         psc = [protid,0,0,0]
-        return mat,psc
+        return mat,psc,{}
     #Determines whether index came from model or single chain
     if np.shape(index)[1] == 2:
         #create a numerical and character matrix based on the amount of nonzero values found in the previous function
@@ -96,7 +97,7 @@ def get_matrix(index: np.ndarray, protid: str):
         total = sum([P,S,X])
         psc = [protid,P,S,X,round(P/total if total != 0 else 0,3),round(S/total if total != 0 else 0,3),round(X/total if total != 0 else 0,3)]
 
-        return mat,psc
+        return mat,psc,{}
 
     elif np.shape(index)[1] == 4:
         chainids = np.unique(index[:,2:])
@@ -271,3 +272,5 @@ def get_matrix(index: np.ndarray, protid: str):
 
         stats = [protid,P,S,X,I2,I3,I4,T2,T3,L]
         return mat,stats,chainstats
+
+    raise ValueError(f"Unexpected index shape: {index.shape}. Expected 2 or 4 columns.")

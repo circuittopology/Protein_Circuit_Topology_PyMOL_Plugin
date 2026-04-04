@@ -101,9 +101,9 @@ def run_single_frame_analysis(self: Any) -> None:
 
     # matrix retrieval (depends on object level 'chain' vs 'model' (single- vs multi-chain))
     if frame_level == "chain":
-        mat, psc = get_matrix(idx, protid)
+        mat, frame_psc, _ = get_matrix(idx, protid)
     else:
-        mat, frame_stats, _ = get_matrix(index=idx, protid=protid)
+        mat, frame_psc, _ = get_matrix(index=idx, protid=protid)
 
     # plotting
     if circuit_plot_enabled:
@@ -116,10 +116,7 @@ def run_single_frame_analysis(self: Any) -> None:
     
     if stats_plot_enabled:
         entangled = get_stats(mat=mat)
-        if frame_level == "chain":
-            stats_plot(entangled, psc, protid)
-        else:
-            stats_plot(entangled, frame_stats, protid)
+        stats_plot(entangled, frame_psc, protid)
 
     # csv exporting
     if export_cmap3_enabled:

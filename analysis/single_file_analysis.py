@@ -75,7 +75,7 @@ def run_standard_analysis(self: Any) -> None:
                                                     cutoff_numcontacts=single_numcontacts,
                                                     exclude_neighbour=single_neighbour)
     if level == "chain":
-        mat, psc = get_matrix(idx, protid)
+        mat, psc, _ = get_matrix(idx, protid)
     else:
         mat, stats, chainstats = get_matrix(idx, protid)
     # plots
@@ -95,7 +95,7 @@ def run_standard_analysis(self: Any) -> None:
             folding_chain, p = retrieve_chain(file_name)
             i, n, p, _= get_cmap(folding_chain, cutoff_distance=single_dist,
                                             cutoff_numcontacts=single_numcontacts, exclude_neighbour=single_neighbour)
-            m, psc = get_matrix(i, p)
+            m, psc, _ = get_matrix(i, p)
 
             if folding_score_enabled:
                 # To handle incomplete chains

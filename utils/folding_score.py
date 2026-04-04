@@ -1,5 +1,3 @@
-from typing import Sequence, Union
-
 import numpy as np
 
 from utils.topology import get_topology_vector
@@ -8,7 +6,7 @@ from utils.topology import get_topology_vector
 def get_folding_score(
     mat: np.ndarray,
     index: np.ndarray,
-    numbering: Union[Sequence[int], np.ndarray]
+    numbering: np.ndarray
 ) -> float:
     """
     Calculate the folding score based on the given relations, using topology data.

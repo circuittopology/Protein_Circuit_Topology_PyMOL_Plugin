@@ -10,13 +10,13 @@ input   =   indices of contact map, array of residue ID's, list of residue names
 output  =   indices of filtered contact map, protein ID 
 """
 import os
-from typing import Sequence, Tuple
+from typing import Tuple
 import numpy as np
 
 def energy_cmap(
     index: np.ndarray,
-    numbering: Sequence[int],
-    res_names: Sequence[str],
+    numbering: np.ndarray,
+    res_names: list[str],
     protid: str,
     potential_sign: str = '-'
 ) -> Tuple[np.ndarray, str]:

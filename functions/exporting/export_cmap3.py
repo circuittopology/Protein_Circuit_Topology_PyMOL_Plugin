@@ -6,11 +6,10 @@ Created on Mon May 24 17:00:09 2021
 For transforming Residue contact map indices to a contact map and exporting that to a csv file.
 """
 import os
-from typing import Sequence
 import numpy as np
 import pandas as pd
 
-def export_cmap3(index: np.ndarray, protid: str, numbering: Sequence[int], output_dir: str) -> None:
+def export_cmap3(index: np.ndarray, protid: str, numbering: np.ndarray, output_dir: str) -> None:
     """
     Exports a residue contact map (as a binary matrix) to a CSV file.
 

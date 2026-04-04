@@ -140,20 +140,20 @@ def run_multi_analysis(self: Any) -> None:
                 print(f"There is no contact map for {multi_obj} that can satisfy the provided length filtering. Skipping...")
 
         if multi_level == "chain":
-            mat, psc = get_matrix(index=idx, protid=protid)
-            p.append(psc[1])
-            s.append(psc[2])
-            x.append(psc[3])
-            psclist.append(psc)
+            mat, multi_psc, _ = get_matrix(index=idx, protid=protid)
+            p.append(multi_psc[1])
+            s.append(multi_psc[2])
+            x.append(multi_psc[3])
+            psclist.append(multi_psc)
         else:
-            mat, multi_stats, multi_chain_stats = get_matrix(index=idx, protid=protid)
-            adj_psc = [multi_stats[0], multi_stats[1], multi_stats[2], multi_stats[3]]
-            p.append(multi_stats[1])
-            s.append(multi_stats[2])
-            x.append(multi_stats[3])
-            adj_psc.append({'I2': multi_stats[4], 'I3': multi_stats[5], 'I4': multi_stats[6]})
-            adj_psc.append({'T2': multi_stats[7], 'T3': multi_stats[8]})
-            adj_psc.append({'L': multi_stats[-1]})
+            mat, multi_psc, multi_chain_stats = get_matrix(index=idx, protid=protid)
+            adj_psc = [multi_psc[0], multi_psc[1], multi_psc[2], multi_psc[3]]
+            p.append(multi_psc[1])
+            s.append(multi_psc[2])
+            x.append(multi_psc[3])
+            adj_psc.append({'I2': multi_psc[4], 'I3': multi_psc[5], 'I4': multi_psc[6]})
+            adj_psc.append({'T2': multi_psc[7], 'T3': multi_psc[8]})
+            adj_psc.append({'L': multi_psc[-1]})
             psclist.append(adj_psc)
 
         entangled = get_stats(mat)
@@ -168,9 +168,9 @@ def run_multi_analysis(self: Any) -> None:
                 
         if multi_stats_plot:
             if multi_level == "chain":
-                stats_plot(entangled, psc, protid)
+                stats_plot(entangled, multi_psc, protid)
             else:
-                stats_plot(entangled, multi_stats, protid)
+                stats_plot(entangled, multi_psc, protid)
 
         if multi_export_cmap3:
             for c in multi_obj_chains:

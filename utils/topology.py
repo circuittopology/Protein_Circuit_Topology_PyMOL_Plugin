@@ -1,4 +1,4 @@
-from typing import Sequence, Union, Optional
+from typing import Optional
 
 import numpy as np
 from pymol import cmd
@@ -7,7 +7,7 @@ def get_topology_vector(
     mat: np.ndarray,
     index: np.ndarray,
     topology_type: str,
-    numbering: Union[Sequence[int], np.ndarray]
+    numbering: np.ndarray
 ) -> Optional[np.ndarray]:
     """
     Calculates a topology vector representing the density of a specific contact type
@@ -47,7 +47,7 @@ def get_topology_vector(
 def color_by_topology(
     molecule_name: str,
     topology_vector: np.ndarray,
-    numbering: Union[Sequence[int], np.ndarray],
+    numbering: np.ndarray,
     topology_type: str
 ) -> None:
     """
