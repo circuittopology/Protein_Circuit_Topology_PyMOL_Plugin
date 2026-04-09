@@ -5,23 +5,20 @@ Created on Mon May 24 17:00:09 2021
 
 Function that creates a topological relations matrix plot for a single chain
 """
+import warnings
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
-import warnings
-from matplotlib.figure import Figure
 
-def matrix_plot(mat: np.ndarray, protid: str) -> Figure:
+def matrix_plot(mat: np.ndarray, protid: str) -> None:
     """
-    Creates a topological relations matrix plot for a single chain.
-    
+    Plots the topological relationship matrix for a single chain.
+
     Args:
-        mat: The topological relations matrix to plot.
-        protid: The protein ID.
-        
-    Returns:
-        The matplotlib figure.
+        mat (numpy.ndarray): The topological relationship matrix.
+        protid (str): Protein identifier.
     """
+
     #create custom colormap
     newcolors = np.array([[218/255, 219/255, 228/255,1], #grey - 
                       [131/255, 139/255, 197/255,1],    #purple S
@@ -37,7 +34,7 @@ def matrix_plot(mat: np.ndarray, protid: str) -> Figure:
     color = plt.get_cmap(newcmp, 8)
 
     #plot data
-    pngmat = ax.imshow(mat,cmap=color,vmin = np.min(mat)-.5, vmax = np.max(mat)+.5)
+    pngmat = plt.imshow(mat,cmap=color,vmin = np.min(mat)-.5, vmax = np.max(mat)+.5)
     ax.set_xlabel('Intramolecular contact #')
     ax.set_ylabel('Intramolecular contact #')
     ax.set_title(protid)
@@ -46,5 +43,3 @@ def matrix_plot(mat: np.ndarray, protid: str) -> Figure:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         cbar.ax.set_yticklabels(['-','S','P','P-1','X','CP','CP-1','CS'])
-    
-    return fig

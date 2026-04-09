@@ -1,19 +1,24 @@
+"""
+Utility functions for handling trajectory files in the PyMOL plugin.
+"""
 import os
+from typing import Any
 
 from pymol import cmd
-from pymol.Qt import QtWidgets
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
-from .non_polymer import remove_non_polymer_atoms
+from utils.non_polymer import remove_non_polymer_atoms
 
-# Gets the pdb/cif file
-def select_mol_file(self: QtWidgets.QWidget) -> None:
+
+def select_mol_file(self: Any) -> None:
     """
-    Opens a file dialog to select a structure file (PDB/CIF) and loads it into PyMOL.
-    
+    Opens a file dialog to select a structure file (PDB or CIF) for trajectory analysis.
+    Loads the file into PyMOL.
+
     Args:
-        self: The QtWidget object.
+        self: The main GUI class instance.
     """
-    fname, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select PDB file", "", "Structure files (*.pdb *.cif)")
+    fname, _ = QFileDialog.getOpenFileName(self, "Select PDB file", "", "Structure files (*.pdb *.cif)")
     if fname:
         self.traj_mol_path = fname
         self.traj_mol_label.setText(fname)
@@ -23,29 +28,30 @@ def select_mol_file(self: QtWidgets.QWidget) -> None:
         self.protein_name = mol_name
 
 # Gets the trajectory file
-def select_xtc_file(self: QtWidgets.QWidget) -> None:
+def select_xtc_file(self: Any) -> None:
     """
-    Opens a file dialog to select a trajectory file and loads it into PyMOL.
-    
+    Opens a file dialog to select a trajectory file (XTC, DCD, TRR, NC).
+    Loads the trajectory into PyMOL and removes non-polymer atoms.
+
     Args:
-        self: The QtWidget object.
+        self: The main GUI class instance.
     """
-    fname, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select trajectory file", "",
-                                                        "Trajectory files (*.xtc *.dcd *.trr *.nc)")
+    fname, _ = QFileDialog.getOpenFileName(self, "Select trajectory file", "", "Trajectory files (*.xtc *.dcd *.trr *.nc)")
     if fname:
         self.traj_xtc_path = fname
         self.traj_xtc_label.setText(fname)
         # If the trajectory is imported into the GUI, load it into PyMOL first
         cmd.load_traj(fname, object=self.protein_name, state=1)
         remove_non_polymer_atoms()
-        
+
 # Converts a CIF/PDB and .XTC file to a directory of PDBs
-def export_frames_from_traj(self: QtWidgets.QWidget) -> None:
+def export_frames_from_traj(self: Any) -> None:
     """
-    Converts a loaded structure and trajectory into a directory of PDB frames.
-    
+    Exports each frame of the loaded trajectory as a separate PDB file.
+    Prompts the user for confirmation and an output directory.
+
     Args:
-        self: The QtWidget object.
+        self: The main GUI class instance.
     """
     try:
         mol = getattr(self, 'traj_mol_path', None)
@@ -54,17 +60,18 @@ def export_frames_from_traj(self: QtWidgets.QWidget) -> None:
             self.traj_status_label.setText("Please select both a PDB and a trajectory file.")
             return
 
-        confirm = QtWidgets.QMessageBox.question(self,
-                                                    "Confirm Export",
-                                                    "Are you sure you want to export all frames?\n\nThis will create a large number of PDB files!",
-                                                    QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        confirm = QMessageBox.question(
+            self,
+            "Confirm Export",
+            "Are you sure you want to export all frames?\n\nThis will create a large number of PDB files!",
+            QMessageBox.Yes | QMessageBox.No
+        )
 
-        if confirm != QtWidgets.QMessageBox.Yes:
+        if confirm != QMessageBox.Yes:
             self.traj_status_label.setText("Export cancelled.")
             return
 
-        outdir = QtWidgets.QFileDialog.getExistingDirectory(self,
-                                                            "Select folder to save frames in the widget above")
+        outdir = QFileDialog.getExistingDirectory(self, "Select folder to save frames in the widget above")
         if not outdir:
             return
 

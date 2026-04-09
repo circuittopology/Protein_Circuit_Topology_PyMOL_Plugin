@@ -6,25 +6,22 @@ Created on Mon May 24 17:00:09 2021
 Function for creating the chain object used in Bio.PDB and all the functions. Can specify which chain
 
 """
-
+import warnings
 from typing import Tuple, Union
-
 from Bio.PDB import MMCIFParser, PDBParser
 from Bio.PDB.Chain import Chain
 from Bio import BiopythonWarning
-import warnings
-
 
 def retrieve_chain(input_file: str, chainid: Union[int, str] = 0) -> Tuple[Chain, str]:
     """
-    Retrieves a Chain object from a PDB or CIF file.
-    
+    Retrieves a specific chain from a PDB or MMCIF file.
+
     Args:
-        input_file: Path to the PDB or CIF file.
-        chainid: The integer index or string ID of the chain to retrieve.
-        
+        input_file (str): Path to the input PDB or MMCIF file.
+        chainid (int or str, optional): The chain ID to retrieve. Can be an integer index or a string ID. Defaults to 0.
+
     Returns:
-        A tuple containing the Biopython Chain object and a protein ID string.
+        tuple: A tuple containing the chain object (Bio.PDB.Chain.Chain) and the protein ID (str).
     """
     # determines which format is used
     if input_file.endswith('cif'):
@@ -45,7 +42,6 @@ def retrieve_chain(input_file: str, chainid: Union[int, str] = 0) -> Tuple[Chain
             structure = PDBParser(PERMISSIVE=1).get_structure(input_file.replace('.pdb', ''), input_filepath)
 
     model = structure[0]
-    chainlist = model.get_list()
     # removes heteroresidues from protein
     residue_to_remove = []
     chain_to_remove = []
@@ -67,9 +63,9 @@ def retrieve_chain(input_file: str, chainid: Union[int, str] = 0) -> Tuple[Chain
     for chain in chain_to_remove:
         model.detach_child(chain)
 
-    if type(chainid) == int:
+    if isinstance(chainid, int):
         chain = model.get_list()[chainid]
-    elif type(chainid) == str:
+    elif isinstance(chainid, str):
         chain = model[chainid]
     else:
         raise TypeError

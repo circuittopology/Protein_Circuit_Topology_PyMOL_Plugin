@@ -7,24 +7,23 @@ Function that creates a residue contact map plot
 """
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Any
 
-def circuit_plot(index: np.ndarray, protid: str, numbering: np.ndarray) -> Any:
+
+
+def circuit_plot(index: np.ndarray, protid: str, numbering: np.ndarray) -> None:
     """
-    Creates a residue contact map plot.
-    
+    Plots the circuit topology of a protein as a series of arcs.
+
     Args:
-        index: An array of contact indices.
-        protid: The protein ID.
-        numbering: The residue numbering array.
+        index (numpy.ndarray): Array of contact indices.
+        protid (str): Protein identifier.
+        numbering (list or numpy.ndarray): List of residue numbers/identifiers.
     """
     plt.ion()
 
     if len(np.shape(numbering)) > 1:
         numbering = numbering[:,1]
-        
-    nseg = len(numbering)
-    segment = list(range(0,nseg))  
+
     ax = plt.subplots()[1]
     plt.plot()
     plt.xlim(0,len(numbering)+1)

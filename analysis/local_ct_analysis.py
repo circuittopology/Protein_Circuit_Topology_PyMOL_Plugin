@@ -1,40 +1,45 @@
 import os
+import tempfile
+from typing import Any
 
 from pymol import cmd
-from pymol.Qt import QtWidgets
+from PyQt5.QtWidgets import QMessageBox
 
-from ..functions.calculating.local_ct import local_ct
-from ..functions.calculating.get_cmap import get_cmap
-from ..functions.calculating.get_matrix import get_matrix
+from functions.calculating.local_ct import local_ct
+from functions.calculating.get_cmap import get_cmap
+from functions.calculating.get_matrix import get_matrix
 
-from ..functions.importing.retrieve_chain import retrieve_chain
+from functions.importing.retrieve_chain import retrieve_chain
 
-from ..functions.plots.local_topology_plot import local_topology_plot
+from functions.plots.local_topology_plot import local_topology_plot
 
-from ..functions.exporting.export_cmap3 import export_cmap3
-from ..functions.exporting.export_mat import export_mat
+from functions.exporting.export_cmap3 import export_cmap3
+from functions.exporting.export_mat import export_mat
 
-from ..utils.non_polymer import has_non_polymer_atoms
+from utils.non_polymer import has_non_polymer_atoms
+from utils.config import WARN_MSG, LOCAL_CT_WARN, CHECKBOX_WARN
 
-def run_local_ct(self: QtWidgets.QWidget) -> None:
+
+def run_local_ct(self: Any) -> None:
     """
-    Runs the local circuit topology analysis.
-    
+    Runs the local circuit topology analysis based on user-selected parameters.
+    Handles data retrieval, calculation, plotting, and exporting.
+
     Args:
-        self: The QtWidget object (CTDialog instance) calling this function.
+        self: The main GUI class instance.
     """
     # check for non-polymer atoms
     if has_non_polymer_atoms():
-        QtWidgets.QMessageBox.warning(self, "Warning",
-                                        "The opened file contains non-polymer atoms, which can interfere with Circuit Topology. Please use the 'Remove Non-Polymer Atoms' button to remove them.")
+        QMessageBox.warning(self, "Warning", WARN_MSG)
 
     vals = self.get_local_values()
     # Retrieve imported file as a selected object in PyMOL
-    selected_obj = f"{self.local_dropdown_objects.currentText()} and chain {self.chain_combo_box.currentText()}"
+    curr_local_obj = self.local_dropdown_objects.currentText()
+    curr_chain = self.chain_combo_box.currentText()
+    selected_obj = f"{curr_local_obj} and chain {curr_chain}"
 
     if (selected_obj == "Select a file." or not selected_obj):
-        QtWidgets.QMessageBox.warning(self, "Error",
-                                        "To use local Circuit Topology, please select the desired object from the dropdown menu first!")
+        QMessageBox.warning(self, "Error", LOCAL_CT_WARN)
         return
 
     local_ct_plot = vals["local_topology_plot"]
@@ -45,24 +50,29 @@ def run_local_ct(self: QtWidgets.QWidget) -> None:
     export_mat_enabled = vals["export_mat"]
 
     # Check to see if GUI has at least one checkbox ticked for the 'run analysis' part
-    if not local_ct_plot and not local_ct and not export_cmap3_enabled and not export_mat_enabled:
-        QtWidgets.QMessageBox.warning(self, "Error", "No checkboxes for plotting or exporting have been ticked!")
+    if not (local_ct_plot or local_ct_enabled or export_cmap3_enabled or export_mat_enabled):
+        QMessageBox.warning(self, "Error", CHECKBOX_WARN)
         return
 
-    file_name = f"{selected_obj}_export.pdb"
-    cmd.save(file_name, selected_obj, state=cmd.get_state())
+    file_name = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
+    tmp_path = file_name.name
+    file_name.close()
+    cmd.save(tmp_path, selected_obj, state=cmd.get_state())
     local_dist = vals["cutoff_distance"]
     local_numcontacts = vals["cutoff_numcontacts"]
     local_neighbour = vals["exclude_neighbour"]
-    base_file_typeless = file_name.split('.')[0]
-    local_chain, protid = retrieve_chain(file_name)
-    if os.path.exists(file_name):
-        os.remove(os.path.abspath(file_name))
+    base_file_typeless = f"{curr_local_obj}_chain_{curr_chain}"
+    local_chain, protid = retrieve_chain(tmp_path)
+    os.remove(tmp_path)
 
-    idx, numbering, protid, res_names = get_cmap(local_chain, cutoff_distance=local_dist,
-                                                    cutoff_numcontacts=local_numcontacts,
-                                                    exclude_neighbour=local_neighbour)
-    mat, psc = get_matrix(idx, protid)
+    idx, numbering, protid, _ = get_cmap(
+        chain=local_chain,
+        cutoff_distance=local_dist,
+        cutoff_numcontacts=local_numcontacts,
+        exclude_neighbour=local_neighbour
+    )
+
+    mat, _, _ = get_matrix(idx, protid)
     if local_ct_plot:
         local_topology_plot(idx, mat, numbering, protid, residue_id, contact)
     if local_ct_enabled:

@@ -1,13 +1,15 @@
-from pymol import cmd
-from pymol.Qt import QtWidgets
+from typing import Any, Optional
 
-def get_residue_range(self: QtWidgets.QWidget, obj_name: str) -> None:
+from pymol import cmd, stored
+
+def get_residue_range(self: Any, obj_name: Optional[str]) -> None:
     """
-    Gets the residue range for a specific object.
-    
+    Retrieves the residue range for each chain in the specified object.
+    Updates the chain combo box and residue range spinbox.
+
     Args:
-        self: The QtWidget object.
-        obj_name: The object name.
+        self: The main GUI class instance.
+        obj_name (str): The name of the object to analyze.
     """
     if not obj_name or obj_name == "Select a file.":
         return
@@ -15,9 +17,10 @@ def get_residue_range(self: QtWidgets.QWidget, obj_name: str) -> None:
         chains = cmd.get_chains(obj_name)
         self.curr_chain_residues = {}
         for c in chains:
-            resi_list = []
-            cmd.iterate(f"{obj_name} and chain {c} and name CA", "resi_list.append(resv)",
-                        space={"resi_list": resi_list})
+            stored.resi_list = []
+            cmd.iterate(f"{obj_name} and chain {c} and name CA",
+                        "stored.resi_list.append(resv)")
+            resi_list = stored.resi_list
 
             if resi_list:
                 self.curr_chain_residues[c] = [min(resi_list), max(resi_list)]
@@ -32,17 +35,19 @@ def get_residue_range(self: QtWidgets.QWidget, obj_name: str) -> None:
         self.box_res_id.setRange(0, 0)
         self.box_res_id.setValue(0)
 
-def update_residue_range(self: QtWidgets.QWidget) -> None:
+def update_residue_range(self: Any) -> None:
     """
-    Updates the UI residue range based on the selected chain.
-    
+    Updates the residue range spinbox based on the currently selected chain.
+
     Args:
-        self: The QtWidget object.
+        self: The main GUI class instance.
     """
+    selected_chain = self.chain_combo_box.currentText()
+    if not selected_chain:
+        return
     try:
-        selected_chain = self.chain_combo_box.currentText()
         min_resi, max_resi = self.curr_chain_residues[selected_chain]
         self.box_res_id.setRange(min_resi, max_resi)
         self.box_res_id.setValue(min_resi)
-    except KeyError as e:
-        print(f"Error updating residue range: {e}")
+    except KeyError:
+        pass

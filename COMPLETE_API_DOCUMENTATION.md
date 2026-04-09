@@ -1,19 +1,19 @@
 # Protein Circuit Topology Plugin - Complete API Documentation
 
-This document provides a comprehensive reference of **ALL 126 callable entry points** available in the Protein Circuit Topology Plugin, including their parameters, return values, and descriptions.
+This document provides a comprehensive reference of **ALL 122 functions** available in the Protein Circuit Topology Plugin, including their parameters, return values, and descriptions.
 
-**Total Functions:** 126 across 54 Python files
+**Total Functions:** 122 across 54 Python files
 
 ## Table of Contents
 
 1. [Calculating Functions](#calculating-functions) (13 functions)
-2. [Plotting Functions](#plotting-functions) (7 functions)
+2. [Plotting Functions](#plotting-functions) (6 functions)
 3. [Importing Functions](#importing-functions) (5 functions)
 4. [Exporting Functions](#exporting-functions) (5 functions)
-5. [Analysis Functions](#analysis-functions) (6 functions)
-6. [Utility Functions](#utility-functions) (36 functions)
-7. [GUI Functions](#gui-functions) (42 functions)
-8. [Initialization Functions](#initialization-functions) (12 functions)
+5. [Analysis Functions](#analysis-functions) (5 functions)
+6. [Utility Functions](#utility-functions) (37 functions)
+7. [GUI Functions](#gui-functions) (40 functions)
+8. [Initialization Functions](#initialization-functions) (11 functions)
 
 ---
 
@@ -33,11 +33,7 @@ Creates a residue-residue contact map (as a list of contacts) for a single chain
 - `exclude_neighbour` (int, optional): Minimum sequence separation (in residues) to consider a contact. Defaults to 3.
 
 **Returns:**
-- `tuple`: Tuple containing:
-  - Array of contact indices.
-  - Array of residue numbering.
-  - Protein ID string.
-  - List of residue names.
+- `tuple`: (index, numbering, protid, res_names)
 
 ---
 
@@ -136,7 +132,7 @@ Analyzes the contact map to identify and characterize circuits based on Anatoly'
 
 ---
 
-### `secondary_struc_cmap(chain, sequence, structure, cutoff_distance=4.5, cutoff_numcontacts=10, exclude_neighbour=3, ss_elements=['H', 'E', 'B', 'b', 'G'])`
+### `secondary_struc_cmap(chain, sequence, structure, cutoff_distance=4.5, cutoff_numcontacts=10, exclude_neighbour=3, ss_elements=('H','E','B','b','G'))`
 
 Creates a segment-segment contact map based on secondary structure elements.
 
@@ -149,14 +145,14 @@ Creates a segment-segment contact map based on secondary structure elements.
 - `cutoff_distance` (float, optional): Maximum distance (in Angstroms) between atoms to consider a contact. Defaults to 4.5.
 - `cutoff_numcontacts` (int, optional): Minimum number of atomic contacts required to define a segment-segment contact. Defaults to 10.
 - `exclude_neighbour` (int, optional): Minimum sequence separation (in residues) to consider a contact. Defaults to 3.
-- `ss_elements` (list, optional): List of secondary structure codes to consider as segments. Defaults to `['H', 'E', 'B', 'b', 'G']`.
+- `ss_elements` (list, optional): List of secondary structure codes to consider as segments. Defaults to ['H', 'E', 'B', 'b', 'G'].
 
 **Returns:**
 - `tuple`: (index, segment)
 
 ---
 
-### `secondary_struc_filter(index, struc, filtered_structures=['H', 'E'], ss_elements=['H', 'E', 'B', 'b', 'G', 'b'])`
+### `secondary_struc_filter(index, struc, filtered_structures=('H','E'), ss_elements=('H','E','B','b','G','b'))`
 
 Filters out residue contacts that occur within the same secondary structure element.
 
@@ -165,8 +161,8 @@ Filters out residue contacts that occur within the same secondary structure elem
 **Parameters:**
 - `index` (numpy.ndarray): Array of contact indices.
 - `struc` (str): The secondary structure string.
-- `filtered_structures` (list, optional): List of secondary structure types to filter out contacts within. Defaults to `['H', 'E']`.
-- `ss_elements` (list, optional): List of secondary structure codes considered as distinct elements. Defaults to `['H', 'E', 'B', 'b', 'G', 'b']`.
+- `filtered_structures` (list, optional): List of secondary structure types to filter out contacts within. Defaults to ['H', 'E'].
+- `ss_elements` (list, optional): List of secondary structure codes considered as distinct elements. Defaults to ['H', 'E', 'B', 'b', 'G', 'b'].
 
 **Returns:**
 - `tuple`: (index_filtered, struc_id)
@@ -1134,22 +1130,6 @@ Exports each frame of the loaded trajectory as a separate PDB file.
 
 ## GUI Functions
 
-### Plugin GUI Entry Point
-
-#### `run_plugin_gui()`
-
-Runs or focuses the plugin dialog window.
-
-**Module:** `__init__.py`
-
-**Parameters:**
-- None
-
-**Returns:**
-- `object`: Active `CTDialog` instance.
-
----
-
 ### Tab Initialization Functions
 
 #### `init_single_file_tab(self)`
@@ -1162,7 +1142,7 @@ Initializes the single-file analysis tab of the GUI.
 - `self` (Any): The main GUI class instance.
 
 **Returns:**
-- `None`
+- `QWidget`: The configured single-file tab widget.
 
 ---
 
@@ -1176,7 +1156,7 @@ Initializes the multi-file analysis tab of the GUI.
 - `self` (Any): The main GUI class instance.
 
 **Returns:**
-- `None`
+- `QWidget`: The configured multi-file tab widget.
 
 ---
 
@@ -1190,76 +1170,22 @@ Initializes the local circuit topology analysis tab of the GUI.
 - `self` (Any): The main GUI class instance.
 
 **Returns:**
-- `None`
+- `QWidget`: The configured local analysis tab widget.
 
 ---
 
-### `CTDialog` Class Methods (38 methods)
+### Main GUI Class
 
-The `gui_class.py` file contains the main `CTDialog` class. Most methods are Qt slots that delegate to functions in `utils/`, `analysis/`, and `tabs/` modules.
+The `gui_class.py` file contains the main `CircuitTopologyGUI` class with approximately 40 methods that handle all GUI interactions, parameter retrieval, file selection, and analysis execution.
 
-**Module:** `gui_class.py`
-
-**Methods:**
-- `get_values(self)`
-- `get_local_values(self)`
-- `get_multiple_values(self)`
-- `get_vis_vals(self)`
-- `clear_selected_local_file(self)`
-- `clear_selected_single_file(self)`
-- `choose_file(self)`
-- `choose_local_file(self)`
-- `choose_output_dir(self)`
-- `choose_local_output_dir(self)`
-- `choose_input_dir_multi(self)`
-- `choose_output_dir_multi(self)`
-- `handle_local_object_change(self, obj_name=None)`
-- `handle_standard_object_change(self, obj_name=None)`
-- `show_warning_dialog(self)`
-- `get_residue_range(self, obj_name=None)`
-- `update_residue_range(self)`
-- `update_chain_combo_box(self)`
-- `init_timers(self)`
-- `update_list(self)`
-- `update_local_list(self)`
-- `update_output_widgets(self)`
-- `update_output_widgets_local(self)`
-- `update_output_widgets_multi(self)`
-- `select_mol_file(self)`
-- `select_xtc_file(self)`
-- `export_frames_from_traj(self)`
-- `init_local_tab(self)`
-- `init_single_file_tab(self)`
-- `init_multi_file_tab(self)`
-- `run_local_ct(self)`
-- `run_standard_analysis(self)`
-- `run_single_frame_analysis(self)`
-- `run_multi_analysis(self)`
-- `visualize_molecule(self, contact_type)`
-- `toggle_frame_controls(self, enabled)`
-- `__init__(self, parent=None)`
-- `init_ui(self)`
-
-**Returns:**
-- Wrapper and UI methods return `None` unless delegated function behavior differs.
+**Key Methods:**
+- `__init__(self)`: Initializes the GUI
+- `init_ui(self)`: Sets up the user interface
+- All utility functions are bound as methods to the GUI class
 
 ---
 
 ## Initialization Functions
-
-### `__init_plugin__(app=None)`
-
-Initializes the plugin, performs dependency checks/installation flow, registers PyMOL commands, and adds the plugin menu item.
-
-**Module:** `__init__.py`
-
-**Parameters:**
-- `app` (object, optional): Optional application object passed by PyMOL.
-
-**Returns:**
-- `None`
-
----
 
 ### `is_path_user(path)`
 
@@ -1275,7 +1201,7 @@ Checks if a given path is within the user's home directory.
 
 ---
 
-### `pymol_install(env=pymol_env, reqs=requirements_file)`
+### `pymol_install(env, reqs)`
 
 Attempts to install dependencies using the PyMOL terminal and conda.
 
@@ -1290,7 +1216,7 @@ Attempts to install dependencies using the PyMOL terminal and conda.
 
 ---
 
-### `install_failed(reqs=requirements_file)`
+### `install_failed(reqs)`
 
 Prints instructions for manual installation of dependencies.
 
@@ -1360,7 +1286,7 @@ Initializes conda for PowerShell.
 
 ---
 
-### `win_install(env=pymol_env, reqs=requirements_file)`
+### `win_install(env, reqs)`
 
 Performs installation on Windows using PowerShell and conda.
 
@@ -1375,7 +1301,7 @@ Performs installation on Windows using PowerShell and conda.
 
 ---
 
-### `mac_install(env=pymol_env, reqs=requirements_file)`
+### `mac_install(env, reqs)`
 
 Performs installation on macOS using pip.
 
@@ -1390,7 +1316,7 @@ Performs installation on macOS using pip.
 
 ---
 
-### `linux_install(env=LINUX_ENV_FIXED, reqs=LINUX_REQS_FIXED)`
+### `linux_install(env, reqs)`
 
 Performs installation on Linux using pip (and conda for DSSP if needed).
 
@@ -1415,7 +1341,7 @@ Register all functions as PyMOL commands.
 - None
 
 **Returns:**
-- `None`: Extends plugin functions to the PyMOL command line.
+- `None`: Extends all plugin functions to PyMOL command line.
 
 ---
 
@@ -1423,22 +1349,22 @@ Register all functions as PyMOL commands.
 
 ### By Category
 - **Calculating Functions**: 13
-- **Plotting Functions**: 7
+- **Plotting Functions**: 6
 - **Importing Functions**: 5
 - **Exporting Functions**: 5
-- **Analysis Functions**: 6
-- **Utility Functions**: 36
-- **GUI Functions**: 42
-- **Initialization Functions**: 12
+- **Analysis Functions**: 5 (+ 1 helper)
+- **Utility Functions**: 37
+- **GUI Functions**: 40
+- **Initialization Functions**: 11
 
 ### By Module Type
-- **Core Functions** (calculating, plotting, importing, exporting): 30
+- **Core Functions** (calculating, plotting, importing, exporting): 29
 - **Analysis Orchestration**: 6
-- **GUI & User Interaction**: 42
-- **Utility & Helper Functions**: 36
-- **Setup & Installation**: 12
+- **GUI & User Interaction**: 40
+- **Utility & Helper Functions**: 37
+- **Setup & Installation**: 11
 
-### **Total Functions: 126**
+### **Total Functions: 122**
 
 ---
 
@@ -1501,6 +1427,7 @@ The GUI functions handle the entire workflow automatically:
 
 ---
 
-*Last Updated: April 9, 2026*
+*Last Updated: February 15, 2026*
 
-*Total Functions Documented: 126*
+*Total Functions Documented: 122*
+
