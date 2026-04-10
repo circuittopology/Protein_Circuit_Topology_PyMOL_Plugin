@@ -1,9 +1,9 @@
-from typing import Any, Dict
+from typing import Any
 
 from utils.config import CONTACT_MAP
 
 
-def get_vis_vals(self: Any) -> Dict[str, Any]:
+def get_vis_vals(self: Any) -> dict[str, Any]:
     """
     Retrieves visualization parameters from the GUI.
 
@@ -19,7 +19,7 @@ def get_vis_vals(self: Any) -> Dict[str, Any]:
         "exclude_neighbour": self.exclude_neighbor_spin.value(),
     }
 
-def get_values(self: Any) -> Dict[str, Any]:
+def get_values(self: Any) -> dict[str, Any]:
     """
     Retrieves parameters for single-file analysis from the GUI.
 
@@ -38,10 +38,10 @@ def get_values(self: Any) -> Dict[str, Any]:
         "folding_score": self.checkbox_folding_score.isChecked(),
         "matrix_plot": self.checkbox_matrix_plot.isChecked(),
         "export_cmap3": self.checkbox_export_cmap3.isChecked(),
-        "export_mat": self.checkbox_export_matrix.isChecked()
+        "export_mat": self.checkbox_export_matrix.isChecked(),
     }
 
-def get_local_values(self: Any) -> Dict[str, Any]:
+def get_local_values(self: Any) -> dict[str, Any]:
     """
     Retrieves parameters for local analysis from the GUI.
 
@@ -62,10 +62,10 @@ def get_local_values(self: Any) -> Dict[str, Any]:
         "contact_type": contact_type,
         "local_ct": self.checkbox_local_ct.isChecked(),
         "export_cmap3": self.checkbox_local_cmap3.isChecked(),
-        "export_mat": self.checkbox_local_matrix.isChecked()
+        "export_mat": self.checkbox_local_matrix.isChecked(),
     }
 
-def get_multiple_values(self: Any) -> Dict[str, Any]:
+def get_multiple_values(self: Any) -> dict[str, Any]:
     """
     Retrieves parameters for multi-file analysis from the GUI.
 
@@ -97,5 +97,5 @@ def get_multiple_values(self: Any) -> Dict[str, Any]:
         "filtering_distance": self.filtering_distance_spin.value() if len_filtering else None,
         "length_filter_mode": len_dropdown if len_filtering else None,
         "energy_filtering": energy_filtering,
-        "energy_filtering_mode": '-' if energy_dropdown == "Repulsive/Destabilizing (-)" else '+'
+        "energy_filtering_mode": "-" if energy_dropdown == "Repulsive/Destabilizing (-)" else "+",
     }

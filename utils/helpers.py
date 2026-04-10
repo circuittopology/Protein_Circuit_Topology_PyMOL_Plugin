@@ -1,11 +1,11 @@
-import os
 import tempfile
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 
 from pymol import cmd
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton
 
 from utils.config import INFO_BUTTON_STYLE
 
@@ -48,13 +48,6 @@ def init_timers(self: Any) -> None:
     self.timer.timeout.connect(self._poll_pymol_objects)
     self.timer.start(2000)
 
-def _poll_pymol_objects(self: Any) -> None:
-    """Single poll that refreshes both object dropdowns from one cmd call."""
-    from utils.updates import update_list, update_local_list
-    new_objects = cmd.get_object_list()
-    update_list(self, new_objects)
-    update_local_list(self, new_objects)
-
 def object_exists(name: str) -> bool:
     """
     Checks if a PyMOL object exists.
@@ -71,15 +64,15 @@ def object_exists(name: str) -> bool:
 @contextmanager
 def temp_pdb_export(selection, state=None):
     """Save a PyMOL selection to a temporary PDB file, yield the path, then clean up."""
-    tmp = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
-    tmp_path = tmp.name
-    tmp.close()
+    with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
+        tmp_path = tmp.name
     cmd.save(tmp_path, selection, state=state or cmd.get_state())
+    tmp_path = Path(tmp_path)
     try:
         yield tmp_path
     finally:
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
+        if tmp_path.exists():
+            tmp_path.unlink()
 
 
 def make_param_row(label_text, tooltip, spinbox):

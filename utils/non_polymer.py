@@ -1,7 +1,11 @@
+import logging
 from typing import Any
 
 from pymol import cmd
 from PyQt5.QtWidgets import QMessageBox
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 def show_warning_dialog(self: Any) -> None:
     """
@@ -11,7 +15,7 @@ def show_warning_dialog(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    if getattr(self, '_suppress_non_polymer_warning', False):
+    if getattr(self, "_suppress_non_polymer_warning", False):
         remove_non_polymer_atoms()
         return
 
@@ -34,7 +38,7 @@ def show_warning_dialog(self: Any) -> None:
         self._suppress_non_polymer_warning = True
         remove_non_polymer_atoms()
     else:
-        print("User cancelled.")
+        logger.info("User cancelled.")
 
 # generic
 def remove_non_polymer_atoms() -> None:
@@ -45,8 +49,7 @@ def remove_non_polymer_atoms() -> None:
     cmd.remove("not polymer")
     cmd.refresh()
     after_atoms = cmd.count_atoms("all")
-    print(f"""Removed all non-polymer atoms!
-          Atom count has changed from {before_atoms} to {after_atoms}""")
+    logger.info("Removed all non-polymer atoms! Atom count has changed from %s to %s", before_atoms, after_atoms)
     cmd.zoom("all")
 
 # generic

@@ -1,12 +1,12 @@
-import os
+from pathlib import Path
 from typing import Any
 
 from pymol import cmd
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QFileDialog, QMessageBox, QLabel
+from PyQt5.QtWidgets import QFileDialog, QLabel, QMessageBox
 
-from utils.non_polymer import new_file_has_non_polymer_atoms
 from utils.config import WARN_MSG
+from utils.non_polymer import new_file_has_non_polymer_atoms
 
 
 def _load_structure_file(self, label, attr_file, attr_obj):
@@ -15,7 +15,7 @@ def _load_structure_file(self, label, attr_file, attr_obj):
     file_path, _ = QFileDialog.getOpenFileName(self, "Select Input File", "", file_filter)
     if file_path:
         set_label_text_elided(file_path, label)
-        obj_name = os.path.splitext(os.path.basename(file_path))[0]
+        obj_name = Path(file_path).stem
         cmd.load(file_path, obj_name)
         obj_name = obj_name.replace(" ", "_")
         setattr(self, attr_file, file_path)
@@ -59,11 +59,11 @@ def choose_input_dir_multi(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    dir_path = QFileDialog.getExistingDirectory(self, "Select Input Directory")
-    if dir_path:
+    dir_path = Path(QFileDialog.getExistingDirectory(self, "Select Input Directory"))
+    if dir_path.exists():
         self.selected_input_dir_multi = dir_path
-        set_label_text_elided(dir_path, self.input_dir_label_multi)
-        pdb_files = sorted([f.replace(" ", "_") for f in os.listdir(dir_path) if f.endswith(".pdb")])
+        set_label_text_elided(str(dir_path), self.input_dir_label_multi)
+        pdb_files = sorted([f.name.replace(" ", "_") for f in dir_path.iterdir() if f.suffix == ".pdb"])
         self.available_mol_files = pdb_files
         self.frame_selector_spinbox.setMaximum(len(pdb_files))
     else:

@@ -1,31 +1,25 @@
 from typing import Any
 
-from PyQt5.QtWidgets import (
-    QScrollArea, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel,
-    QPushButton, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, QSizePolicy
-)
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
 
 from utils.helpers import make_info_button, make_param_row
 
 
-def init_multi_file_tab(self: Any) -> None:
-    """
-    Initializes the 'Multi-File Analysis' tab in the GUI.
-    Sets up widgets for directory selection, trajectory handling,
-    parameter input, analysis options, and exporting.
-
-    Args:
-        self: The main GUI class instance.
-    """
-    scroll_area = QScrollArea(self.multi_file_tab)
-    scroll_area.setWidgetResizable(True)
-
-    scroll_widget = QWidget()
-    scroll_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-    scroll_area.setWidgetResizable(True)
-    scroll_layout = QVBoxLayout(scroll_widget)
-
+def _build_multi_dir_group(self: Any) -> QGroupBox:
     dir_grp = QGroupBox("Directory")
     dir_lay = QVBoxLayout(dir_grp)
     self.input_dir_button_multi = QPushButton("Choose input directory …")
@@ -36,8 +30,10 @@ def init_multi_file_tab(self: Any) -> None:
     self.input_dir_label_multi.setTextInteractionFlags(Qt.TextSelectableByMouse)
     dir_lay.addWidget(self.input_dir_button_multi)
     dir_lay.addWidget(self.input_dir_label_multi)
-    scroll_layout.addWidget(dir_grp)
+    return dir_grp
 
+
+def _build_multi_traj_group(self: Any) -> QGroupBox:
     traj_grp = QGroupBox("Import a trajectory and PDB")
     traj_lay = QVBoxLayout(traj_grp)
 
@@ -60,8 +56,10 @@ def init_multi_file_tab(self: Any) -> None:
     traj_lay.addWidget(self.export_frames_button)
     traj_lay.addWidget(self.traj_status_label)
 
-    scroll_layout.addWidget(traj_grp)
+    return traj_grp
 
+
+def _build_multi_params_group(self: Any) -> QGroupBox:
     params_grp = QGroupBox("Contact-map parameters")
     params_lay = QVBoxLayout(params_grp)
 
@@ -90,40 +88,41 @@ def init_multi_file_tab(self: Any) -> None:
         "Number of neighbouring residues to ignore.",
         self.exclude_neighbor_multi))
 
-    scroll_layout.addWidget(params_grp)
+    return params_grp
 
+
+def _build_multi_frame_widgets(self: Any, layout: QVBoxLayout) -> None:
     self.checkbox_single_frame_analysis = QCheckBox("Enable per-frame trajectory analysis")
     self.checkbox_single_frame_analysis.setToolTip(
         """Per-frame trajectory analysis should only be used when processing trajectories
         (not multiple files). It is also possible to select the imported trajectory PDB object
         from the dropdown menu in single-file analysis and use PyMOL's built-in controls to
-        sift through individual frames and analyse them."""
+        sift through individual frames and analyse them.""",
     )
     self.checkbox_single_frame_analysis.setChecked(False)
     self.checkbox_single_frame_analysis.toggled.connect(self.toggle_frame_controls)
-    scroll_layout.addWidget(self.checkbox_single_frame_analysis)
+    layout.addWidget(self.checkbox_single_frame_analysis)
 
-    # Frame selector (initially hidden)
     self.frame_selector_layout = QHBoxLayout()
     self.frame_selector_label = QLabel("Select trajectory frame:")
     self.frame_selector_spinbox = QSpinBox()
-    self.frame_selector_spinbox.setMinimum(1)  # Will be updated dynamically
+    self.frame_selector_spinbox.setMinimum(1)
     self.frame_selector_spinbox.setEnabled(False)
     self.frame_selector_layout.addWidget(self.frame_selector_label)
     self.frame_selector_layout.addWidget(self.frame_selector_spinbox)
     self.frame_selector_layout.addStretch()
-    scroll_layout.addLayout(self.frame_selector_layout)
+    layout.addLayout(self.frame_selector_layout)
 
-    # Run single-frame analysis button (initially hidden)
     self.run_single_frame_button = QPushButton("Analyze selected trajectory frame")
     self.run_single_frame_button.setEnabled(False)
     self.run_single_frame_button.clicked.connect(self.run_single_frame_analysis)
-    scroll_layout.addWidget(self.run_single_frame_button)
+    layout.addWidget(self.run_single_frame_button)
 
+
+def _build_multi_filters_group(self: Any) -> QGroupBox:
     filters_grp = QGroupBox("Optional filters")
     filters_lay = QVBoxLayout(filters_grp)
 
-    # Fixed 'Distance:' label appearing
     self.checkbox_length_filtering = QCheckBox("Enable length filtering")
     self.filtering_distance_label = QLabel("Distance:")
     self.filtering_distance_spin = QSpinBox()
@@ -143,7 +142,7 @@ def init_multi_file_tab(self: Any) -> None:
         NOTE:
         1) MANIPULATING LENGTH FILTERING CAN RETURN EMPTY CONTACT MAPS.
         2) THE CURRENT CIRCUIT TOPOLOGY ANALYSIS TOOL DOES NOT SUPPORT LENGTH FILTERING FOR MULTI-CHAIN PROTEINS.
-        THE ANALYSIS WILL SKIP LENGTH FILTERING STEP FOR MULTI-CHAIN PROTEINS."""
+        THE ANALYSIS WILL SKIP LENGTH FILTERING STEP FOR MULTI-CHAIN PROTEINS.""",
     ))
     length_row.addStretch()
     filters_lay.addLayout(length_row)
@@ -156,7 +155,7 @@ def init_multi_file_tab(self: Any) -> None:
 
     self.checkbox_energy_filtering = QCheckBox("Enable energy filtering")
     self.dropdown_energy_mode = QComboBox()
-    self.dropdown_energy_mode.addItems(["Attractive / stabilising (+)", "Repulsive / destabilising (−)"])
+    self.dropdown_energy_mode.addItems(["Attractive / stabilising (+)", "Repulsive / destabilising (−)"])  # noqa: RUF001
     self.dropdown_energy_mode.hide()
     energy_row = QHBoxLayout()
     energy_row.addWidget(self.checkbox_energy_filtering)
@@ -167,14 +166,16 @@ def init_multi_file_tab(self: Any) -> None:
         NOTE:
         THE CURRENT CIRCUIT TOPOLOGY ANALYSIS TOOL DOES NOT SUPPORT ENERGY FILTERING
         FOR MULTI-CHAIN PROTEINS. THE ANALYSIS WILL SKIP ENERGY FILTERING STEP
-        FOR MULTI-CHAIN PROTEINS."""
+        FOR MULTI-CHAIN PROTEINS.""",
     ))
     energy_row.addStretch()
     filters_lay.addLayout(energy_row)
     filters_lay.addWidget(self.dropdown_energy_mode)
 
-    scroll_layout.addWidget(filters_grp)
+    return filters_grp
 
+
+def _build_multi_plot_group(self: Any) -> QGroupBox:
     plot_grp = QGroupBox("Plots")
     plot_lay = QVBoxLayout(plot_grp)
     self.checkbox_matrix_multi = QCheckBox("Matrix plot")
@@ -182,8 +183,10 @@ def init_multi_file_tab(self: Any) -> None:
     self.checkbox_stats_multi = QCheckBox("Statistics plot")
     for cb in (self.checkbox_matrix_multi, self.checkbox_circuit_multi, self.checkbox_stats_multi):
         plot_lay.addWidget(cb)
-    scroll_layout.addWidget(plot_grp)
+    return plot_grp
 
+
+def _build_multi_export_group(self: Any) -> QGroupBox:
     export_grp = QGroupBox("Export")
     export_lay = QVBoxLayout(export_grp)
     self.checkbox_export_cmap3_multi = QCheckBox("Contact map (.csv)")
@@ -216,7 +219,33 @@ def init_multi_file_tab(self: Any) -> None:
     for cb in (self.checkbox_export_cmap3_multi, self.checkbox_export_matrix_multi, self.checkbox_export_psc_multi):
         cb.toggled.connect(self.update_output_widgets_multi)
 
-    scroll_layout.addWidget(export_grp)
+    return export_grp
+
+
+def init_multi_file_tab(self: Any) -> None:
+    """
+    Initializes the 'Multi-File Analysis' tab in the GUI.
+    Sets up widgets for directory selection, trajectory handling,
+    parameter input, analysis options, and exporting.
+
+    Args:
+        self: The main GUI class instance.
+    """
+    scroll_area = QScrollArea(self.multi_file_tab)
+    scroll_area.setWidgetResizable(True)
+
+    scroll_widget = QWidget()
+    scroll_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+    scroll_area.setWidgetResizable(True)
+    scroll_layout = QVBoxLayout(scroll_widget)
+
+    scroll_layout.addWidget(_build_multi_dir_group(self))
+    scroll_layout.addWidget(_build_multi_traj_group(self))
+    scroll_layout.addWidget(_build_multi_params_group(self))
+    _build_multi_frame_widgets(self, scroll_layout)
+    scroll_layout.addWidget(_build_multi_filters_group(self))
+    scroll_layout.addWidget(_build_multi_plot_group(self))
+    scroll_layout.addWidget(_build_multi_export_group(self))
 
     self.run_multi_button = QPushButton("Run multi-file CT analysis")
     self.run_multi_button.clicked.connect(self.run_multi_analysis)

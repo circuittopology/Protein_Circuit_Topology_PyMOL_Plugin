@@ -1,8 +1,12 @@
-from typing import Any, Optional
+import logging
+from typing import Any
 
 from pymol import cmd, stored
 
-def get_residue_range(self: Any, obj_name: Optional[str]) -> None:
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+def get_residue_range(self: Any, obj_name: str | None) -> None:
     """
     Retrieves the residue range for each chain in the specified object.
     Updates the chain combo box and residue range spinbox.
@@ -30,8 +34,8 @@ def get_residue_range(self: Any, obj_name: Optional[str]) -> None:
 
         self.update_chain_combo_box()
 
-    except Exception as e:
-        print(f"Error getting residue range: {e}")
+    except Exception:
+        logger.exception("Error getting residue range")
         self.box_res_id.setRange(0, 0)
         self.box_res_id.setValue(0)
 
