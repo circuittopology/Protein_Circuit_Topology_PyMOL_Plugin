@@ -1,0 +1,112 @@
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "F",      # Pyflakes (Staticcheck/Revive equivalent)
+    "E", "W", # pycodestyle (Whitespace/Gofmt equivalent)
+    "I",      # isort (GCI/Goimports equivalent)
+    "N",      # pep8-naming (Revive var-naming equivalent)
+    "UP",     # pyupgrade (Modernization)
+    "YTT",    # flake8-2020
+    "ASYNC",  # flake8-async (Noctx/Contextcheck equivalent)
+    "S",      # flake8-bandit (Gosec equivalent)
+    "BLE",    # flake8-blind-except (Errcheck equivalent)
+    "B",      # flake8-bugbear (Gocritic/Staticcheck equivalent)
+    "A",      # flake8-builtins
+    "COM",    # flake8-commas (Formatting)
+    "C4",     # flake8-comprehensions
+    "DTZ",    # flake8-datetimez
+    "T10",    # flake8-debugger
+    "EM",     # flake8-errmsg (Errorlint equivalent)
+    "EXE",    # flake8-executable
+    "FA",     # flake8-future-annotations
+    "ISC",    # flake8-implicit-str-concat
+    "ICN",    # flake8-import-conventions
+    "LOG",    # flake8-logging (Sloglint equivalent)
+    "G",      # flake8-logging-format
+    "INP",    # flake8-no-pep420
+    "PIE",    # flake8-pie (Gocritic equivalent)
+    "T20",    # flake8-print (Goprintffuncname/Sloglint equivalent)
+    "PYI",    # flake8-pyi
+    "PT",     # flake8-pytest-style (Testifylint/Thelper equivalent)
+    "Q",      # flake8-quotes
+    "RSE",    # flake8-raise
+    "RET",    # flake8-return (Nakedret equivalent)
+    "SLOT",   # flake8-slots
+    "SIM",    # flake8-simplify (Gocritic equivalent)
+    "TID",    # flake8-tidy-imports (Importas/Gomodguard equivalent)
+    "TC",     # flake8-type-checking
+    "INT",    # flake8-gettext
+    "ARG",    # flake8-unused-arguments (Unparam equivalent)
+    "PTH",    # flake8-use-pathlib
+    "TD",     # flake8-todos
+    "FIX",    # flake8-fixme
+    "ERA",    # eradicate (Commented out code - like Gocritic/Dogsled)
+    "PD",     # pandas-vet
+    "PL",     # Pylint (Revive/Staticcheck equivalent)
+    "TRY",    # tryceratops (Errorlint equivalent)
+    "FLY",    # flynt
+    "PERF",   # Perflint (Perfsprint equivalent)
+    "FURB",   # refurb
+    "LOG",    # flake8-logging
+    "RUF",    # Ruff-specific rules
+    "AIR3",    # Airflow v3
+]
+
+ignore = [
+    "E501",   # Line too long (handled by ruff format)
+    "S101",   # Use of assert (standard in tests)
+    "D",      # Ignore Pydocstyle
+    "TD002",  # Missing author in TODO
+    "TD003",  # Missing issue link in TODO
+    "FIX002", # Line contains TODO
+    "E402",   # wrong-import-position, 
+    "PLC0415", # import-outside-toplevel, Airflow DAGs require heavier imports to be inside functions for fast parsing every 20-30 seconds.
+]
+
+[tool.ruff.lint.isort]
+# Mirroring GCI sections (Standard -> First Party -> Default)
+known-first-party = ["dags"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 20
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.coverage.run]
+source = ["dags"]
+omit = [
+    "dags/**/__init__.py",
+    "dags/**/__pycache__/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+precision = 2
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
+
+[tool.coverage.json]
+pretty_print = true
+
+[tool.pylint.master]
+ignore = [".venv", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox", "build", "dist"]
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+    "import-error",
+    "no-name-in-module",
+    "wrong-import-position",
+    "import-outside-toplevel",
+]

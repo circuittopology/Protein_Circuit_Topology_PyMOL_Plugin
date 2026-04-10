@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 # Setup for the plugin
 setup(
@@ -7,5 +7,5 @@ setup(
     description = "PyMOL plugin for Circuit Topology GUI",
     author="LACDR",
     packages=find_packages(),
-    install_requires=['numpy', 'pandas', 'matplotlib', 'pyqt', 'biopython'],
+    install_requires=["numpy", "pandas", "matplotlib", "pyqt", "biopython"],
 )
