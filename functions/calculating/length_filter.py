@@ -9,15 +9,15 @@ import numpy as np
 
 def length_filter(index: np.ndarray, distance: int, mode: str = '<') -> np.ndarray:
     """
-    Applies a length filter to an existing residue contact map index.
-    
+    Filters contact indices based on sequence separation distance.
+
     Args:
-        index: An array of contact indices.
-        distance: The distance to filter by.
-        mode: The filtering mode ('<' for less than or equal to, '>' for greater than or equal to).
-        
+        index (numpy.ndarray): Array of contact indices.
+        distance (int): The distance threshold for filtering.
+        mode (str, optional): The filtering mode ('<' for less than or equal to, '>' for greater than or equal to). Defaults to '<'.
+
     Returns:
-        The filtered array of contact indices.
+        numpy.ndarray: The filtered array of contact indices.
     """
     if index.shape == (0,):
         print('Error - index empty')

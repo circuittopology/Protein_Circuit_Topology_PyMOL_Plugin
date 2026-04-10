@@ -1,21 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def local_topology_plot(index: np.ndarray, mat: np.ndarray, numbering: np.ndarray, protid: str, siteid: int, relation: str) -> None:
-        """
-        Generates plots for local topology showing specific contact relationships.
-        
-        Args:
-            index: An array of contact indices.
-            mat: The topological relationships matrix.
-            numbering: The residue numbering array.
-            protid: The protein ID.
-            siteid: The specific site (residue) ID to plot for.
-            relation: The type of relationship ('X', 'S', 'P', 'IP').
-        """
+def local_topology_plot(index,mat,numbering,protid,siteid,relation):
         plt.ion()
-        nseg = len(numbering)
-        segment = list(range(0,nseg))  
         ax = plt.subplots()[1]
         plt.plot()
         plt.xlim(0,len(numbering)+1)
@@ -41,8 +28,6 @@ def local_topology_plot(index: np.ndarray, mat: np.ndarray, numbering: np.ndarra
                         color ='k')
         
         plt.ion()
-        nseg = len(numbering)
-        segment = list(range(0,nseg))  
         ax = plt.subplots()[1]
         plt.plot()
         plt.xlim(0,len(numbering)+1)
@@ -78,8 +63,6 @@ def local_topology_plot(index: np.ndarray, mat: np.ndarray, numbering: np.ndarra
                         color ='k')
                         
         plt.ion()
-        nseg = len(numbering)
-        segment = list(range(0,nseg))  
         ax = plt.subplots()[1]
         plt.plot()
         plt.xlim(0,len(numbering)+1)

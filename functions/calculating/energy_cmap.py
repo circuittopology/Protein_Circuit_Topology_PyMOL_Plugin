@@ -9,25 +9,30 @@ input   =   indices of contact map, array of residue ID's, list of residue names
             4 letter protein id, energy filter type
 output  =   indices of filtered contact map, protein ID 
 """
-from typing import List, Tuple
-import numpy as np
 import os
+from typing import Tuple
+import numpy as np
 
-def energy_cmap(index: np.ndarray, numbering: np.ndarray, res_names: List[str], protid: str, potential_sign: str = '-') -> Tuple[np.ndarray, str]:
+def energy_cmap(
+    index: np.ndarray,
+    numbering: np.ndarray,
+    res_names: list[str],
+    protid: str,
+    potential_sign: str = '-'
+) -> Tuple[np.ndarray, str]:
     """
-    Applies an energy filter on an existing Residue contact map.
-    
+    Applies an energy filter to an existing residue contact map based on a potential matrix.
+
     Args:
-        index: An array of contact indices.
-        numbering: The residue numbering array.
-        res_names: List of residue names.
-        protid: The protein ID.
-        potential_sign: The energy filter type ('-' or '+').
-        
+        index (numpy.ndarray): Array of contact indices.
+        numbering (list or numpy.ndarray): List of residue numbers/identifiers.
+        res_names (list): List of residue names corresponding to the numbering.
+        protid (str): Protein identifier.
+        potential_sign (str, optional): The sign of the potential to filter by ('+' or '-'). Defaults to '-'.
+
     Returns:
-        A tuple containing the indices of the filtered contact map and the updated protein ID.
+        tuple: A tuple containing the filtered contact indices (numpy.ndarray) and the updated protein identifier (str).
     """
-    
     #Checking if contacts are present
     if index.shape == (0,):
         print('Energy filtering failed - Empty index')
@@ -43,7 +48,7 @@ def energy_cmap(index: np.ndarray, numbering: np.ndarray, res_names: List[str], 
     numbering = np.array([numbering]).T
 
     res_names = np.array(res_names)
-    
+
     resnames1 = res_names[y]
     resnames2 = res_names[x]
 
@@ -69,9 +74,9 @@ def energy_cmap(index: np.ndarray, numbering: np.ndarray, res_names: List[str], 
     energy_cmap = np.zeros([len(numbering),len(numbering)],'float')
 
     for i in range(0,len(x)):
-            score = potential_matrix[aamap == resnames1[i],aamap == resnames2[i]][0]
-            energy_cmap[x[i]][y[i]] = score
-            energy_cmap[y[i]][x[i]] = score
+        score = potential_matrix[aamap == resnames1[i],aamap == resnames2[i]][0]
+        energy_cmap[x[i]][y[i]] = score
+        energy_cmap[y[i]][x[i]] = score
 
     #determine type of filtering
     if potential_sign == '+':
@@ -81,9 +86,8 @@ def energy_cmap(index: np.ndarray, numbering: np.ndarray, res_names: List[str], 
     else:
         raise TypeError
 
-    #transform into indices    
+    #transform into indices
     energy_cmap = np.transpose(np.nonzero(np.triu(energy_cmap)))
     protid = f'{protid}_{potential_sign}_ef'
 
     return energy_cmap,protid
-
