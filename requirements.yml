@@ -1,14 +1,3 @@
-channels:
-  - conda-forge
-  - anaconda
-  - salilab
-  - speleo3
-  - defaults
 dependencies:
-  - pip
-  - pandas
-  - dssp
-  - scipy
-  - ipywidgets
-  - matplotlib
-  - biopython
+  - conda-forge::pandas=2.3.3
+  - conda-forge::matplotlib=3.9.1
