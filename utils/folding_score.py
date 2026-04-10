@@ -1,49 +1,35 @@
-from .topology import get_topology_vector
 import numpy as np
 
-def get_folding_score(mat: np.ndarray, index: np.ndarray, numbering: np.ndarray) -> float:
+from utils.topology import get_topology_vector
+
+
+def get_folding_score(
+    mat: np.ndarray,
+    index: np.ndarray,
+    numbering: np.ndarray
+) -> float:
     """
     Calculate the folding score based on the given relations, using topology data.
-    
+
+    The score is the sum of the mean per-residue densities for parallel,
+    series, and crossover contact types.
+
     Args:
-        mat: Topological relationships matrix.
-        index: Contact indices.
-        numbering: Residue numbering array.
-        
+        mat (numpy.ndarray): The topological relationship matrix.
+        index (numpy.ndarray): Array of contact indices.
+        numbering (list or numpy.ndarray): List of residue numbers/identifiers.
+
     Returns:
-        The calculated folding score.
+        float: The calculated folding score.
     """
-    # Get the topology vectors for parallel, series, and crossover relations
     parallel_relations = get_topology_vector(mat, index, 'P', numbering)
     series_relations = get_topology_vector(mat, index, 'S', numbering)
     crossover_relations = get_topology_vector(mat, index, 'X', numbering)
 
-    # Calculate averages for P, S, and X across the trajectoryif len(parallel_relations) > 0:
-    if len(parallel_relations) > 0:
-        avg_parallel = sum(parallel_relations) / len(parallel_relations)
-    else:
-        avg_parallel = 0
+    avg_parallel = np.mean(parallel_relations) if len(parallel_relations) > 0 else 0.0
+    avg_series = np.mean(series_relations) if len(series_relations) > 0 else 0.0
+    avg_crossover = np.mean(crossover_relations) if len(crossover_relations) > 0 else 0.0
 
-    print("avg_parallel:", avg_parallel)
-
-    if len(series_relations) > 0:
-        avg_series = sum(series_relations) / len(series_relations)
-    else:
-        avg_series = 0
-
-    if len(crossover_relations) > 0:
-        avg_crossover = sum(crossover_relations) / len(crossover_relations)
-    else:
-        avg_crossover = 0
-
-    # Normalize the P, S, X values by their respective averages
-    normalized_parallel = sum(parallel_relations) / avg_parallel if avg_parallel != 0 else 0
-    normalized_series = sum(series_relations) / avg_series if avg_series != 0 else 0
-    normalized_crossover = sum(crossover_relations) / avg_crossover if avg_crossover != 0 else 0
-
-    # Folding score calculation
-    folding_score = normalized_parallel + normalized_series + normalized_crossover
-
-    print("Final folding_score:", folding_score)
+    folding_score = float(avg_parallel + avg_series + avg_crossover)
 
     return folding_score

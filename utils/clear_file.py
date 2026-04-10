@@ -1,12 +1,14 @@
-from pymol import cmd
-from pymol.Qt import QtWidgets
+from typing import Any
 
-def clear_selected_single_file(self: QtWidgets.QWidget) -> None:
+from pymol import cmd
+
+
+def clear_selected_single_file(self: Any) -> None:
     """
-    Clears the selected single file from PyMOL and UI.
-    
+    Clears the currently selected single file and updates the UI.
+
     Args:
-        self: The QtWidget object (CTDialog instance) calling this function.
+        self: The main GUI class instance.
     """
     if hasattr(self, "selected_obj_name") and cmd.object_exists(self.selected_obj_name):
         cmd.delete(self.selected_obj_name)
@@ -15,12 +17,12 @@ def clear_selected_single_file(self: QtWidgets.QWidget) -> None:
     self.dropdown_objects.setCurrentIndex(0)
     self.update_list()
 
-def clear_selected_local_file(self: QtWidgets.QWidget) -> None:
+def clear_selected_local_file(self: Any) -> None:
     """
-    Clears the selected local file from PyMOL and UI.
-    
+    Clears the currently selected local file and updates the UI.
+
     Args:
-        self: The QtWidget object (CTDialog instance) calling this function.
+        self: The main GUI class instance.
     """
     if hasattr(self, "local_selected_obj_name") and cmd.object_exists(self.local_selected_obj_name):
         cmd.delete(self.local_selected_obj_name)
