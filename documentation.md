@@ -1,8 +1,8 @@
 # Protein Circuit Topology Plugin - Complete API Documentation
 
-This document reflects the **current source tree** and lists callable entry points by module category.
+This document reflects the **current plugin/runtime source tree** and lists callable entry points by module category.
 
-**Total Callable Entry Points:** 112
+**Total Callable Entry Points:** 118
 **Python Files With Callables:** 37
 
 ## Table of Contents
@@ -12,8 +12,8 @@ This document reflects the **current source tree** and lists callable entry poin
 3. [Importing Functions](#importing-functions) (1 functions)
 4. [Exporting Functions](#exporting-functions) (3 functions)
 5. [Analysis Functions](#analysis-functions) (6 functions)
-6. [Utility Functions](#utility-functions) (36 functions)
-7. [GUI Functions](#gui-functions) (43 functions)
+6. [Utility Functions](#utility-functions) (41 functions)
+7. [GUI Functions](#gui-functions) (44 functions)
 8. [Initialization Functions](#initialization-functions) (11 functions)
 
 ## Calculating Functions
@@ -22,37 +22,37 @@ This document reflects the **current source tree** and lists callable entry poin
 
 **Module:** `functions/calculating/energy_cmap.py`
 
-Applies an energy filter on an existing Residue contact map.
+Applies an energy filter to an existing residue contact map based on a potential matrix.
 
 ### `get_cmap(chain, level='chain', cutoff_distance=4.5, cutoff_numcontacts=5, exclude_neighbour=3)`
 
 **Module:** `functions/calculating/get_cmap.py`
 
-Creates a residue-residue contact map for a given chain or model.
+Creates a residue-residue contact map (as a list of contacts) for a single chain or a whole model.
 
 ### `get_matrix(index, protid)`
 
 **Module:** `functions/calculating/get_matrix.py`
 
-Creates a topological relationship matrix for a Residue contact map.
+Creates a topological relationship matrix for a residue contact map.
 
 ### `get_stats(mat)`
 
 **Module:** `functions/calculating/get_stats.py`
 
-Calculates the percentage of entangled contacts further along the diagonal.
+Calculates the percentage of entangled contacts (Parallel and Cross) further along the diagonal.
 
 ### `length_filter(index, distance, mode='<')`
 
 **Module:** `functions/calculating/length_filter.py`
 
-Applies a length filter to an existing residue contact map index.
+Filters contact indices based on sequence separation distance.
 
 ### `local_ct(index, mat, numbering)`
 
 **Module:** `functions/calculating/local_ct.py`
 
-Calculates the local circuit topology parameters.
+Calculates local circuit topology statistics for each residue.
 
 ## Plotting Functions
 
@@ -60,37 +60,33 @@ Calculates the local circuit topology parameters.
 
 **Module:** `functions/plots/circuit_plot.py`
 
-Creates a residue contact map plot.
+Plots the circuit topology of a protein as a series of arcs.
 
 ### `local_topology_plot(index, mat, numbering, protid, siteid, relation)`
 
 **Module:** `functions/plots/local_topology_plot.py`
 
-Generates plots for local topology showing specific contact relationships.
-
 ### `matrix_plot(mat, protid)`
 
 **Module:** `functions/plots/matrix_plot.py`
 
-Creates a topological relations matrix plot for a single chain.
+Plots the topological relationship matrix for a single chain.
 
 ### `matrix_plot_model(mat, protid)`
 
 **Module:** `functions/plots/matrix_plot_model.py`
 
-Creates a topological relations matrix plot for a whole model.
+Plots the topological relationship matrix for a whole model (multiple chains).
 
 ### `autopct_funct(pct)`
 
 **Module:** `functions/plots/stats_plot.py`
 
-Format string for pie chart percentages.
-
 ### `stats_plot(entangled, psc, protid)`
 
 **Module:** `functions/plots/stats_plot.py`
 
-Plots the amount of psc and entangled contacts.
+Plots the fraction of entangled contacts versus distance from
 
 ## Importing Functions
 
@@ -98,7 +94,7 @@ Plots the amount of psc and entangled contacts.
 
 **Module:** `functions/importing/retrieve_chain.py`
 
-Retrieves a Chain object from a PDB or CIF file.
+Retrieves a specific chain from a PDB or MMCIF file.
 
 ## Exporting Functions
 
@@ -106,19 +102,19 @@ Retrieves a Chain object from a PDB or CIF file.
 
 **Module:** `functions/exporting/export_cmap3.py`
 
-Transforms Residue contact map indices to a contact map and exports it to a csv file.
+Exports a residue contact map (as a binary matrix) to a CSV file.
 
 ### `export_mat(index, mat, protid, output_dir)`
 
 **Module:** `functions/exporting/export_mat.py`
 
-Exports a topological relations matrix to a csv.
+Exports the topological relationship matrix to a CSV file.
 
 ### `export_psc(psclist, output_dir)`
 
 **Module:** `functions/exporting/export_psc.py`
 
-Exports amount of PSC contacts to a csv file.
+Exports the counts of Parallel, Series, and Cross contacts (and others) to a CSV file.
 
 ## Analysis Functions
 
@@ -126,37 +122,37 @@ Exports amount of PSC contacts to a csv file.
 
 **Module:** `analysis/local_ct_analysis.py`
 
-Runs the local circuit topology analysis.
+Runs the local circuit topology analysis based on user-selected parameters.
 
 ### `run_multi_analysis(self)`
 
 **Module:** `analysis/multiple_file_analysis.py`
 
-Runs analysis across multiple files or trajectory frames.
+Runs the multi-file circuit topology analysis.
 
 ### `run_standard_analysis(self)`
 
 **Module:** `analysis/single_file_analysis.py`
 
-Runs the standard circuit topology analysis for a single file.
+Runs the standard single-file circuit topology analysis.
 
 ### `run_single_frame_analysis(self)`
 
 **Module:** `analysis/single_frame_analysis.py`
 
-Runs analysis for a single frame of a trajectory.
+Runs circuit topology analysis for a single frame of a trajectory or a single PDB file from a directory.
 
 ### `toggle_frame_controls(self, enabled)`
 
 **Module:** `analysis/single_frame_analysis.py`
 
-Enables or disables single frame analysis controls.
+Toggles the enabled state of the frame selector and run button.
 
 ### `visualize_molecule(self, contact_type)`
 
 **Module:** `analysis/visualization.py`
 
-Visualizes the topology on the molecule inside PyMOL.
+Visualizes the circuit topology on the selected molecule in PyMOL by coloring residues based on contact density.
 
 ## Utility Functions
 
@@ -164,55 +160,57 @@ Visualizes the topology on the molecule inside PyMOL.
 
 **Module:** `utils/clear_file.py`
 
-Clears the selected local file from PyMOL and UI.
+Clears the currently selected local file and updates the UI.
 
 ### `clear_selected_single_file(self)`
 
 **Module:** `utils/clear_file.py`
 
-Clears the selected single file from PyMOL and UI.
+Clears the currently selected single file and updates the UI.
+
+### `_choose_output_dir(self, attr_name, label)`
+
+**Module:** `utils/directory.py`
+
+Shared helper: open a directory dialog and store the result.
+
+### `_load_structure_file(self, label, attr_file, attr_obj)`
+
+**Module:** `utils/directory.py`
+
+Shared helper: open a file dialog, load into PyMOL, check for non-polymer atoms.
 
 ### `choose_file(self)`
 
 **Module:** `utils/directory.py`
 
-Opens a file dialog to select an input structure file.
-
 ### `choose_input_dir_multi(self)`
 
 **Module:** `utils/directory.py`
 
-Opens a dialog to choose a multi-file input directory.
+Opens directory dialog to select the input directory containing PDBs for multi-file analysis.
 
 ### `choose_local_file(self)`
 
 **Module:** `utils/directory.py`
 
-Opens a file dialog to select a local input structure file.
-
 ### `choose_local_output_dir(self)`
 
 **Module:** `utils/directory.py`
-
-Opens a dialog to choose a local output directory.
 
 ### `choose_output_dir(self)`
 
 **Module:** `utils/directory.py`
 
-Opens a dialog to choose an output directory.
-
 ### `choose_output_dir_multi(self)`
 
 **Module:** `utils/directory.py`
-
-Opens a dialog to choose a multi-file output directory.
 
 ### `set_label_text_elided(file_path, label)`
 
 **Module:** `utils/directory.py`
 
-Sets elided text on a QLabel.
+Sets the text of a QLabel to an elided version of the file path if it's too long.
 
 ### `get_folding_score(mat, index, numbering)`
 
@@ -224,67 +222,85 @@ Calculate the folding score based on the given relations, using topology data.
 
 **Module:** `utils/get_values.py`
 
-Retrieves values from the local CT analysis GUI elements.
+Retrieves parameters for local analysis from the GUI.
 
 ### `get_multiple_values(self)`
 
 **Module:** `utils/get_values.py`
 
-Retrieves values from the multi-file analysis GUI elements.
+Retrieves parameters for multi-file analysis from the GUI.
 
 ### `get_values(self)`
 
 **Module:** `utils/get_values.py`
 
-Retrieves values from the standard analysis GUI elements.
+Retrieves parameters for single-file analysis from the GUI.
 
 ### `get_vis_vals(self)`
 
 **Module:** `utils/get_values.py`
 
-Retrieves values from the visualization GUI elements.
+Retrieves visualization parameters from the GUI.
+
+### `_poll_pymol_objects(self)`
+
+**Module:** `utils/helpers.py`
+
+Single poll that refreshes both object dropdowns from one cmd call.
 
 ### `init_timers(self)`
 
 **Module:** `utils/helpers.py`
 
-Initializes timers for updating lists.
+Initializes timers for updating object lists.
 
 ### `make_info_button(tooltip)`
 
 **Module:** `utils/helpers.py`
 
-Creates an info button with a tooltip.
+Creates a small info button with a tooltip.
+
+### `make_param_row(label_text, tooltip, spinbox)`
+
+**Module:** `utils/helpers.py`
+
+Create a standard parameter row layout with label, info button, and spinbox.
 
 ### `object_exists(name)`
 
 **Module:** `utils/helpers.py`
 
-Checks if a given object name exists in PyMOL.
+Checks if a PyMOL object exists.
+
+### `temp_pdb_export(selection, state=None)`
+
+**Module:** `utils/helpers.py`
+
+Save a PyMOL selection to a temporary PDB file, yield the path, then clean up.
 
 ### `update_chain_combo_box(self)`
 
 **Module:** `utils/helpers.py`
 
-Updates the chain combo box with current chain residues.
+Updates the chain combo box with the chains available in the currently selected object.
 
 ### `has_non_polymer_atoms()`
 
 **Module:** `utils/non_polymer.py`
 
-Checks if there are any non-polymer atoms in PyMOL.
+Checks if there are any non-polymer atoms in the PyMOL session.
 
 ### `new_file_has_non_polymer_atoms(obj_name)`
 
 **Module:** `utils/non_polymer.py`
 
-Checks if a newly loaded file has non-polymer atoms.
+Checks if a specific object contains non-polymer atoms.
 
 ### `remove_non_polymer_atoms()`
 
 **Module:** `utils/non_polymer.py`
 
-Removes non-polymer atoms from all objects in PyMOL.
+Removes all non-polymer atoms from the PyMOL session.
 
 ### `show_warning_dialog(self)`
 
@@ -296,85 +312,85 @@ Shows a warning dialog before removing non-polymer atoms.
 
 **Module:** `utils/object_change.py`
 
-Handles changes in the selected local object.
+Handles changes to the selected object in the local analysis tab.
 
 ### `handle_standard_object_change(self, obj_name)`
 
 **Module:** `utils/object_change.py`
 
-Handles changes in the selected standard object.
+Handles changes to the selected object in the standard analysis tab.
 
 ### `get_residue_range(self, obj_name)`
 
 **Module:** `utils/residues.py`
 
-Gets the residue range for a specific object.
+Retrieves the residue range for each chain in the specified object.
 
 ### `update_residue_range(self)`
 
 **Module:** `utils/residues.py`
 
-Updates the UI residue range based on the selected chain.
+Updates the residue range spinbox based on the currently selected chain.
 
 ### `color_by_topology(molecule_name, topology_vector, numbering, topology_type)`
 
 **Module:** `utils/topology.py`
 
-Function that takes the topology vector from the get_topology_vector function and
+Colors a PyMOL object based on a topology vector.
 
 ### `get_topology_vector(mat, index, topology_type, numbering)`
 
 **Module:** `utils/topology.py`
 
-The get_topology_vector that Vasiliy provided that we modified to take the actual contact values
+Calculates a topology vector representing the density of a specific contact type
 
 ### `export_frames_from_traj(self)`
 
 **Module:** `utils/trajectory.py`
 
-Converts a loaded structure and trajectory into a directory of PDB frames.
+Exports each frame of the loaded trajectory as a separate PDB file.
 
 ### `select_mol_file(self)`
 
 **Module:** `utils/trajectory.py`
 
-Opens a file dialog to select a structure file (PDB/CIF) and loads it into PyMOL.
+Opens a file dialog to select a structure file (PDB or CIF) for trajectory analysis.
 
 ### `select_xtc_file(self)`
 
 **Module:** `utils/trajectory.py`
 
-Opens a file dialog to select a trajectory file and loads it into PyMOL.
+Opens a file dialog to select a trajectory file (XTC, DCD, TRR, NC).
 
-### `update_list(self)`
-
-**Module:** `utils/updates.py`
-
-Updates the list of objects from PyMOL.
-
-### `update_local_list(self)`
+### `update_list(self, new_objects=None)`
 
 **Module:** `utils/updates.py`
 
-Updates the list of local objects from PyMOL.
+Updates the list of available objects in the single-file analysis dropdown.
+
+### `update_local_list(self, new_objects=None)`
+
+**Module:** `utils/updates.py`
+
+Updates the list of available objects in the local analysis dropdown.
 
 ### `update_output_widgets(self)`
 
 **Module:** `utils/updates.py`
 
-Updates the visibility of standard analysis output widgets based on checkboxes.
+Update visibility of output widgets for single-file export options.
 
 ### `update_output_widgets_local(self)`
 
 **Module:** `utils/updates.py`
 
-Updates the visibility of local CT output widgets based on checkboxes.
+Updates the visibility of output widgets in the local analysis tab based on checkbox states.
 
 ### `update_output_widgets_multi(self)`
 
 **Module:** `utils/updates.py`
 
-Updates the visibility of multi-file output widgets based on checkboxes.
+Updates the visibility of output widgets in the multi-file analysis
 
 ## GUI Functions
 
@@ -382,13 +398,13 @@ Updates the visibility of multi-file output widgets based on checkboxes.
 
 **Module:** `__init__.py`
 
-Initializes the Protein Circuit Topology plugin.
+Initialize the plugin within PyMOL.
 
 ### `run_plugin_gui()`
 
 **Module:** `__init__.py`
 
-Runs the Protein Circuit Topology Plugin GUI.
+Create or raise the plugin GUI dialog.
 
 ### `__init__(self, parent=None)`
 
@@ -396,7 +412,15 @@ Runs the Protein Circuit Topology Plugin GUI.
 
 **Type:** `CTDialog` method
 
-Initializes the CTDialog instance.
+Construct the dialog and perform UI initialization.
+
+### `_poll_pymol_objects(self)`
+
+**Module:** `gui_class.py`
+
+**Type:** `CTDialog` method
+
+Single timer callback that refreshes both object dropdowns.
 
 ### `choose_file(self)`
 
@@ -404,7 +428,7 @@ Initializes the CTDialog instance.
 
 **Type:** `CTDialog` method
 
-Opens a dialog to choose a file.
+Open a file chooser to select a single input file (single-file tab).
 
 ### `choose_input_dir_multi(self)`
 
@@ -412,7 +436,7 @@ Opens a dialog to choose a file.
 
 **Type:** `CTDialog` method
 
-Opens a dialog to choose a multiple input directory.
+Open a directory chooser for selecting multiple input files (multi-file).
 
 ### `choose_local_file(self)`
 
@@ -420,7 +444,7 @@ Opens a dialog to choose a multiple input directory.
 
 **Type:** `CTDialog` method
 
-Opens a dialog to choose a local file.
+Open a file chooser to select a local PDB/file for local analysis.
 
 ### `choose_local_output_dir(self)`
 
@@ -428,7 +452,7 @@ Opens a dialog to choose a local file.
 
 **Type:** `CTDialog` method
 
-Opens a dialog to choose a local output directory.
+Open a directory chooser for specifying the output folder (local analysis).
 
 ### `choose_output_dir(self)`
 
@@ -436,7 +460,7 @@ Opens a dialog to choose a local output directory.
 
 **Type:** `CTDialog` method
 
-Opens a dialog to choose an output directory.
+Open a directory chooser for specifying the output folder (single-file).
 
 ### `choose_output_dir_multi(self)`
 
@@ -444,7 +468,7 @@ Opens a dialog to choose an output directory.
 
 **Type:** `CTDialog` method
 
-Opens a dialog to choose a multiple output directory.
+Open a directory chooser for specifying the output folder (multi-file).
 
 ### `clear_selected_local_file(self)`
 
@@ -452,7 +476,7 @@ Opens a dialog to choose a multiple output directory.
 
 **Type:** `CTDialog` method
 
-Clears the currently selected local file.
+Clear the selected local file control value(s).
 
 ### `clear_selected_single_file(self)`
 
@@ -460,7 +484,7 @@ Clears the currently selected local file.
 
 **Type:** `CTDialog` method
 
-Clears the currently selected single file.
+Clear the selected single-file control value(s).
 
 ### `export_frames_from_traj(self)`
 
@@ -468,7 +492,7 @@ Clears the currently selected single file.
 
 **Type:** `CTDialog` method
 
-Exports frames from a trajectory.
+Export frames from an opened trajectory according to UI parameters.
 
 ### `get_local_values(self)`
 
@@ -476,7 +500,7 @@ Exports frames from a trajectory.
 
 **Type:** `CTDialog` method
 
-Retrieves and processes local values.
+Return settings from the local analysis tab UI controls.
 
 ### `get_multiple_values(self)`
 
@@ -484,7 +508,7 @@ Retrieves and processes local values.
 
 **Type:** `CTDialog` method
 
-Retrieves and processes multiple values.
+Return settings from the multi-file analysis tab UI controls.
 
 ### `get_residue_range(self, obj_name=None)`
 
@@ -492,7 +516,7 @@ Retrieves and processes multiple values.
 
 **Type:** `CTDialog` method
 
-Gets the residue range for the selected object.
+Request the residue range for an object and update the UI.
 
 ### `get_values(self)`
 
@@ -500,7 +524,7 @@ Gets the residue range for the selected object.
 
 **Type:** `CTDialog` method
 
-Retrieves and processes standard values.
+Return settings from the single-file tab UI controls.
 
 ### `get_vis_vals(self)`
 
@@ -508,7 +532,7 @@ Retrieves and processes standard values.
 
 **Type:** `CTDialog` method
 
-Retrieves visualization values.
+Return visualization-specific values from the UI.
 
 ### `handle_local_object_change(self, obj_name=None)`
 
@@ -516,7 +540,7 @@ Retrieves visualization values.
 
 **Type:** `CTDialog` method
 
-Handles changes in the selected local object.
+Handle changes in the local object dropdown.
 
 ### `handle_standard_object_change(self, obj_name=None)`
 
@@ -524,7 +548,7 @@ Handles changes in the selected local object.
 
 **Type:** `CTDialog` method
 
-Handles changes in the selected standard object.
+Handle changes in the standard object dropdown.
 
 ### `init_local_tab(self)`
 
@@ -532,7 +556,7 @@ Handles changes in the selected standard object.
 
 **Type:** `CTDialog` method
 
-Initializes the local tab UI.
+Initialize widgets and layout for the local analysis tab.
 
 ### `init_multi_file_tab(self)`
 
@@ -540,7 +564,7 @@ Initializes the local tab UI.
 
 **Type:** `CTDialog` method
 
-Initializes the multi-file tab UI.
+Initialize widgets and layout for the multi-file analysis tab.
 
 ### `init_single_file_tab(self)`
 
@@ -548,7 +572,7 @@ Initializes the multi-file tab UI.
 
 **Type:** `CTDialog` method
 
-Initializes the single file tab UI.
+Initialize widgets and layout for the single-file analysis tab.
 
 ### `init_timers(self)`
 
@@ -556,7 +580,7 @@ Initializes the single file tab UI.
 
 **Type:** `CTDialog` method
 
-Initializes application timers.
+Initialize any repeating timers used by the GUI (e.g., polling PyMOL state).
 
 ### `init_ui(self)`
 
@@ -564,7 +588,7 @@ Initializes application timers.
 
 **Type:** `CTDialog` method
 
-Sets up the initial user interface elements.
+Create the top-level tab widget and initialize each feature tab.
 
 ### `run_local_ct(self)`
 
@@ -572,7 +596,7 @@ Sets up the initial user interface elements.
 
 **Type:** `CTDialog` method
 
-Runs the local circuit topology analysis.
+Run local circuit-topology analysis using current local-tab settings.
 
 ### `run_multi_analysis(self)`
 
@@ -580,7 +604,7 @@ Runs the local circuit topology analysis.
 
 **Type:** `CTDialog` method
 
-Runs multiple file analysis.
+Run the batch multi-file analysis flow.
 
 ### `run_single_frame_analysis(self)`
 
@@ -588,7 +612,7 @@ Runs multiple file analysis.
 
 **Type:** `CTDialog` method
 
-Runs the single frame analysis.
+Run an analysis for the currently selected single frame.
 
 ### `run_standard_analysis(self)`
 
@@ -596,7 +620,7 @@ Runs the single frame analysis.
 
 **Type:** `CTDialog` method
 
-Runs the standard circuit topology analysis.
+Run the standard single-file analysis flow using current UI settings.
 
 ### `select_mol_file(self)`
 
@@ -604,7 +628,7 @@ Runs the standard circuit topology analysis.
 
 **Type:** `CTDialog` method
 
-Selects a molecule file.
+Select a molecular file used by the trajectory tools.
 
 ### `select_xtc_file(self)`
 
@@ -612,7 +636,7 @@ Selects a molecule file.
 
 **Type:** `CTDialog` method
 
-Selects an XTC trajectory file.
+Select an XTC (trajectory) file used by the trajectory tools.
 
 ### `show_warning_dialog(self)`
 
@@ -620,7 +644,7 @@ Selects an XTC trajectory file.
 
 **Type:** `CTDialog` method
 
-Shows a warning dialog for non-polymer selections.
+Display a warning dialog when a non-polymeric selection is detected.
 
 ### `toggle_frame_controls(self, enabled)`
 
@@ -628,7 +652,7 @@ Shows a warning dialog for non-polymer selections.
 
 **Type:** `CTDialog` method
 
-Toggles frame controls.
+Enable or disable UI controls that affect frame selection.
 
 ### `update_chain_combo_box(self)`
 
@@ -636,7 +660,7 @@ Toggles frame controls.
 
 **Type:** `CTDialog` method
 
-Updates the chain combo box choices.
+Refresh the chain selection combobox based on the currently selected object.
 
 ### `update_list(self)`
 
@@ -644,7 +668,7 @@ Updates the chain combo box choices.
 
 **Type:** `CTDialog` method
 
-Updates the general list.
+Refresh the object list shown in the single-file tab.
 
 ### `update_local_list(self)`
 
@@ -652,7 +676,7 @@ Updates the general list.
 
 **Type:** `CTDialog` method
 
-Updates the local list.
+Refresh the object list shown in the local-analysis tab.
 
 ### `update_output_widgets(self)`
 
@@ -660,7 +684,7 @@ Updates the local list.
 
 **Type:** `CTDialog` method
 
-Updates general output widgets.
+Update widgets that display or depend on the output path (single-file).
 
 ### `update_output_widgets_local(self)`
 
@@ -668,7 +692,7 @@ Updates general output widgets.
 
 **Type:** `CTDialog` method
 
-Updates local output widgets.
+Update widgets that display or depend on the output path (local-analysis).
 
 ### `update_output_widgets_multi(self)`
 
@@ -676,7 +700,7 @@ Updates local output widgets.
 
 **Type:** `CTDialog` method
 
-Updates multi-file output widgets.
+Update widgets that display or depend on the output path (multi-file).
 
 ### `update_residue_range(self)`
 
@@ -684,7 +708,7 @@ Updates multi-file output widgets.
 
 **Type:** `CTDialog` method
 
-Updates the displayed residue range.
+Apply the current residue-range widget values to the model or internal state.
 
 ### `visualize_molecule(self, contact_type)`
 
@@ -692,25 +716,25 @@ Updates the displayed residue range.
 
 **Type:** `CTDialog` method
 
-Visualizes the molecule based on contact type.
+Trigger molecule visualization in PyMOL.
 
 ### `init_local_tab(self)`
 
 **Module:** `tabs/local_tab.py`
 
-Initializes the local tab interface.
+Initializes the 'Local Circuit Topology' tab in the GUI.
 
 ### `init_multi_file_tab(self)`
 
 **Module:** `tabs/multiple_file_tab.py`
 
-Initializes the multi-file tab interface.
+Initializes the 'Multi-File Analysis' tab in the GUI.
 
 ### `init_single_file_tab(self)`
 
 **Module:** `tabs/single_file_tab.py`
 
-Initializes the single-file tab interface.
+Initializes the 'Single-File Analysis' tab in the GUI.
 
 ## Initialization Functions
 
@@ -718,67 +742,67 @@ Initializes the single-file tab interface.
 
 **Module:** `initialization_checks.py`
 
-Checks to see if the necessary packages are installed.
+Checks if the required packages are installed in the current environment.
 
 ### `conda_init(user_install)`
 
 **Module:** `initialization_checks.py`
 
-Initializes conda in powershell.
+Initializes conda for PowerShell.
 
 ### `get_requirements(req_path)`
 
 **Module:** `initialization_checks.py`
 
-Gets the required packages from the yml file.
+Parses the requirements.yml file to get a list of required packages.
 
-### `install_failed(reqs=requirements_file)`
+### `install_failed(reqs=REQUIREMENTS_FILE)`
 
 **Module:** `initialization_checks.py`
 
-Give instructions on how to install dependencies if installation fails.
+Prints instructions for manual installation of dependencies if automated installation fails.
 
 ### `is_conda_installed()`
 
 **Module:** `initialization_checks.py`
 
-Checks to see if conda is installed on the system.
+Checks if conda is installed on the system.
 
 ### `is_path_user(path)`
 
 **Module:** `initialization_checks.py`
 
-Checks if a path is system or user.
+Checks if a given path is within the user's home directory.
 
 ### `linux_install(env=LINUX_ENV_FIXED, reqs=LINUX_REQS_FIXED)`
 
 **Module:** `initialization_checks.py`
 
-Linux install.
+Performs installation on Linux.
 
-### `mac_install(env=pymol_env, reqs=requirements_file)`
-
-**Module:** `initialization_checks.py`
-
-Mac install.
-
-### `pymol_install(env=pymol_env, reqs=requirements_file)`
+### `mac_install(env=PYMOL_ENV, reqs=REQUIREMENTS_FILE)`
 
 **Module:** `initialization_checks.py`
 
-Tries install with pymol terminal.
+Performs installation on macOS using pip.
+
+### `pymol_install(env=PYMOL_ENV, reqs=REQUIREMENTS_FILE)`
+
+**Module:** `initialization_checks.py`
+
+Attempts to install dependencies using the PyMOL terminal and conda.
 
 ### `register_pymol_functions()`
 
 **Module:** `initialization_checks.py`
 
-Register functions as PyMOL commands.
+Register the plugin's core functions as PyMOL commands.
 
-### `win_install(env=pymol_env, reqs=requirements_file)`
+### `win_install(env=PYMOL_ENV, reqs=REQUIREMENTS_FILE)`
 
 **Module:** `initialization_checks.py`
 
-Windows install.
+Performs installation on Windows using PowerShell and conda.
 
 ## Function Statistics
 
@@ -787,14 +811,9 @@ Windows install.
 - **Importing Functions**: 1
 - **Exporting Functions**: 3
 - **Analysis Functions**: 6
-- **Utility Functions**: 36
-- **GUI Functions**: 43
+- **Utility Functions**: 41
+- **GUI Functions**: 44
 - **Initialization Functions**: 11
-- **Total**: 112
+- **Total**: 118
 
-## Notes
-
-- `initialization_checks.register_pymol_functions` currently imports several legacy modules that are not present in this tree (for example `string_pdb`, `secondary_struc_cmap`, `retrieve_cif`, and `export_circuit`).
-- This documentation intentionally lists only callables defined in files currently present in the project.
-
-*Last Updated: April 09, 2026*
+*Last Updated: April 10, 2026*
