@@ -12,10 +12,10 @@ strategies and prints human-readable diagnostics to assist users when
 manual intervention is necessary.
 """
 
-import os
-from pathlib import Path
-import sys
+import logging
 import platform
+import sys
+from pathlib import Path
 
 from pymol.plugins import addmenuitemqt
 
@@ -23,38 +23,48 @@ PROJECT_ROOT = Path(__file__).resolve().parents[0]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from initialization_checks import (  # noqa: E402
-    register_pymol_functions,
-    install_failed,
-    get_requirements,
+from initialization_checks import (
+    PYMOL_ENV,
+    REQUIREMENTS_FILE,
     check_installed_packages,
+    get_requirements,
+    install_failed,
     is_path_user,
+    linux_install,
+    mac_install,
     pymol_install,
+    register_pymol_functions,
     win_install,
-    mac_install, 
-    linux_install
 )
 
-# Determine environment and requirement locations
-PYMOL_ENV_PATH = sys.executable
-PYMOL_ENV = os.path.dirname(PYMOL_ENV_PATH)
-PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
-REQUIREMENTS_FILE = os.path.join(PLUGIN_DIR, "requirements.yml")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 
-def __init_plugin__(app=None):
+def _try_register() -> bool:
+    """Attempt to register plugin functions and add the GUI menu item."""
+    try:
+        register_pymol_functions()
+        addmenuitemqt("Protein Circuit Topology Plugin", run_plugin_gui)
+    except ImportError:
+        logger.debug("Registration failed — missing dependencies")
+        return False
+    else:
+        logger.info("ProteinCT plugin initialized")
+        return True
+
+
+def __init_plugin__(app=None):  # noqa: ARG001, N807
     """
     Initialize the plugin within PyMOL.
 
     This function is invoked by PyMOL when the plugin is loaded. It tries the
     following steps, in order:
-      1. Parse requirements and determine what is missing.
-      2. Register PyMOL commands if possible.
-      3. If registration fails, attempt to install dependencies using:
+      1. Register PyMOL commands if dependencies are already present.
+      2. If registration fails, attempt to install dependencies using:
          - PyMOL's internal conda (via `pymol_install`)
          - Platform-specific installers (`win_install`, `mac_install`, `linux_install`)
-      4. If installation succeeds, register commands and add the menu item to
-         open the GUI.
+      3. If installation succeeds, register commands and add the menu item to open the GUI.
 
     Notes
     -----
@@ -62,113 +72,50 @@ def __init_plugin__(app=None):
     - The automated install path will be skipped when PyMOL is installed in a
       system location that requires admin privileges (unless running as admin).
     """
-    print("Beginning ProteinCT plugin initialization")
+    logger.info("Beginning ProteinCT plugin initialization")
 
     auto_install = True
 
-    # If developer toggles `auto_install` to False, attempt registration without installs.
-    if auto_install is False:
-        try:
-            print('Checking ProteinCT plugin initialization')
-            register_pymol_functions()
+    # Direct registration attempt (dependencies may already be present)
+    if _try_register():
+        return
 
-            addmenuitemqt('Protein Circuit Topology Plugin', run_plugin_gui)
+    if not auto_install:
+        install_failed(reqs=REQUIREMENTS_FILE)
+        return
 
-            print('ProteinCT plugin initialized')
-            return
-        except Exception:
-            install_failed(reqs=REQUIREMENTS_FILE)
-            return
-
-    # Determine installation requirements and platform
-    requirements_list = get_requirements(req_path=REQUIREMENTS_FILE)
-    _, packs = check_installed_packages(requirements_list)
-
+    # Check platform constraints for automated install
     sys_type = platform.system()
     pymol_path_user = is_path_user(PYMOL_ENV)
-    # If PyMOL is installed system-wide on non-mac platforms, automated install cannot proceed
-    if pymol_path_user is False and sys_type != "Darwin":
-        print("""PyMOL has been installed on the system environment path,
-              automated plugin install cannot occur for ProteinCT plugin.
-              """
+
+    if not pymol_path_user and sys_type != "Darwin":
+        logger.info(
+            "PyMOL is installed on the system path; "
+            "automated plugin install cannot proceed.",
         )
         install_failed(reqs=REQUIREMENTS_FILE)
         return
-    if pymol_path_user is False and sys_type == "Darwin":
-        print("""PyMOL has been installed on the system path,
-              automated install will still be attempted.
-              """
+
+    if not pymol_path_user and sys_type == "Darwin":
+        logger.info(
+            "PyMOL is installed on the system path; "
+            "automated install will still be attempted assuming admin privileges.",
         )
-        print("Assuming the user is an admin, automated install should succeed.")
 
-    # First attempt: register functions as-is (no install)
-    try:
-        print('Checking ProteinCT plugin initialization')
-        register_pymol_functions()
-        addmenuitemqt('Protein Circuit Topology Plugin', run_plugin_gui)
-        print('ProteinCT plugin initialized')
-        return
-    except Exception as e:
-        print(f'Error: {e}')
-        print(f"The following packages need to be installed for ProteinCT plugin: {packs}")
+    # Log what needs installing
+    requirements_list = get_requirements(req_path=REQUIREMENTS_FILE)
+    _, packs = check_installed_packages(requirements_list)
+    logger.info("Packages to install for ProteinCT plugin: %s", packs)
 
-        # Try using PyMOL's terminal-driven conda approach
-        result = pymol_install()
+    # Try install strategies in order: PyMOL conda, then platform-specific
+    platform_installers = {"Windows": win_install, "Darwin": mac_install}
+    strategies = [pymol_install, platform_installers.get(sys_type, linux_install)]
 
-        if result:
-            try:
-                print('Checking ProteinCT plugin initialization')
-                register_pymol_functions()
-                addmenuitemqt('Protein Circuit Topology Plugin', run_plugin_gui)
-                print('ProteinCT plugin initialized')
-                return
-            except Exception as er:
-                print(f"Error: {er}")
+    for strategy in strategies:
+        if strategy() and _try_register():
+            return
 
-    # If the above did not suffice, attempt platform-specific fallbacks
-    try:
-        print('Checking ProteinCT plugin initialization')
-        register_pymol_functions()
-        addmenuitemqt('Protein Circuit Topology Plugin', run_plugin_gui)
-        print('ProteinCT plugin initialized')
-        return
-    except Exception:
-        if sys_type == "Windows":
-            result = win_install()
-            if result:
-                try:
-                    register_pymol_functions()
-                    addmenuitemqt('Protein Circuit Topology Plugin', run_plugin_gui)
-                    print('ProteinCT plugin initialized')
-                    return
-                except Exception as er:
-                    print(f"Error: {er}")
-                    install_failed()
-                    return
-        elif sys_type == "Darwin":
-            result = mac_install()
-            if result:
-                try:
-                    register_pymol_functions()
-                    addmenuitemqt('Protein Circuit Topology Plugin', run_plugin_gui)
-                    print('ProteinCT plugin initialized')
-                    return
-                except Exception as er:
-                    print(f"Error: {er}")
-                    install_failed()
-                    return
-        else:
-            result = linux_install()
-            if result:
-                try:
-                    register_pymol_functions()
-                    addmenuitemqt('Protein Circuit Topology Plugin', run_plugin_gui)
-                    print('ProteinCT plugin initialized')
-                    return
-                except Exception as er:
-                    print(f"Error: {er}")
-                    install_failed()
-                    return
+    install_failed(reqs=REQUIREMENTS_FILE)
 
 
 # Persistent dialog instance used to avoid creating multiple windows
@@ -183,7 +130,7 @@ def run_plugin_gui():
     singleton dialog instance so callers (and tests) can interact with it.
     """
     from gui_class import CTDialog
-    global DIALOG_INSTANCE
+    global DIALOG_INSTANCE  # noqa: PLW0603
     if DIALOG_INSTANCE is None or not DIALOG_INSTANCE.isVisible():
         DIALOG_INSTANCE = CTDialog()
         DIALOG_INSTANCE.show()

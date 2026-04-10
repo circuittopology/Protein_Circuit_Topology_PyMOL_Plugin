@@ -29,16 +29,13 @@ from pymol import cmd  # pylint: disable=import-error, no-name-in-module
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Locate the pymol env
-PYMOL_ENV_PATH = sys.executable
-# Get env path
-PYMOL_ENV = Path(PYMOL_ENV_PATH).parent
+# Locate the PyMOL installation directory via the official PYMOL_PATH env var.
+# Falls back to sys.executable's parent if PYMOL_PATH is not set.
+_pymol_path_env = os.environ.get("PYMOL_PATH")
+PYMOL_ENV = Path(_pymol_path_env) if _pymol_path_env else Path(sys.executable).parent
 # Get directory of env and requirements.yml
 PLUGIN_DIR = Path(__file__).parent
 REQUIREMENTS_FILE = PLUGIN_DIR / "requirements.yml"
-
-LINUX_REQS_FIXED = str(REQUIREMENTS_FILE).replace("\\", "/")
-LINUX_ENV_FIXED = str(PYMOL_ENV).replace("\\", "/")
 
 ADMIN_INIT_CMD = ["powershell.exe", "Start-Process", "powershell.exe",
                 "-ArgumentList", '-ExecutionPolicy Bypass -Command "conda init"',
@@ -67,12 +64,11 @@ def is_path_user(path: Path | None) -> bool:
         logger.info("Warning: Could not determine if path is user-accessible: %s", e)
         return False
 
-def pymol_install(env: Path = PYMOL_ENV, reqs: Path = REQUIREMENTS_FILE) -> bool:
+def pymol_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
     """
     Attempts to install dependencies using the PyMOL terminal and conda.
 
     Args:
-        env (Path, optional): Path to the PyMOL environment. Defaults to PYMOL_ENV.
         reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
 
     Returns:
@@ -199,21 +195,27 @@ def check_installed_packages(requirements_list: list[str]) -> tuple[bool, list[s
     not_installed = []
     installed = []
 
-    try:
-        for pack in requirements_list:
-            if importlib.util.find_spec(pack) is not None:
-                installed.append(pack)
-            else:
-                not_installed.append(pack)
-    except (ImportError, ValueError, ModuleNotFoundError):
-        try:
-            __import__(pack)
+    for pack in requirements_list:
+        if _is_package_available(pack):
             installed.append(pack)
-        except ImportError:
+        else:
             not_installed.append(pack)
 
     all_installed = len(not_installed) == 0
     return all_installed, not_installed if not all_installed else installed
+
+
+def _is_package_available(pack: str) -> bool:
+    """Check if a single package is importable."""
+    try:
+        return importlib.util.find_spec(pack) is not None
+    except (ImportError, ValueError, ModuleNotFoundError):
+        try:
+            __import__(pack)
+        except ImportError:
+            return False
+        else:
+            return True
 
 
 def is_conda_installed() -> tuple[bool, Path | None]:
@@ -222,18 +224,18 @@ def is_conda_installed() -> tuple[bool, Path | None]:
 
     Returns:
         tuple[bool, Path | None]:
-            A tuple containing a boolean (True if installed) 
+            A tuple containing a boolean (True if installed)
             and the path to conda (or error message).
     """
     command = "where conda" if platform.system() == "Windows" else "which conda"
 
     try:
         pipe = subprocess.PIPE
-        result = subprocess.run(
-            command, shell=True, check=True, stdout=pipe, stderr=pipe, text=True
+        result = subprocess.run(  # noqa: S602
+            command, shell=True, check=True, stdout=pipe, stderr=pipe, text=True,
         )
         return True, Path(result.stdout.strip())
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         return False, None
 
 
@@ -249,28 +251,31 @@ def conda_init(user_install: bool) -> bool:
     """
     try:
         if not user_install:
-            result = subprocess.run(ADMIN_INIT_CMD, check=True, capture_output=True, text=True)
+            result = subprocess.run(ADMIN_INIT_CMD, check=True, capture_output=True, text=True)  # noqa: S603
         else:
-            result = subprocess.run(USER_INIT_CMD, check=True, capture_output=True, text=True)
+            result = subprocess.run(USER_INIT_CMD, check=True, capture_output=True, text=True)  # noqa: S603
 
         logger.info("Initialization results output: %s", result.stdout)
         if result.stderr:
             logger.error("Initialization results error: %s", result.stderr)
 
-        return result.returncode == 0
+        if result.returncode == 0:
+            logger.info("Conda initialization completed successfully.")
+            return True
+        logger.error("Conda initialization failed. Please check the output for details.")
+        return False  # noqa: TRY300
     except subprocess.TimeoutExpired:
         logger.exception("Conda initialization timed out")
         return False
-    except OSError as e:
-        logger.exception("Error in initialization of conda: %s", e)
+    except OSError:
+        logger.exception("Error in initialization of conda")
         return False
 
-def win_install(env: Path = PYMOL_ENV, reqs: Path = REQUIREMENTS_FILE) -> bool:
+def win_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
     """
     Performs installation on Windows using PowerShell and conda.
 
     Args:
-        env (Path, optional): Path to the PyMOL environment. Defaults to PYMOL_ENV.
         reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
 
     Returns:
@@ -301,30 +306,28 @@ def win_install(env: Path = PYMOL_ENV, reqs: Path = REQUIREMENTS_FILE) -> bool:
     try:
         if not conda_user_path:
             logger.info("Running installation with admin privileges...")
-            result = subprocess.run(admin_cmd, check=True, capture_output=True, text=True)
+            result = subprocess.run(admin_cmd, check=True, capture_output=True, text=True)  # noqa: S603
         else:
             logger.info("Running installation with user privileges...")
-            result = subprocess.run(user_cmd, check=True, capture_output=True, text=True)
+            result = subprocess.run(user_cmd, check=True, capture_output=True, text=True)  # noqa: S603
         logger.info("Installation output: %s", result.stdout)
         if result.stderr:
             logger.warning("Installation warnings/errors: %s", result.stderr)
 
-        success = result.returncode == 0
-        if success:
+        if result.returncode == 0:
             logger.info("Installation completed successfully.")
-        else:
-            logger.error("Installation failed. Please check the output for details.")
-        return success
-    except subprocess.CalledProcessError as e:
-        logger.exception("Error occurred during installation: %s", e)
+            return True
+        logger.error("Installation failed. Please check the output for details.")
+        return False  # noqa: TRY300
+    except subprocess.CalledProcessError:
+        logger.exception("Error occurred during installation")
         return False
 
-def mac_install(env: Path = PYMOL_ENV, reqs: Path = REQUIREMENTS_FILE) -> bool:
+def mac_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
     """
     Performs installation on macOS using pip.
 
     Args:
-        env (Path, optional): Path to the PyMOL environment. Defaults to PYMOL_ENV.
         reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
 
     Returns:
@@ -347,24 +350,22 @@ def mac_install(env: Path = PYMOL_ENV, reqs: Path = REQUIREMENTS_FILE) -> bool:
         cmdline = [sys.executable, "-m", "pip", "install",
                    "--upgrade", "--no-warn-script-location",
                    "--target", target_site, *packs]
-        result = subprocess.run(cmdline, check=True, capture_output=True, text=True)
+        result = subprocess.run(cmdline, check=True, capture_output=True, text=True)  # noqa: S603
         if result.returncode == 0:
             logger.info("Output: %s", result.stdout)
             return True
-        else:
-            logger.error("Installation failed: %s", result.stderr)
-            return False
-    except subprocess.CalledProcessError as e:
-        logger.exception("Error occurred during installation: %s", e)
+        logger.error("Installation failed: %s", result.stderr)
+        return False  # noqa: TRY300
+    except subprocess.CalledProcessError:
+        logger.exception("Error occurred during installation")
         return False
 
-def linux_install(env: Path = LINUX_ENV_FIXED, reqs: Path = LINUX_REQS_FIXED) -> bool:
+def linux_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
     """
     Performs installation on Linux.
 
     Args:
-        env (Path, optional): Path to the PyMOL environment. Defaults to LINUX_ENV_FIXED.
-        reqs (Path, optional): Path to the requirements file. Defaults to LINUX_REQS_FIXED.
+        reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
 
     Returns:
         bool: True if installation was successful, False otherwise.
@@ -385,7 +386,7 @@ def linux_install(env: Path = LINUX_ENV_FIXED, reqs: Path = LINUX_REQS_FIXED) ->
         if missing_packages:
             logger.info("Installing pip packages: %s", missing_packages)
             try:
-                result = subprocess.run(
+                result = subprocess.run(  # noqa: S603
                     [sys.executable, "-m", "pip", "install", *missing_packages],
                     check=True,
                     capture_output=True,
@@ -395,8 +396,8 @@ def linux_install(env: Path = LINUX_ENV_FIXED, reqs: Path = LINUX_REQS_FIXED) ->
                     logger.info("Pip packages installed successfully")
                 else:
                     logger.error("Pip install failed: %s", result.stderr)
-            except subprocess.CalledProcessError as e:
-                logger.exception("Pip install error: %s", e)
+            except subprocess.CalledProcessError:
+                logger.exception("Pip install error")
 
         final_status, final_missing = check_installed_packages(requirements_list)
 
@@ -404,9 +405,9 @@ def linux_install(env: Path = LINUX_ENV_FIXED, reqs: Path = LINUX_REQS_FIXED) ->
             logger.info("All packages successfully installed!")
             return True
         logger.error("Some packages still missing: %s", final_missing)
-        return False
-    except subprocess.CalledProcessError as e:
-        logger.exception("Error during Linux installation: %s", e)
+        return False  # noqa: TRY300
+    except subprocess.CalledProcessError:
+        logger.exception("Error during Linux installation")
         return False
 
 

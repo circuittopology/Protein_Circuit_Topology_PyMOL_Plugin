@@ -1,7 +1,8 @@
 """
 Utility functions for handling trajectory files in the PyMOL plugin.
 """
-import os
+import logging
+from pathlib import Path
 from typing import Any
 
 from pymol import cmd
@@ -9,6 +10,8 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
 from utils.non_polymer import remove_non_polymer_atoms
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 def select_mol_file(self: Any) -> None:
     """
@@ -22,8 +25,8 @@ def select_mol_file(self: Any) -> None:
     if fname:
         self.traj_mol_path = fname
         self.traj_mol_label.setText(fname)
-        # If the molecule is imported into the GUI, load it into PyMOL first
-        mol_name = os.path.splitext(os.path.basename(fname))[0]
+        fname_path = Path(fname)
+        mol_name = fname_path.stem
         cmd.load(fname, mol_name)
         self.protein_name = mol_name
 
@@ -54,8 +57,8 @@ def export_frames_from_traj(self: Any) -> None:
         self: The main GUI class instance.
     """
     try:
-        mol = getattr(self, 'traj_mol_path', None)
-        traj = getattr(self, 'traj_xtc_path', None)
+        mol = getattr(self, "traj_mol_path", None)
+        traj = getattr(self, "traj_xtc_path", None)
         if not mol or not traj:
             self.traj_status_label.setText("Please select both a PDB and a trajectory file.")
             return
@@ -64,7 +67,7 @@ def export_frames_from_traj(self: Any) -> None:
             self,
             "Confirm Export",
             "Are you sure you want to export all frames?\n\nThis will create a large number of PDB files!",
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.Yes | QMessageBox.No,
         )
 
         if confirm != QMessageBox.Yes:
@@ -75,24 +78,26 @@ def export_frames_from_traj(self: Any) -> None:
         if not outdir:
             return
 
+        outdir_path = Path(outdir)
         start = 1
         end = cmd.count_states(self.protein_name)
         num_digits = len(str(end))
 
         for s in range(start, end + 1):
             cmd.frame(s)
-            fname = os.path.join(outdir, f"frame_{s:0{num_digits}d}.pdb")
-            cmd.save(fname, selection=self.protein_name)
+            fname = outdir_path / f"frame_{s:0{num_digits}d}.pdb"
+            cmd.save(str(fname), selection=self.protein_name)
 
         self.selected_traj_dir_multi = outdir
-        print(f"{end} frames were saved to {outdir}")
+        logger.info("%s frames were saved to %s", end, outdir)
         self.traj_status_label.setText(f"Exported {end} frames to {outdir}")
         self.update_list()
 
-        mol_files = sorted([f for f in os.listdir(outdir) if f.endswith(".pdb")])
+        mol_files = sorted([f for f in outdir_path.iterdir() if f.suffix == ".pdb"])
         self.avail_dir_traj_files = mol_files
         self.frame_selector_spinbox.setMaximum(len(mol_files))
 
 
     except Exception as e:
-        self.traj_status_label.setText(f"Error: {str(e)}")
+        logger.exception("Error exporting frames")
+        self.traj_status_label.setText(f"Error: {e!s}")

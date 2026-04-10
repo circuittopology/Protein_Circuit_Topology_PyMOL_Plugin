@@ -1,7 +1,7 @@
 """
 Utility functions for updating GUI elements in the PyMOL plugin.
 """
-from typing import Any, List, Optional
+from typing import Any
 
 from pymol import cmd
 
@@ -49,7 +49,7 @@ def update_output_widgets(self: Any) -> None:
     self.output_dir_button.setVisible(show)
     self.output_dir_label.setVisible(show)
 
-def update_local_list(self: Any, new_objects: Optional[List[str]] = None) -> None:
+def update_local_list(self: Any, new_objects: list[str] | None = None) -> None:
     """
     Updates the list of available objects in the local analysis dropdown.
 
@@ -70,7 +70,7 @@ def update_local_list(self: Any, new_objects: Optional[List[str]] = None) -> Non
         self.local_dropdown_objects.addItems(["Select a file."])
         self.local_dropdown_objects.addItems(self.current_local_objects)
 
-def update_list(self: Any, new_objects: Optional[List[str]] = None) -> None:
+def update_list(self: Any, new_objects: list[str] | None = None) -> None:
     """
     Updates the list of available objects in the single-file analysis dropdown.
 
