@@ -1,5 +1,6 @@
-import os
+import logging
 import tempfile
+from pathlib import Path
 from typing import Any
 
 from pymol import cmd
@@ -8,21 +9,19 @@ from PyQt5.QtWidgets import QMessageBox
 from functions.calculating.get_cmap import get_cmap
 from functions.calculating.get_matrix import get_matrix
 from functions.calculating.get_stats import get_stats
-
-from functions.importing.retrieve_chain import retrieve_chain
-
-from functions.plots.circuit_plot import circuit_plot
-from functions.plots.matrix_plot import matrix_plot
-from functions.plots.stats_plot import stats_plot
-from functions.plots.matrix_plot_model import matrix_plot_model
-
 from functions.exporting.export_cmap3 import export_cmap3
 from functions.exporting.export_mat import export_mat
-
+from functions.importing.retrieve_chain import retrieve_chain
+from functions.plots.circuit_plot import circuit_plot
+from functions.plots.matrix_plot import matrix_plot
+from functions.plots.matrix_plot_model import matrix_plot_model
+from functions.plots.stats_plot import stats_plot
 from utils.non_polymer import has_non_polymer_atoms
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
-def run_single_frame_analysis(self: Any) -> None:
+def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
     """
     Runs circuit topology analysis for a single frame of a trajectory or a single PDB file from a directory.
 
@@ -66,20 +65,20 @@ def run_single_frame_analysis(self: Any) -> None:
 
     # Correctly retrieve the frame
     if vals["traj_directory"]:
-        file_directory = vals['traj_directory']
+        file_directory = vals["traj_directory"]
         frame_idx = self.frame_selector_spinbox.value()
-        selected_file = self.avail_dir_traj_files[frame_idx]
-        full_path = os.path.join(file_directory, selected_file)
+        selected_file = Path(self.avail_dir_traj_files[frame_idx])
+        full_path = Path(file_directory) / selected_file
         frame_obj = self.protein_name
         cmd.set("state", frame_idx, frame_obj)
         traj_frame_chains = cmd.get_chains(frame_obj)
         frame_chain, protid = retrieve_chain(full_path)
     else:
-        file_directory = vals['directory']
+        file_directory = vals["directory"]
         frame_idx = self.frame_selector_spinbox.value()
-        selected_file = self.available_mol_files[frame_idx]
-        full_path = os.path.join(file_directory, selected_file)
-        frame_obj = os.path.splitext(os.path.basename(full_path))[0]
+        selected_file = Path(self.available_mol_files[frame_idx])
+        full_path = Path(file_directory) / selected_file
+        frame_obj = full_path.stem
         cmd.load(full_path, frame_obj)
         traj_frame_chains = cmd.get_chains(frame_obj)
         frame_chain, protid = retrieve_chain(full_path)
@@ -92,7 +91,7 @@ def run_single_frame_analysis(self: Any) -> None:
 
     if len(traj_frame_chains) > 1:
         frame_level = "model"
-        print("This trajectory object has multiple chains. Performing multi-chain CT analysis...")
+        logger.info("This trajectory object has multiple chains. Performing multi-chain CT analysis...")
     else:
         frame_level = "chain"
 
@@ -114,7 +113,7 @@ def run_single_frame_analysis(self: Any) -> None:
             matrix_plot(mat=mat, protid=protid)
         else:
             matrix_plot_model(mat=mat, protid=protid)
-    
+
     if stats_plot_enabled:
         entangled = get_stats(mat=mat)
         stats_plot(entangled, frame_psc, protid)
@@ -122,9 +121,8 @@ def run_single_frame_analysis(self: Any) -> None:
     # csv exporting
     if export_cmap3_enabled:
         for c in traj_frame_chains:
-            tmp = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
-            tmp_path = tmp.name
-            tmp.close()
+            with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
+                tmp_path = Path(tmp.name)
             cmd.save(tmp_path, f"{frame_obj} and chain {c}", state=cmd.get_state())
             try:
                 curr_chain, _ = retrieve_chain(tmp_path)
@@ -134,8 +132,8 @@ def run_single_frame_analysis(self: Any) -> None:
                 chain_label = f"{frame_obj}_chain_{c}"
                 export_cmap3(temp_idx, chain_label, temp_n, frame_output_directory)
             finally:
-                if os.path.exists(tmp_path):
-                    os.remove(tmp_path)
+                if tmp_path.exists():
+                    tmp_path.unlink()
 
     if export_mat_enabled:
         export_mat(idx, mat, frame_obj, frame_output_directory)
@@ -145,7 +143,7 @@ def run_single_frame_analysis(self: Any) -> None:
     if vals["directory"]:
         cmd.delete(frame_obj)
 
-# Enables single frame analysis based on the checkbox 
+# Enables single frame analysis based on the checkbox
 def toggle_frame_controls(self: Any, enabled: bool) -> None:
     """
     Toggles the enabled state of the frame selector and run button.

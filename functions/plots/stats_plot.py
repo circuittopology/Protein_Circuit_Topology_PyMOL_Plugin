@@ -23,7 +23,8 @@ def stats_plot(entangled: np.ndarray, psc: Sequence[float], protid: str) -> None
         protid (str): Protein identifier.
     """
     psc = psc[1:]
-    fig,(ax1,ax2)= plt.subplots(1,2)
+    fig,axes= plt.subplots(1,2)
+    ax1, ax2 = axes
     ax1.plot(entangled)
     ax2.pie(psc,autopct = autopct_funct, pctdistance=1.25)
     ax1.set_xlabel("Distance from diagonal")

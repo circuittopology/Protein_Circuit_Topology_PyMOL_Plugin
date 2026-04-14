@@ -1,28 +1,27 @@
-import os
+import logging
 import tempfile
+from pathlib import Path
 from typing import Any
 
 from pymol import cmd
-from PyQt5.QtWidgets import QMessageBox, QDialog, QVBoxLayout, QLabel, QPushButton
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog, QLabel, QMessageBox, QPushButton, QVBoxLayout
 
 from functions.calculating.get_cmap import get_cmap
 from functions.calculating.get_matrix import get_matrix
-
+from functions.exporting.export_cmap3 import export_cmap3
+from functions.exporting.export_mat import export_mat
 from functions.importing.retrieve_chain import retrieve_chain
-
 from functions.plots.circuit_plot import circuit_plot
 from functions.plots.matrix_plot import matrix_plot
 from functions.plots.matrix_plot_model import matrix_plot_model
-
-from functions.exporting.export_cmap3 import export_cmap3
-from functions.exporting.export_mat import export_mat
-
-from utils.non_polymer import has_non_polymer_atoms
 from utils.folding_score import get_folding_score
+from utils.non_polymer import has_non_polymer_atoms
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
-def run_standard_analysis(self: Any) -> None:
+def run_standard_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
     """
     Runs the standard single-file circuit topology analysis.
     Handles data retrieval, calculation, plotting, and exporting.
@@ -34,7 +33,7 @@ def run_standard_analysis(self: Any) -> None:
     if has_non_polymer_atoms():
         QMessageBox.warning(
             self, "Warning",
-            "The opened file contains non-polymer atoms, which can interfere with Circuit Topology. Please use the 'Remove Non-Polymer Atoms' button to remove them."
+            "The opened file contains non-polymer atoms, which can interfere with Circuit Topology. Please use the 'Remove Non-Polymer Atoms' button to remove them.",
         )
 
     vals = self.get_values()
@@ -55,21 +54,20 @@ def run_standard_analysis(self: Any) -> None:
         return
 
     chains = cmd.get_chains(selected_obj)
-    tmp = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
-    tmp_path = tmp.name
-    tmp.close()
+    with  tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
+        tmp_path = Path(tmp.name)
     cmd.save(tmp_path, selected_obj)
     single_dist = vals["cutoff_distance"]
     single_numcontacts = vals["cutoff_numcontacts"]
     single_neighbour = vals["exclude_neighbour"]
     base_file_typeless = selected_obj
     single_chain, protid = retrieve_chain(tmp_path)
-    os.remove(tmp_path)
+    tmp_path.unlink()
     output_directory = vals["output_directory"]
 
     if len(chains) > 1:
         level = "model"
-        print("The supplied object has multiple chains. Performing multi-chain CT analysis...")
+        logger.info("The supplied object has multiple chains. Performing multi-chain CT analysis...")
     else:
         level = "chain"
 
@@ -91,9 +89,8 @@ def run_standard_analysis(self: Any) -> None:
 
     if folding_score_enabled or export_cmap3_enabled:
         for c in chains:
-            tmp = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
-            tmp_path = tmp.name
-            tmp.close()
+            with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
+                tmp_path = Path(tmp.name)
             cmd.save(tmp_path, f"{selected_obj} and chain {c}", state=cmd.get_state())
             try:
                 folding_chain, p = retrieve_chain(tmp_path)
@@ -104,10 +101,10 @@ def run_standard_analysis(self: Any) -> None:
                 if folding_score_enabled:
                     # To handle incomplete chains
                     if psc == [p, 0, 0, 0]:
-                        print(f"Cannot create topology matrix for chain {c}, so folding score cannot be calculated!")
+                        logger.warning("Cannot create topology matrix for chain %s, so folding score cannot be calculated!", c)
                         continue
 
-                    print(f"Calculating folding score for chain {c} ...")
+                    logger.info("Calculating folding score for chain %s ...", c)
                     folding_score = get_folding_score(m, i, n)
 
                     # Show the score in a pop-up tab (QDialog)
@@ -129,11 +126,11 @@ def run_standard_analysis(self: Any) -> None:
 
                 if export_cmap3_enabled:
                     chain_label = f"{selected_obj}_chain_{c}"
-                    print(f"Exporting contact map as .csv for chain {c} ...")
+                    logger.info("Exporting contact map as .csv for chain %s ...", c)
                     export_cmap3(i, chain_label, n, output_directory)
             finally:
-                if os.path.exists(tmp_path):
-                    os.remove(tmp_path)
+                if tmp_path.exists():
+                    tmp_path.unlink()
 
     if export_mat_enabled:
         export_mat(idx, mat, base_file_typeless, output_directory)

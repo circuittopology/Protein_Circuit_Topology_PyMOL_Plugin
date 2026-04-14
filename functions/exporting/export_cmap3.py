@@ -5,11 +5,16 @@ Created on Mon May 24 17:00:09 2021
 
 For transforming Residue contact map indices to a contact map and exporting that to a csv file.
 """
-import os
+import logging
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
-def export_cmap3(index: np.ndarray, protid: str, numbering: np.ndarray, output_dir: str) -> None:
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+def export_cmap3(index: np.ndarray, protid: str, numbering: np.ndarray, output_dir: Path) -> None:
     """
     Exports a residue contact map (as a binary matrix) to a CSV file.
 
@@ -19,8 +24,8 @@ def export_cmap3(index: np.ndarray, protid: str, numbering: np.ndarray, output_d
         numbering (Sequence[int]): List of residue numbers/identifiers.
         output_dir (str): The directory to save the CSV file.
     """
-    os.makedirs(output_dir, exist_ok=True)
-    cmap = np.zeros([len(numbering),len(numbering)],dtype='int')
+    output_dir.mkdir(parents=True, exist_ok=True)
+    cmap = np.zeros([len(numbering),len(numbering)],dtype="int")
 
     for row in index:
         x = row[0]
@@ -29,6 +34,6 @@ def export_cmap3(index: np.ndarray, protid: str, numbering: np.ndarray, output_d
         cmap[y][x] = 1
 
     df = pd.DataFrame(cmap)
-    fpath = os.path.abspath(os.path.join(output_dir, f"{protid}_cmap3.csv"))
+    fpath = output_dir / f"{protid}_cmap3.csv"
     df.to_csv(fpath, header = False,index = False)
-    print(f'Succesfully saved {protid}_cmap3.csv to {output_dir}.')
+    logger.info("Successfully saved %s_cmap3.csv to %s.", protid, output_dir)

@@ -1,5 +1,6 @@
-import os
+import logging
 import tempfile
+from pathlib import Path
 from typing import Any
 
 from pymol import cmd
@@ -7,11 +8,11 @@ from PyQt5.QtWidgets import QMessageBox
 
 from functions.calculating.get_cmap import get_cmap
 from functions.calculating.get_matrix import get_matrix
-
 from functions.importing.retrieve_chain import retrieve_chain
+from utils.topology import color_by_topology, get_topology_vector
 
-from utils.topology import get_topology_vector, color_by_topology
-
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 # Function that only visualizes the topology on the molecule inside PyMOL
 def visualize_molecule(self: Any, contact_type: str) -> None:
@@ -33,12 +34,11 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
         return
 
     chains = cmd.get_chains(selected_obj)
-    print("Chains found: ", chains)
+    logger.info("Chains found: %s", chains)
 
     for chain_id in chains:
-        tmp = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
-        tmp_path = tmp.name
-        tmp.close()
+        with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
+            tmp_path = Path(tmp.name)
         cmd.save(tmp_path, f"{selected_obj} and chain {chain_id}", state=cmd.get_state())
 
         try:
@@ -52,16 +52,16 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
                                                             exclude_neighbour=vis_neighbour)
             mat, psc, _ = get_matrix(idx, protid)
             if psc == [protid, 0, 0, 0]:
-                print(
-                    f"Cannot create topology matrix for chain {chain_id}, so visualization for this chain cannot be performed!")
+                logger.warning(
+                    "Cannot create topology matrix for chain %s, so visualization for this chain cannot be performed!", chain_id)
                 continue
-            print(f"Coloring object based on chain {chain_id} ...")
+            logger.info("Coloring object based on chain %s ...", chain_id)
             top_vec = get_topology_vector(mat=mat, index=idx, topology_type=contact_type, numbering=numbering)
             if top_vec is None:
-                print(f"Invalid contact type for chain {chain_id}. Skipping visualization...")
+                logger.warning("Invalid contact type for chain %s. Skipping visualization...", chain_id)
                 continue
             color_by_topology(molecule_name=selected_obj, topology_vector=top_vec, numbering=numbering,
                                 topology_type=contact_type)
         finally:
-            if os.path.exists(tmp_path):
-                os.remove(tmp_path)
+            if tmp_path.exists():
+                tmp_path.unlink()

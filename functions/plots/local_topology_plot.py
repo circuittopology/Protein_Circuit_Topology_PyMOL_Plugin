@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def local_topology_plot(index,mat,numbering,protid,siteid,relation):  # noqa: PLR0912, PLR0913, PLR0915
+def local_topology_plot(index,mat,numbering,siteid,relation):  # noqa: PLR0912, PLR0915
         plt.ion()
         ax = plt.subplots()[1]
         plt.plot()
@@ -36,7 +36,7 @@ def local_topology_plot(index,mat,numbering,protid,siteid,relation):  # noqa: PL
         ax.set_xlabel("Residues")
 
         plt.yticks([])
-
+        related_contacts = []
         if relation == "X":
                 related_contacts  = np.where(mat[np.where(index == siteid)[0],:]==4)[1]  # noqa: PLR2004
         if relation == "S":

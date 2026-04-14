@@ -1,24 +1,23 @@
-import os
+import logging
 import tempfile
+from pathlib import Path
 from typing import Any
 
 from pymol import cmd
 from PyQt5.QtWidgets import QMessageBox
 
-from functions.calculating.local_ct import local_ct
 from functions.calculating.get_cmap import get_cmap
 from functions.calculating.get_matrix import get_matrix
-
-from functions.importing.retrieve_chain import retrieve_chain
-
-from functions.plots.local_topology_plot import local_topology_plot
-
+from functions.calculating.local_ct import local_ct
 from functions.exporting.export_cmap3 import export_cmap3
 from functions.exporting.export_mat import export_mat
-
+from functions.importing.retrieve_chain import retrieve_chain
+from functions.plots.local_topology_plot import local_topology_plot
+from utils.config import CHECKBOX_WARN, LOCAL_CT_WARN, WARN_MSG
 from utils.non_polymer import has_non_polymer_atoms
-from utils.config import WARN_MSG, LOCAL_CT_WARN, CHECKBOX_WARN
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 def run_local_ct(self: Any) -> None:
     """
@@ -54,29 +53,28 @@ def run_local_ct(self: Any) -> None:
         QMessageBox.warning(self, "Error", CHECKBOX_WARN)
         return
 
-    file_name = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
-    tmp_path = file_name.name
-    file_name.close()
+    with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as file_name:
+        tmp_path = Path(file_name.name)
     cmd.save(tmp_path, selected_obj, state=cmd.get_state())
     local_dist = vals["cutoff_distance"]
     local_numcontacts = vals["cutoff_numcontacts"]
     local_neighbour = vals["exclude_neighbour"]
     base_file_typeless = f"{curr_local_obj}_chain_{curr_chain}"
     local_chain, protid = retrieve_chain(tmp_path)
-    os.remove(tmp_path)
+    tmp_path.unlink()
 
     idx, numbering, protid, _ = get_cmap(
         chain=local_chain,
         cutoff_distance=local_dist,
         cutoff_numcontacts=local_numcontacts,
-        exclude_neighbour=local_neighbour
+        exclude_neighbour=local_neighbour,
     )
 
     mat, _, _ = get_matrix(idx, protid)
     if local_ct_plot:
-        local_topology_plot(idx, mat, numbering, protid, residue_id, contact)
+        local_topology_plot(idx, mat, numbering, residue_id, contact)
     if local_ct_enabled:
-        print(local_ct(idx, mat, numbering))
+        logger.info(local_ct(idx, mat, numbering))
 
     output_directory = vals["output_directory"]
     # exported csv

@@ -7,43 +7,46 @@ Function for creating the chain object used in Bio.PDB and all the functions. Ca
 
 """
 import warnings
+from pathlib import Path
 
 from Bio import BiopythonWarning
-from Bio.PDB import MMCIFParser, PDBParser
 from Bio.PDB.Chain import Chain
+from Bio.PDB.MMCIFParser import MMCIFParser
+from Bio.PDB.PDBParser import PDBParser
 
 
-def retrieve_chain(input_file: str, chainid: int | str = 0) -> tuple[Chain, str]:  # noqa: PLR0912
+def retrieve_chain(input_file: Path, chainid: int | str = 0) -> tuple[Chain, str]:  # noqa: PLR0912
     """
     Retrieves a specific chain from a PDB or MMCIF file.
 
     Args:
-        input_file (str): Path to the input PDB or MMCIF file.
+        input_file (Path): Path to the input PDB or MMCIF file.
         chainid (int or str, optional): The chain ID to retrieve. Can be an integer index or a string ID. Defaults to 0.
 
     Returns:
         tuple: A tuple containing the chain object (Bio.PDB.Chain.Chain) and the protein ID (str).
     """
+    input_file_str = str(input_file)
     # determines which format is used
-    if input_file.endswith("cif"):
-        input_filepath = input_file
+    if input_file_str.endswith("cif"):
+        input_filepath = input_file_str
         # Supress harmless warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", BiopythonWarning)
             # Import the protein data
-            structure = MMCIFParser().get_structure(input_file.replace(".cif", ""), input_filepath)
+            structure = MMCIFParser().get_structure(input_file_str.replace(".cif", ""), input_filepath)
     else:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", BiopythonWarning)
 
-            input_filepath = input_file
+            input_filepath = input_file_str
             # import protein data
-            structure = PDBParser(PERMISSIVE=True).get_structure(input_file.replace(".pdb", ""), input_filepath)
+            structure = PDBParser(PERMISSIVE=True).get_structure(input_file_str.replace(".pdb", ""), input_filepath)
 
     if structure:
         model = structure[0]
     else:
-        msg = f"No structure found in the input file: {input_file}"
+        msg = f"No structure found in the input file: {input_file_str}"
         raise ValueError(msg)
     # removes heteroresidues from protein
     residue_to_remove = []

@@ -4,24 +4,28 @@ Created on Mon May 24 17:00:09 2021
 @author: DuaneM
 
 Function for creating a Residue-Residue based contact map for either a single chain or a whole model.
-Note! this does not produce a contact map but a matrix of the non-zero values in that contact map. 
+Note! this does not produce a contact map but a matrix of the non-zero values in that contact map.
 """
-from typing import List, Tuple, cast
 from collections import Counter
+from typing import TYPE_CHECKING, cast
+
 import numpy as np
 from Bio.PDB import Selection
-from Bio.PDB.NeighborSearch import NeighborSearch
-from Bio.PDB.Residue import Residue
-from Bio.PDB.Atom import Atom
 from Bio.PDB.Chain import Chain
 from Bio.PDB.Model import Model
+from Bio.PDB.NeighborSearch import NeighborSearch
 
-def get_cmap(
+if TYPE_CHECKING:
+    from Bio.PDB.Atom import Atom
+    from Bio.PDB.Residue import Residue
+
+
+def get_cmap(  # noqa: PLR0915
             chain: Chain | Model,
-            level: str = 'chain',
+            level: str = "chain",
             cutoff_distance: float = 4.5,
             cutoff_numcontacts: int = 5,
-            exclude_neighbour: int = 3) -> Tuple[np.ndarray, np.ndarray, str, List[str]]:
+            exclude_neighbour: int = 3) -> tuple[np.ndarray, np.ndarray, str, list[str]]:
     """
     Creates a residue-residue contact map (as a list of contacts) for a single chain or a whole model.
 
@@ -39,11 +43,11 @@ def get_cmap(
             - protid (str): Protein identifier.
             - res_names (list): List of residue names.
     """
-    if level == 'chain':
+    if level == "chain":
 
         #Unpack chain object into atoms and residues
-        atom_list = cast(List[Atom], Selection.unfold_entities(chain,'A'))
-        res_list = cast(List[Residue], Selection.unfold_entities(chain,'R'))
+        atom_list = cast("list[Atom]", Selection.unfold_entities(chain,"A"))
+        res_list = cast("list[Residue]", Selection.unfold_entities(chain,"R"))
 
         res_names, numbering = [], []
         for res in res_list:
@@ -52,7 +56,7 @@ def get_cmap(
 
         #search for neighbouring atoms within specified distance
         ns = NeighborSearch(atom_list)
-        all_neighbours = cast(List[Tuple[Atom, Atom]], ns.search_all(cutoff_distance,'A'))
+        all_neighbours = cast("list[tuple[Atom, Atom]]", ns.search_all(cutoff_distance,"A"))
 
         numbering = np.array(numbering)
         segment = np.array(range(len(numbering)))
@@ -62,7 +66,8 @@ def get_cmap(
         for atompair in all_neighbours:
             parent0 = atompair[0].get_parent()
             parent1 = atompair[1].get_parent()
-            assert parent0 is not None and parent1 is not None
+            assert parent0 is not None
+            assert parent1 is not None
             res1 = segment[numbering == parent0.id[1]][0]
             res2 = segment[numbering == parent1.id[1]][0]
 
@@ -79,17 +84,17 @@ def get_cmap(
         assert parent is not None
         grandparent = parent.get_parent()
         assert grandparent is not None
-        protid = grandparent.id + '_' + chain.id
+        protid = grandparent.id + "_" + chain.id
         return np.array(index),numbering, protid,res_names
 
     #same as single chain analysis but unpacks whole model instead of single chain
-    if level == 'model':
+    if level == "model":
 
-        atom_list_model = cast(List[Atom], Selection.unfold_entities(chain.get_parent(),'A'))
-        res_list_model = cast(List[Residue], Selection.unfold_entities(chain.get_parent(),'R'))
+        atom_list_model = cast("list[Atom]", Selection.unfold_entities(chain.get_parent(),"A"))
+        res_list_model = cast("list[Residue]", Selection.unfold_entities(chain.get_parent(),"R"))
 
         ns = NeighborSearch(atom_list_model)
-        all_neighbours = cast(List[Tuple[Atom, Atom]], ns.search_all(cutoff_distance,'A'))
+        all_neighbours = cast("list[tuple[Atom, Atom]]", ns.search_all(cutoff_distance,"A"))
 
         res_names, numbering = [], []
         for res in res_list_model:
@@ -104,7 +109,8 @@ def get_cmap(
         for atompair in all_neighbours:
             parent0 = atompair[0].get_parent()
             parent1 = atompair[1].get_parent()
-            assert parent0 is not None and parent1 is not None
+            assert parent0 is not None
+            assert parent1 is not None
             res1 = segment[(numbering == [parent0.get_full_id()[2],str(parent0.get_full_id()[3][1])]).all(axis=1)][0]
             res2 = segment[(numbering == [parent1.get_full_id()[2],str(parent1.get_full_id()[3][1])]).all(axis=1)][0]
             chain1 = parent0.get_full_id()[2]
@@ -127,4 +133,5 @@ def get_cmap(
 
         return np.array(index),numbering,protid,res_names
 
-    raise ValueError(f"Invalid level: '{level}'. Expected 'chain' or 'model'.")
+    msg = f"Invalid level: '{level}'. Expected 'chain' or 'model'."
+    raise ValueError(msg)

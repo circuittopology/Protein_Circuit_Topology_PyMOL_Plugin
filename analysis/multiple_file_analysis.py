@@ -1,34 +1,33 @@
-import os
+import logging
 import tempfile
-import matplotlib.pyplot as plt
+from pathlib import Path
 from typing import Any
 
+import matplotlib.pyplot as plt
 from pymol import cmd
 from PyQt5.QtWidgets import QMessageBox
 
-from functions.calculating.get_matrix import get_matrix
-from functions.calculating.get_cmap import get_cmap
 from functions.calculating.energy_cmap import energy_cmap
-from functions.calculating.length_filter import length_filter
+from functions.calculating.get_cmap import get_cmap
+from functions.calculating.get_matrix import get_matrix
 from functions.calculating.get_stats import get_stats
-
+from functions.calculating.length_filter import length_filter
+from functions.exporting.export_cmap3 import export_cmap3
+from functions.exporting.export_mat import export_mat
+from functions.exporting.export_psc import export_psc
 from functions.importing.retrieve_chain import retrieve_chain
-
-from functions.plots.matrix_plot import matrix_plot
 from functions.plots.circuit_plot import circuit_plot
+from functions.plots.matrix_plot import matrix_plot
 from functions.plots.matrix_plot_model import matrix_plot_model
 from functions.plots.stats_plot import stats_plot
-
-from functions.exporting.export_mat import export_mat
-from functions.exporting.export_cmap3 import export_cmap3
-from functions.exporting.export_psc import export_psc
-
+from utils.config import CHECKBOX_WARN, WARN_MSG
 from utils.non_polymer import has_non_polymer_atoms
-from utils.config import WARN_MSG, CHECKBOX_WARN
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 # Slight rewrite to match their notebook code because we had bugs
-def run_multi_analysis(self: Any) -> None:
+def run_multi_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
     """
     Runs the multi-file circuit topology analysis.
     Iterates through files in the selected directory, performs analysis, and generates plots/exports.
@@ -57,23 +56,19 @@ def run_multi_analysis(self: Any) -> None:
         QMessageBox.warning(self, "Error", "No input directory selected!")
         return
 
-    if multi_traj_dir:
-        path = multi_traj_dir
-    else:
-        path = multi_input_dir
+    path = Path(multi_traj_dir or multi_input_dir)
 
-    if not os.path.exists(path):
+    if not path.exists():
         QMessageBox.warning(self, "Error", f"The input directory does not exist: {path}")
         return
 
     output_dir = vals["output_directory"]
 
-    if not output_dir:
-        if multi_export_cmap3 or multi_export_mat or multi_export_psc:
-            QMessageBox.warning(self, "Error", f"An output directory has not been selected: {output_dir}")
-            return
+    if not output_dir and (multi_export_cmap3 or multi_export_mat or multi_export_psc):
+        QMessageBox.warning(self, "Error", f"An output directory has not been selected: {output_dir}")
+        return
 
-    number_of_files = len(os.listdir(path))
+    number_of_files = len(list(path.iterdir()))
     psclist = []
     p = []
     s = []
@@ -98,28 +93,28 @@ def run_multi_analysis(self: Any) -> None:
                                         QMessageBox.Yes | QMessageBox.No)
 
         if confirm != QMessageBox.Yes:
-            print("Multi-file analysis was aborted.")
+            logger.info("Multi-file analysis was aborted.")
             return
 
-    for num, files in enumerate(os.listdir(path)):
-        if files.endswith((".pdb", ".cif")):
+    for num, files in enumerate(path.iterdir()):
+        if files.suffix in (".pdb", ".cif"):
             try:
-                multi_full_path = os.path.join(path, files)
-                multi_obj = os.path.splitext(os.path.basename(multi_full_path))[0]
-                cmd.load(multi_full_path, multi_obj)
+                multi_full_path = files
+                multi_obj = files.stem
+                cmd.load(str(multi_full_path), multi_obj)
                 cmd.remove("not polymer")
                 multi_obj_chains = cmd.get_chains(multi_obj)
                 multi_chain, protid = retrieve_chain(multi_full_path)
-                print(f'{files} - {num + 1}/{number_of_files}')
-            except Exception as e:
-                print(f'{files} - {e}')
+                logger.info("%s - %d/%d", files, num + 1, number_of_files)
+            except Exception:
+                logger.exception("%s", files)
                 continue
         else:
             continue
 
         if len(multi_obj_chains) > 1:
             multi_level = "model"
-            print("The object %s has multiple chains. Performing multi-chain CT analysis...", multi_obj)
+            logger.info("The object %s has multiple chains. Performing multi-chain CT analysis...", multi_obj)
         else:
             multi_level = "chain"
 
@@ -133,12 +128,12 @@ def run_multi_analysis(self: Any) -> None:
                 idx, protid = energy_cmap(index=idx, numbering=numbering, res_names=res_names, protid=protid,
                                             potential_sign=multi_energy_mode)
             except IndexError:
-                print(f"There is no contact map for {multi_obj} that can satisfy the provided energy filtering. Skipping...")
+                logger.warning("There is no contact map for %s that can satisfy the provided energy filtering. Skipping...", multi_obj)
         if multi_len_filtering and multi_level == "chain":
             try:
                 idx = length_filter(index=idx, distance=multi_filtering_dist, mode=multi_filter_mode)
             except IndexError:
-                print(f"There is no contact map for {multi_obj} that can satisfy the provided length filtering. Skipping...")
+                logger.warning("There is no contact map for %s that can satisfy the provided length filtering. Skipping...", multi_obj)
 
         if multi_level == "chain":
             mat, psc_result, _ = get_matrix(index=idx, protid=protid)
@@ -147,14 +142,14 @@ def run_multi_analysis(self: Any) -> None:
             x.append(psc_result[3])
             psclist.append(psc_result)
         else:
-            mat, psc_result, multi_chain_stats = get_matrix(index=idx, protid=protid)
+            mat, psc_result, _ = get_matrix(index=idx, protid=protid)
             adj_psc = [psc_result[0], psc_result[1], psc_result[2], psc_result[3]]
             p.append(psc_result[1])
             s.append(psc_result[2])
             x.append(psc_result[3])
-            adj_psc.append({'I2': psc_result[4], 'I3': psc_result[5], 'I4': psc_result[6]})
-            adj_psc.append({'T2': psc_result[7], 'T3': psc_result[8]})
-            adj_psc.append({'L': psc_result[-1]})
+            adj_psc.append({"I2": psc_result[4], "I3": psc_result[5], "I4": psc_result[6]})
+            adj_psc.append({"T2": psc_result[7], "T3": psc_result[8]})
+            adj_psc.append({"L": psc_result[-1]})
             psclist.append(adj_psc)
 
         entangled = get_stats(mat)
@@ -166,7 +161,7 @@ def run_multi_analysis(self: Any) -> None:
                 matrix_plot(mat=mat, protid=protid)
             else:
                 matrix_plot_model(mat=mat, protid=protid)
-                
+
         if multi_stats_plot:
             if multi_level == "chain":
                 stats_plot(entangled, psc_result, protid)
@@ -175,9 +170,8 @@ def run_multi_analysis(self: Any) -> None:
 
         if multi_export_cmap3:
             for c in multi_obj_chains:
-                tmp = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False)
-                tmp_path = tmp.name
-                tmp.close()
+                with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
+                    tmp_path = Path(tmp.name)
                 cmd.save(tmp_path, f"{multi_obj} and chain {c}", state=cmd.get_state())
                 try:
                     curr_multi_chain, _ = retrieve_chain(tmp_path)
@@ -187,8 +181,8 @@ def run_multi_analysis(self: Any) -> None:
                     temp_multi_f_base = f"{multi_obj}_chain_{c}"
                     export_cmap3(temp_i, temp_multi_f_base, temp_num, output_dir)
                 finally:
-                    if os.path.exists(tmp_path):
-                        os.remove(tmp_path)
+                    if tmp_path.exists():
+                        tmp_path.unlink()
 
         if multi_export_mat:
             export_mat(idx, mat, multi_obj, output_dir)
@@ -198,7 +192,7 @@ def run_multi_analysis(self: Any) -> None:
     if multi_export_psc:
         export_psc(psclist, output_dir)
     if multi_plot_psc:
-        plt.rcParams.update({'font.size': 14})
+        plt.rcParams.update({"font.size": 14})
         time = range(len(p))
         plt.plot(time, p, label="P", color="red", linewidth=1.5)
         plt.plot(time, s, label="S", color="green", linewidth=1.5)
