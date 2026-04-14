@@ -12,37 +12,48 @@ Key responsibilities:
 - Expose Qt slots that delegate to functions defined in the plugin's utilities.
 - Manage UI initialization, timers and basic dialog state.
 """
-from typing import Optional, cast
+from typing import cast
 
 from pymol import cmd
-from pymol.Qt import QtWidgets, QtCore
-
-from utils.get_values import get_values, get_local_values, get_multiple_values, get_vis_vals
-from utils.clear_file import clear_selected_single_file, clear_selected_local_file
-from utils.directory import choose_file, choose_local_file, choose_output_dir, choose_local_output_dir, choose_input_dir_multi, choose_output_dir_multi
-
-from utils.object_change import handle_standard_object_change, handle_local_object_change
-from utils.non_polymer import show_warning_dialog
-from utils.residues import get_residue_range, update_residue_range
-from utils.helpers import update_chain_combo_box, init_timers, _poll_pymol_objects, object_exists
-from utils.config import SECTION_STYLESHEET
-from utils.updates import update_list, update_local_list, update_output_widgets, update_output_widgets_local, update_output_widgets_multi
-from utils.trajectory import select_mol_file, select_xtc_file, export_frames_from_traj
+from PyQt5.Qt import QtCore
+from PyQt5.QtWidgets import QDialog, QTabWidget, QVBoxLayout, QWidget
 
 from analysis.local_ct_analysis import run_local_ct
+from analysis.multiple_file_analysis import run_multi_analysis
 from analysis.single_file_analysis import run_standard_analysis
 from analysis.single_frame_analysis import run_single_frame_analysis, toggle_frame_controls
-from analysis.multiple_file_analysis import run_multi_analysis
 from analysis.visualization import visualize_molecule
-
 from tabs.local_tab import init_local_tab
-from tabs.single_file_tab import init_single_file_tab
 from tabs.multiple_file_tab import init_multi_file_tab
+from tabs.single_file_tab import init_single_file_tab
+from utils.clear_file import clear_selected_local_file, clear_selected_single_file
+from utils.config import SECTION_STYLESHEET
+from utils.directory import (
+    choose_file,
+    choose_input_dir_multi,
+    choose_local_file,
+    choose_local_output_dir,
+    choose_output_dir,
+    choose_output_dir_multi,
+)
+from utils.get_values import get_local_values, get_multiple_values, get_values, get_vis_vals
+from utils.helpers import _poll_pymol_objects, init_timers, object_exists, update_chain_combo_box
+from utils.non_polymer import show_warning_dialog
+from utils.object_change import handle_local_object_change, handle_standard_object_change
+from utils.residues import get_residue_range, update_residue_range
+from utils.trajectory import export_frames_from_traj, select_mol_file, select_xtc_file
+from utils.updates import (
+    update_list,
+    update_local_list,
+    update_output_widgets,
+    update_output_widgets_local,
+    update_output_widgets_multi,
+)
 
 if not hasattr(cmd, "object_exists"):
-    setattr(cmd, "object_exists", object_exists)
+    cmd.object_exists = object_exists
 
-class CTDialog(QtWidgets.QDialog):
+class CTDialog(QDialog):
     """
     Primary Qt dialog for the Circuit Topology Tool.
 
@@ -57,9 +68,9 @@ class CTDialog(QtWidgets.QDialog):
         Set of object names present in the standard (non-local) object dropdown.
     current_local_objects : set
         Set of object names present in the local object dropdown.
-    tab_widget : QtWidgets.QTabWidget
+    tab_widget : QTabWidget
         Top-level tab container holding use-case specific tabs.
-    local_tab, single_file_tab, multi_file_tab : QtWidgets.QWidget
+    local_tab, single_file_tab, multi_file_tab : QWidget
         Tab pages created and initialized during UI setup.
     """
     @QtCore.pyqtSlot()
@@ -126,7 +137,7 @@ class CTDialog(QtWidgets.QDialog):
 
     # object_change.py
     @QtCore.pyqtSlot()
-    def handle_local_object_change(self, obj_name: Optional[str]=None):
+    def handle_local_object_change(self, obj_name: str | None = None):
         """
         Handle changes in the local object dropdown.
 
@@ -137,11 +148,11 @@ class CTDialog(QtWidgets.QDialog):
         """
         if obj_name is None:
             obj_name = self.local_dropdown_objects.currentText()
-        cast(str, obj_name)
+        cast("str", obj_name)
         handle_local_object_change(self, obj_name)
 
     @QtCore.pyqtSlot()
-    def handle_standard_object_change(self, obj_name: Optional[str]=None):
+    def handle_standard_object_change(self, obj_name: str | None = None):
         """
         Handle changes in the standard object dropdown.
 
@@ -152,7 +163,7 @@ class CTDialog(QtWidgets.QDialog):
         """
         if obj_name is None:
             obj_name = self.dropdown_objects.currentText()
-        cast(str, obj_name)
+        cast("str", obj_name)
         handle_standard_object_change(self, obj_name)
 
     # non_polymer.py
@@ -163,7 +174,7 @@ class CTDialog(QtWidgets.QDialog):
 
     # residues.py
     @QtCore.pyqtSlot()
-    def get_residue_range(self, obj_name: Optional[str]=None):
+    def get_residue_range(self, obj_name: str | None = None):
         """
         Request the residue range for an object and update the UI.
 
@@ -174,7 +185,7 @@ class CTDialog(QtWidgets.QDialog):
         """
         if obj_name is None:
             obj_name = self.local_dropdown_objects.currentText()
-        cast(str, obj_name)
+        cast("str", obj_name)
         get_residue_range(self, obj_name)
 
     @QtCore.pyqtSlot()
@@ -323,20 +334,20 @@ class CTDialog(QtWidgets.QDialog):
 
     def init_ui(self):
         """Create the top-level tab widget and initialize each feature tab."""
-        self.tab_widget = QtWidgets.QTabWidget()
+        self.tab_widget = QTabWidget()
 
-        self.local_tab = QtWidgets.QWidget()
-        self.single_file_tab = QtWidgets.QWidget()
-        self.multi_file_tab = QtWidgets.QWidget()
+        self.local_tab = QWidget()
+        self.single_file_tab = QWidget()
+        self.multi_file_tab = QWidget()
 
         self.tab_widget.addTab(self.local_tab, "Local Circuit Topology")
-        self.tab_widget.addTab(self.single_file_tab, "Single‑File Analysis")
-        self.tab_widget.addTab(self.multi_file_tab, "Multi‑File Analysis")
+        self.tab_widget.addTab(self.single_file_tab, "Single‑File Analysis")  # noqa: RUF001
+        self.tab_widget.addTab(self.multi_file_tab, "Multi‑File Analysis")  # noqa: RUF001
 
         self.init_local_tab()
         self.init_single_file_tab()
         self.init_multi_file_tab()
 
-        main_layout = QtWidgets.QVBoxLayout()
+        main_layout = QVBoxLayout()
         main_layout.addWidget(self.tab_widget)
         self.setLayout(main_layout)

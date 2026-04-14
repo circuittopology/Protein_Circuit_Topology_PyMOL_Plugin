@@ -10,6 +10,13 @@ from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton
 from utils.config import INFO_BUTTON_STYLE
 
 
+def _poll_pymol_objects(self: Any) -> None:
+    """Single poll that refreshes both object dropdowns from one cmd call."""
+    from utils.updates import update_list, update_local_list
+    new_objects = cmd.get_object_list()
+    update_list(self, new_objects)
+    update_local_list(self, new_objects)
+
 def update_chain_combo_box(self: Any) -> None:
     """
     Updates the chain combo box with the chains available in the currently selected object.
