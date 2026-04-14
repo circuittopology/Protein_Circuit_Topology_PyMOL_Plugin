@@ -62,8 +62,9 @@ ignore = [
     "TD002",  # Missing author in TODO
     "TD003",  # Missing issue link in TODO
     "FIX002", # Line contains TODO
-    "E402",   # wrong-import-position, 
-    "PLC0415", # import-outside-toplevel, Airflow DAGs require heavier imports to be inside functions for fast parsing every 20-30 seconds.
+    "E402",   # wrong-import-position
+    "PLC0415", # import-outside-toplevel
+    "N999"
 ]
 
 [tool.ruff.lint.isort]
