@@ -1,3 +1,4 @@
+import logging
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
@@ -5,9 +6,11 @@ from typing import Any
 
 from pymol import cmd
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QMessageBox, QPushButton
 
 from utils.config import INFO_BUTTON_STYLE
+
+logger = logging.getLogger(__name__)
 
 
 def _poll_pymol_objects(self: Any) -> None:
@@ -90,3 +93,20 @@ def make_param_row(label_text, tooltip, spinbox):
     row.addStretch()
     row.addWidget(spinbox)
     return row
+
+
+def resolve_output_path(self: Any, output_dir: str) -> Path | None:
+    """Validates and creates the output directory. Returns the Path on success, None on failure."""
+    output_path = Path(output_dir)
+    if output_path.exists() and not output_path.is_dir():
+        QMessageBox.warning(self, "Error", f"The specified output path is not a directory: {output_path}")
+        return None
+    if not output_path.exists():
+        try:
+            output_path.mkdir(parents=True, exist_ok=True)
+            logger.info("Created output directory: %s", output_path)
+        except Exception as e:
+            logger.exception("Failed to create output directory: %s", output_path)
+            QMessageBox.warning(self, "Error", f"Failed to create output directory: {output_path}\n{e}")
+            return None
+    return output_path

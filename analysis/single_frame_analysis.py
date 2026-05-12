@@ -16,6 +16,7 @@ from functions.plots.circuit_plot import circuit_plot
 from functions.plots.matrix_plot import matrix_plot
 from functions.plots.matrix_plot_model import matrix_plot_model
 from functions.plots.stats_plot import stats_plot
+from utils.helpers import resolve_output_path
 from utils.non_polymer import has_non_polymer_atoms
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -89,6 +90,14 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
 
     frame_output_directory = vals["output_directory"]
 
+    if not frame_output_directory and (export_cmap3_enabled or export_mat_enabled):
+        QMessageBox.warning(self, "Error", "An output directory has not been selected.")
+        return
+
+    output_path = resolve_output_path(self, frame_output_directory)
+    if output_path is None:
+        return
+
     if len(traj_frame_chains) > 1:
         frame_level = "model"
         logger.info("This trajectory object has multiple chains. Performing multi-chain CT analysis...")
@@ -130,13 +139,13 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
                                                             cutoff_numcontacts=frame_numcontacts,
                                                             exclude_neighbour=frame_neighbour)
                 chain_label = f"{frame_obj}_chain_{c}"
-                export_cmap3(temp_idx, chain_label, temp_n, frame_output_directory)
+                export_cmap3(temp_idx, chain_label, temp_n, output_path)
             finally:
                 if tmp_path.exists():
                     tmp_path.unlink()
 
     if export_mat_enabled:
-        export_mat(idx, mat, frame_obj, frame_output_directory)
+        export_mat(idx, mat, frame_obj, output_path)
 
     # If we are processing a trajectory that was imported as a directory of PDBs, then we first loaded the corresponding frame to retrieve chain info about it
     # and now that we are done, we can remove it

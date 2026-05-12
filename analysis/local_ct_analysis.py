@@ -14,6 +14,7 @@ from functions.exporting.export_mat import export_mat
 from functions.importing.retrieve_chain import retrieve_chain
 from functions.plots.local_topology_plot import local_topology_plot
 from utils.config import CHECKBOX_WARN, LOCAL_CT_WARN, WARN_MSG
+from utils.helpers import resolve_output_path
 from utils.non_polymer import has_non_polymer_atoms
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -77,8 +78,13 @@ def run_local_ct(self: Any) -> None:
         logger.info(local_ct(idx, mat, numbering))
 
     output_directory = vals["output_directory"]
+
+    output_path = resolve_output_path(self, output_directory)
+    if output_path is None:
+        return
+
     # exported csv
     if export_cmap3_enabled:
-        export_cmap3(idx, base_file_typeless, numbering, output_directory)
+        export_cmap3(idx, base_file_typeless, numbering, output_path)
     if export_mat_enabled:
-        export_mat(idx, mat, base_file_typeless, output_directory)
+        export_mat(idx, mat, base_file_typeless, output_path)

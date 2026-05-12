@@ -15,7 +15,7 @@ Key responsibilities:
 from typing import cast
 
 from pymol import cmd
-from PyQt5.Qt import QtCore
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDialog, QTabWidget, QVBoxLayout, QWidget
 
 from analysis.local_ct_analysis import run_local_ct

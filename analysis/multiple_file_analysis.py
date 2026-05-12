@@ -21,6 +21,7 @@ from functions.plots.matrix_plot import matrix_plot
 from functions.plots.matrix_plot_model import matrix_plot_model
 from functions.plots.stats_plot import stats_plot
 from utils.config import CHECKBOX_WARN, WARN_MSG
+from utils.helpers import resolve_output_path
 from utils.non_polymer import has_non_polymer_atoms
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -66,6 +67,10 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
 
     if not output_dir and (multi_export_cmap3 or multi_export_mat or multi_export_psc):
         QMessageBox.warning(self, "Error", f"An output directory has not been selected: {output_dir}")
+        return
+
+    output_path = resolve_output_path(self, output_dir)
+    if output_path is None:
         return
 
     number_of_files = len(list(path.iterdir()))
@@ -179,18 +184,18 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
                                                                 cutoff_numcontacts=multi_num_contacts,
                                                                 exclude_neighbour=multi_neighbours)
                     temp_multi_f_base = f"{multi_obj}_chain_{c}"
-                    export_cmap3(temp_i, temp_multi_f_base, temp_num, output_dir)
+                    export_cmap3(temp_i, temp_multi_f_base, temp_num, output_path)
                 finally:
                     if tmp_path.exists():
                         tmp_path.unlink()
 
         if multi_export_mat:
-            export_mat(idx, mat, multi_obj, output_dir)
+            export_mat(idx, mat, multi_obj, output_path)
 
         cmd.delete(multi_obj)
 
     if multi_export_psc:
-        export_psc(psclist, output_dir)
+        export_psc(psclist, output_path)
     if multi_plot_psc:
         plt.rcParams.update({"font.size": 14})
         time = range(len(p))

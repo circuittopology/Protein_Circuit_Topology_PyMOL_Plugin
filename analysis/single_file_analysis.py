@@ -16,6 +16,7 @@ from functions.plots.circuit_plot import circuit_plot
 from functions.plots.matrix_plot import matrix_plot
 from functions.plots.matrix_plot_model import matrix_plot_model
 from utils.folding_score import get_folding_score
+from utils.helpers import resolve_output_path
 from utils.non_polymer import has_non_polymer_atoms
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -64,6 +65,14 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
     single_chain, protid = retrieve_chain(tmp_path)
     tmp_path.unlink()
     output_directory = vals["output_directory"]
+
+    if not output_directory and (export_cmap3_enabled or export_mat_enabled):
+        QMessageBox.warning(self, "Error", "An output directory has not been selected.")
+        return
+
+    output_path = resolve_output_path(self, output_directory)
+    if output_path is None:
+        return
 
     if len(chains) > 1:
         level = "model"
@@ -127,10 +136,10 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
                 if export_cmap3_enabled:
                     chain_label = f"{selected_obj}_chain_{c}"
                     logger.info("Exporting contact map as .csv for chain %s ...", c)
-                    export_cmap3(i, chain_label, n, output_directory)
+                    export_cmap3(i, chain_label, n, output_path)
             finally:
                 if tmp_path.exists():
                     tmp_path.unlink()
 
     if export_mat_enabled:
-        export_mat(idx, mat, base_file_typeless, output_directory)
+        export_mat(idx, mat, base_file_typeless, output_path)
