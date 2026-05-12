@@ -5,7 +5,7 @@ This module exposes the CTDialog class that encapsulates the Qt-based GUI used
 to drive the plugin. The design follows a thin-wrapper pattern where GUI
 slots delegate behavior to functions implemented in modular helper and analysis
 submodules. This keeps the dialog class focused on UI wiring and lifecycle
-management while business logic lives in reusable utilities.
+management while the rest is in reusable utilities.
 
 Key responsibilities:
 - Provide a persistent dialog instance that can be shown by the plugin entrypoint.
