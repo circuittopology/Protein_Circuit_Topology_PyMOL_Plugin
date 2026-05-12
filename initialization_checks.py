@@ -129,6 +129,27 @@ def install_failed(reqs: Path = REQUIREMENTS_FILE) -> None:
 
     logger.info("Once all packages are installed, restart PyMOL and reinitialize the plugin.")
 
+
+def _normalize_requirement_name(requirement: str) -> str | None:
+    """Convert a conda-style dependency entry into its package name."""
+    requirement = requirement.split("#", maxsplit=1)[0].strip()
+    if not requirement or requirement.endswith(":"):
+        return None
+
+    if "::" in requirement:
+        requirement = requirement.split("::", maxsplit=1)[1]
+
+    if "[" in requirement:
+        requirement = requirement.split("[", maxsplit=1)[0]
+
+    for operator in ("==", ">=", "<=", "!=", "~=", "=", ">", "<"):
+        if operator in requirement:
+            requirement = requirement.split(operator, maxsplit=1)[0]
+            break
+
+    requirement = requirement.strip()
+    return requirement or None
+
 def get_requirements(req_path: Path) -> list[str]:
     """
     Parses the requirements.yml file to get a list of required packages.
@@ -163,9 +184,7 @@ def get_requirements(req_path: Path) -> list[str]:
                         continue
 
                     if in_dependencies and stripped.startswith("-"):
-                        pack = stripped.replace("- ", "")
-                        pack = pack.split("==")[0].split(">=")[0].split("<=")[0]
-                        pack = pack.strip()
+                        pack = _normalize_requirement_name(stripped.removeprefix("-").strip())
                         if pack and pack not in packages:
                             packages.append(pack)
                 except Exception as e:

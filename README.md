@@ -30,11 +30,13 @@ When PyMOL prompts you to register file extensions, select **"Register Recommend
 
 ### 3. Download the plugin
 
-Download the latest plugin release ZIP (`.zip`) file from the GitHub Releases page:
+Download the latest plugin release ZIP (`.zip`) file directly from GitHub Releases:
+
+> Latest plugin ZIP: <https://github.com/circuittopology/Protein_Circuit_Topology_PyMOL_Plugin/releases/latest/download/protein-circuit-topology-pymol-plugin.zip>
+
+If you need a specific tagged version instead of the latest release, use the Releases page:
 
 > <https://github.com/circuittopology/Protein_Circuit_Topology_PyMOL_Plugin/releases>
-
-Choose the most recent release and download its accompanying `.zip` file.
 
 ### 4. Install the plugin in PyMOL
 

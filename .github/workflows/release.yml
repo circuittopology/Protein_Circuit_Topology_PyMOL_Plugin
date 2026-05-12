@@ -3,7 +3,10 @@ name: Lint and Release
 on:
   push:
     tags:
-      - '*'
+      - "*"
+
+permissions:
+  contents: write
 
 jobs:
   build-and-release:
@@ -11,12 +14,9 @@ jobs:
     container:
       image: astral/uv:0.10.10-python3.13-alpine3.23
 
-    permissions:
-      contents: write
-
     steps:
       - name: Install Git
-        run: apt-get update && apt-get install -y --no-install-recommends git
+        run: apk add --no-cache git
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,27 +25,44 @@ jobs:
 
       - name: Run Ruff
         run: |
-          uvx ruff check --exit-zero
+          uvx ruff check --exit-zero .
 
-      - name: Zip Repository & Generate Checksum
-        id: zip
+      - name: Build plugin package & Generate Checksum
+        id: package
+        env:
+          ASSET_NAME: protein-circuit-topology-pymol-plugin.zip
         run: |
-          FILENAME="release-${{ github.ref_name }}.zip"
+          git archive \
+          --format=zip \
+          --output="${ASSET_NAME}" \
+          HEAD \
+          analysis \
+          functions \
+          tabs \
+          utils \
+          __init__.py \
+          gui_class.py \
+          initialization_checks.py \
+          setup.py \
+          requirements.yml \
+          LICENSE
 
-          # (ignores .git and .gitignore automatically)
-          git archive --format=zip --output="$FILENAME" HEAD
+          echo "zip_file=${ASSET_NAME}" >> "${GITHUB_OUTPUT}"
 
-          sha256sum "$FILENAME" > "$FILENAME.sha256"
-
-          echo "zip_file=$FILENAME" >> $GITHUB_OUTPUT
-          echo "checksum_file=$FILENAME.sha256" >> $GITHUB_OUTPUT
+      - name: Publish download links
+        env:
+          ASSET_NAME: protein-circuit-topology-pymol-plugin.zip
+        run: |
+          {
+            echo "Latest download: https://github.com/${{ github.repository }}/releases/latest/download/${ASSET_NAME}"
+            echo "Versioned release page: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+          } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ${{ steps.zip.outputs.zip_file }}
-            ${{ steps.zip.outputs.checksum_file }}
+            ${{ steps.package.outputs.zip_file }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
