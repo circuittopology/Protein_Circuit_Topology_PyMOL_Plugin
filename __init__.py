@@ -30,6 +30,7 @@ from initialization_checks import (
     get_requirements,
     install_failed,
     is_path_user,
+    is_running_as_admin,
     linux_install,
     mac_install,
     pymol_install,
@@ -39,6 +40,27 @@ from initialization_checks import (
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
+
+def _show_admin_required_dialog() -> None:
+    """Show a Qt message box telling the user to restart PyMOL as administrator."""
+    try:
+        from PyQt5.QtWidgets import QApplication, QMessageBox
+        app = QApplication.instance()
+        if app is None:
+            return
+        msg = QMessageBox()
+        msg.setWindowTitle("Administrator privileges required")
+        msg.setIcon(QMessageBox.Warning)
+        msg.setText(
+            "Automatic dependency installation could not proceed because PyMOL is installed "
+            "system-wide and this session does not have administrator privileges.\n\n"
+            "Please close PyMOL, right-click it and choose "
+            "<b>Run as administrator</b>, then load the plugin again.",
+        )
+        msg.exec_()
+    except Exception:
+        logger.exception("Failed to show admin required dialog")
 
 
 def _try_register() -> bool:
@@ -88,19 +110,25 @@ def __init_plugin__(app=None):  # noqa: ARG001, N807
     sys_type = platform.system()
     pymol_path_user = is_path_user(PYMOL_ENV)
 
-    if not pymol_path_user and sys_type != "Darwin":
-        logger.info(
-            "PyMOL is installed on the system path; "
-            "automated plugin install cannot proceed.",
-        )
-        install_failed(reqs=REQUIREMENTS_FILE)
-        return
-
-    if not pymol_path_user and sys_type == "Darwin":
-        logger.info(
-            "PyMOL is installed on the system path; "
-            "automated install will still be attempted assuming admin privileges.",
-        )
+    if not pymol_path_user:
+        if sys_type == "Darwin":
+            logger.info(
+                "PyMOL is installed on the system path (macOS); "
+                "automated install will be attempted assuming admin privileges.",
+            )
+        elif is_running_as_admin():
+            logger.info(
+                "PyMOL is installed on the system path and is running as administrator; "
+                "proceeding with install.",
+            )
+        else:
+            logger.info(
+                "PyMOL is installed on the system path; "
+                "automated plugin install cannot proceed without administrator privileges.",
+            )
+            _show_admin_required_dialog()
+            install_failed(reqs=REQUIREMENTS_FILE)
+            return
 
     # Log what needs installing
     requirements_list = get_requirements(req_path=REQUIREMENTS_FILE)

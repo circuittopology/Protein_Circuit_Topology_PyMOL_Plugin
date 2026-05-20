@@ -68,7 +68,7 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
     if vals["traj_directory"]:
         file_directory = vals["traj_directory"]
         frame_idx = self.frame_selector_spinbox.value()
-        selected_file = Path(self.avail_dir_traj_files[frame_idx])
+        selected_file = Path(self.avail_dir_traj_files[frame_idx - 1])
         full_path = Path(file_directory) / selected_file
         frame_obj = self.protein_name
         cmd.set("state", frame_idx, frame_obj)
@@ -77,7 +77,7 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
     else:
         file_directory = vals["directory"]
         frame_idx = self.frame_selector_spinbox.value()
-        selected_file = Path(self.available_mol_files[frame_idx])
+        selected_file = Path(self.available_mol_files[frame_idx - 1])
         full_path = Path(file_directory) / selected_file
         frame_obj = full_path.stem
         cmd.load(full_path, frame_obj)

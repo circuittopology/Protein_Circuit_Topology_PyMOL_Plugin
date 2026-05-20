@@ -21,7 +21,6 @@ import os
 import platform
 import subprocess
 import sys
-import sysconfig
 from pathlib import Path
 
 from pymol import cmd  # pylint: disable=import-error, no-name-in-module
@@ -63,6 +62,23 @@ def is_path_user(path: Path | None) -> bool:
     except (OSError, ValueError) as e:
         logger.info("Warning: Could not determine if path is user-accessible: %s", e)
         return False
+
+
+def is_running_as_admin() -> bool:
+    """
+    Returns True if the current process has administrator / root privileges.
+
+    On Windows this calls IsUserAnAdmin(); on POSIX it checks effective uid == 0.
+    Returns False on any error so callers can treat the result conservatively.
+    """
+    if platform.system() == "Windows":
+        try:
+            import ctypes
+            return bool(ctypes.windll.shell32.IsUserAnAdmin())
+        except Exception:  # noqa: BLE001
+            return False
+    getuid = getattr(os, "getuid", None)
+    return getuid is not None and getuid() == 0
 
 def pymol_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
     """
@@ -253,7 +269,8 @@ def is_conda_installed() -> tuple[bool, Path | None]:
         result = subprocess.run(  # noqa: S602
             command, shell=True, check=True, stdout=pipe, stderr=pipe, text=True,
         )
-        return True, Path(result.stdout.strip())
+        first_line = result.stdout.splitlines()[0].strip()
+        return True, Path(first_line)
     except subprocess.CalledProcessError:
         return False, None
 
@@ -324,8 +341,13 @@ def win_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
     user_cmd = ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", win_cmds]
     try:
         if not conda_user_path:
-            logger.info("Running installation with admin privileges...")
-            result = subprocess.run(admin_cmd, check=True, capture_output=True, text=True)  # noqa: S603
+            if is_running_as_admin():
+                # Already elevated — run conda directly without spawning a new admin process
+                logger.info("Running installation with existing admin privileges...")
+                result = subprocess.run(user_cmd, check=True, capture_output=True, text=True)  # noqa: S603
+            else:
+                logger.info("Running installation with admin privileges via UAC...")
+                result = subprocess.run(admin_cmd, check=True, capture_output=True, text=True)  # noqa: S603
         else:
             logger.info("Running installation with user privileges...")
             result = subprocess.run(user_cmd, check=True, capture_output=True, text=True)  # noqa: S603
@@ -344,7 +366,7 @@ def win_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
 
 def mac_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
     """
-    Performs installation on macOS using pip.
+    Performs installation on macOS using conda.
 
     Args:
         reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
@@ -355,33 +377,32 @@ def mac_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
     if not reqs.exists():
         logger.error("Error: Requirements file not found: %s", reqs)
         return False
-    try:
-        requirements_list = get_requirements(reqs)
-        ready, packs = check_installed_packages(requirements_list)
 
-        if ready:
-            logger.info("Packages already installed.")
-            return True
-
-        target_site = sysconfig.get_paths()["purelib"]
-
-        logger.info("Installing missing packages into %s", target_site)
-        cmdline = [sys.executable, "-m", "pip", "install",
-                   "--upgrade", "--no-warn-script-location",
-                   "--target", target_site, *packs]
-        result = subprocess.run(cmdline, check=True, capture_output=True, text=True)  # noqa: S603
-        if result.returncode == 0:
-            logger.info("Output: %s", result.stdout)
-            return True
-        logger.error("Installation failed: %s", result.stderr)
-        return False  # noqa: TRY300
-    except subprocess.CalledProcessError:
-        logger.exception("Error occurred during installation")
+    conda_installed, conda_path = is_conda_installed()
+    if not conda_installed or conda_path is None:
+        logger.error("Conda not found on system — cannot install dependencies.")
         return False
+
+    reqs_fixed = str(reqs).replace("\\", "/")
+    try:
+        result = subprocess.run(  # noqa: S603
+            [str(conda_path), "env", "update", "--file", reqs_fixed],
+            check=True, capture_output=True, text=True,
+        )
+        logger.info("Installation output: %s", result.stdout)
+        if result.stderr:
+            logger.warning("Installation warnings/errors: %s", result.stderr)
+    except subprocess.CalledProcessError as e:
+        logger.exception("Installation failed: %s", e.stderr)
+        return False
+    else:
+        logger.info("Installation completed successfully.")
+        return True
+
 
 def linux_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
     """
-    Performs installation on Linux.
+    Performs installation on Linux using conda.
 
     Args:
         reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
@@ -392,42 +413,27 @@ def linux_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
     if not reqs.exists():
         logger.error("Error: Requirements file not found: %s", reqs)
         return False
-    try:
-        requirements_list = get_requirements(reqs)
 
-        pack_status, missing_packages = check_installed_packages(requirements_list)
-        if pack_status:
-            logger.info("All packages already installed.")
-            return True
-
-        logger.info("Missing packages: %s", missing_packages)
-
-        if missing_packages:
-            logger.info("Installing pip packages: %s", missing_packages)
-            try:
-                result = subprocess.run(  # noqa: S603
-                    [sys.executable, "-m", "pip", "install", *missing_packages],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-                if result.returncode == 0:
-                    logger.info("Pip packages installed successfully")
-                else:
-                    logger.error("Pip install failed: %s", result.stderr)
-            except subprocess.CalledProcessError:
-                logger.exception("Pip install error")
-
-        final_status, final_missing = check_installed_packages(requirements_list)
-
-        if final_status:
-            logger.info("All packages successfully installed!")
-            return True
-        logger.error("Some packages still missing: %s", final_missing)
-        return False  # noqa: TRY300
-    except subprocess.CalledProcessError:
-        logger.exception("Error during Linux installation")
+    conda_installed, conda_path = is_conda_installed()
+    if not conda_installed or conda_path is None:
+        logger.error("Conda not found on system — cannot install dependencies.")
         return False
+
+    reqs_fixed = str(reqs).replace("\\", "/")
+    try:
+        result = subprocess.run(  # noqa: S603
+            [str(conda_path), "env", "update", "--file", reqs_fixed],
+            check=True, capture_output=True, text=True,
+        )
+        logger.info("Installation output: %s", result.stdout)
+        if result.stderr:
+            logger.warning("Installation warnings/errors: %s", result.stderr)
+    except subprocess.CalledProcessError as e:
+        logger.exception("Installation failed: %s", e.stderr)
+        return False
+    else:
+        logger.info("Installation completed successfully.")
+        return True
 
 
 def register_pymol_functions():

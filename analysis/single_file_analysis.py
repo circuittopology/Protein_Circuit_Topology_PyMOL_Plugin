@@ -55,15 +55,18 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
         return
 
     chains = cmd.get_chains(selected_obj)
-    with  tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
         tmp_path = Path(tmp.name)
     cmd.save(tmp_path, selected_obj)
+    try:
+        single_chain, protid = retrieve_chain(tmp_path)
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink()
     single_dist = vals["cutoff_distance"]
     single_numcontacts = vals["cutoff_numcontacts"]
     single_neighbour = vals["exclude_neighbour"]
     base_file_typeless = selected_obj
-    single_chain, protid = retrieve_chain(tmp_path)
-    tmp_path.unlink()
     output_directory = vals["output_directory"]
 
     if not output_directory and (export_cmap3_enabled or export_mat_enabled):
