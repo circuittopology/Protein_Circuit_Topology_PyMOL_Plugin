@@ -94,10 +94,6 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
         QMessageBox.warning(self, "Error", "An output directory has not been selected.")
         return
 
-    output_path = resolve_output_path(self, frame_output_directory)
-    if output_path is None:
-        return
-
     if len(traj_frame_chains) > 1:
         frame_level = "model"
         logger.info("This trajectory object has multiple chains. Performing multi-chain CT analysis...")
@@ -127,7 +123,7 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
         entangled = get_stats(mat=mat)
         stats_plot(entangled, frame_psc, protid)
 
-    # csv exporting
+    cmap3_exports = []
     if export_cmap3_enabled:
         for c in traj_frame_chains:
             with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
@@ -138,14 +134,19 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
                 temp_idx, temp_n, _, _ = get_cmap(curr_chain, cutoff_distance=frame_dist,
                                                             cutoff_numcontacts=frame_numcontacts,
                                                             exclude_neighbour=frame_neighbour)
-                chain_label = f"{frame_obj}_chain_{c}"
-                export_cmap3(temp_idx, chain_label, temp_n, output_path)
+                cmap3_exports.append((temp_idx, f"{frame_obj}_chain_{c}", temp_n))
             finally:
                 if tmp_path.exists():
                     tmp_path.unlink()
 
-    if export_mat_enabled:
-        export_mat(idx, mat, frame_obj, output_path)
+    if export_cmap3_enabled or export_mat_enabled:
+        output_path = resolve_output_path(self, frame_output_directory)
+        if output_path is None:
+            return
+        for temp_idx, chain_label, temp_n in cmap3_exports:
+            export_cmap3(temp_idx, chain_label, temp_n, output_path)
+        if export_mat_enabled:
+            export_mat(idx, mat, frame_obj, output_path)
 
     # If we are processing a trajectory that was imported as a directory of PDBs, then we first loaded the corresponding frame to retrieve chain info about it
     # and now that we are done, we can remove it

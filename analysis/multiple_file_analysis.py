@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Slight rewrite to match their notebook code because we had bugs
-def run_multi_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
+def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     """
     Runs the multi-file circuit topology analysis.
     Iterates through files in the selected directory, performs analysis, and generates plots/exports.
@@ -67,10 +67,6 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
 
     if not output_dir and (multi_export_cmap3 or multi_export_mat or multi_export_psc):
         QMessageBox.warning(self, "Error", f"An output directory has not been selected: {output_dir}")
-        return
-
-    output_path = resolve_output_path(self, output_dir)
-    if output_path is None:
         return
 
     number_of_files = len(list(path.iterdir()))
@@ -173,28 +169,34 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
             else:
                 stats_plot(entangled, psc_result, protid)
 
-        if multi_export_cmap3:
-            for c in multi_obj_chains:
-                with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
-                    tmp_path = Path(tmp.name)
-                cmd.save(tmp_path, f"{multi_obj} and chain {c}", state=cmd.get_state())
-                try:
-                    curr_multi_chain, _ = retrieve_chain(tmp_path)
-                    temp_i, temp_num, _, res_names = get_cmap(curr_multi_chain, cutoff_distance=cutoff_dist_multi,
-                                                                cutoff_numcontacts=multi_num_contacts,
-                                                                exclude_neighbour=multi_neighbours)
-                    temp_multi_f_base = f"{multi_obj}_chain_{c}"
-                    export_cmap3(temp_i, temp_multi_f_base, temp_num, output_path)
-                finally:
-                    if tmp_path.exists():
-                        tmp_path.unlink()
-
-        if multi_export_mat:
-            export_mat(idx, mat, multi_obj, output_path)
+        if multi_export_cmap3 or multi_export_mat:
+            output_path = resolve_output_path(self, output_dir)
+            if output_path is None:
+                return
+            if multi_export_cmap3:
+                for c in multi_obj_chains:
+                    with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
+                        tmp_path = Path(tmp.name)
+                    cmd.save(tmp_path, f"{multi_obj} and chain {c}", state=cmd.get_state())
+                    try:
+                        curr_multi_chain, _ = retrieve_chain(tmp_path)
+                        temp_i, temp_num, _, res_names = get_cmap(curr_multi_chain, cutoff_distance=cutoff_dist_multi,
+                                                                    cutoff_numcontacts=multi_num_contacts,
+                                                                    exclude_neighbour=multi_neighbours)
+                        temp_multi_f_base = f"{multi_obj}_chain_{c}"
+                        export_cmap3(temp_i, temp_multi_f_base, temp_num, output_path)
+                    finally:
+                        if tmp_path.exists():
+                            tmp_path.unlink()
+            if multi_export_mat:
+                export_mat(idx, mat, multi_obj, output_path)
 
         cmd.delete(multi_obj)
 
     if multi_export_psc:
+        output_path = resolve_output_path(self, output_dir)
+        if output_path is None:
+            return
         export_psc(psclist, output_path)
     if multi_plot_psc:
         plt.rcParams.update({"font.size": 14})

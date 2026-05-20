@@ -73,10 +73,6 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
         QMessageBox.warning(self, "Error", "An output directory has not been selected.")
         return
 
-    output_path = resolve_output_path(self, output_directory)
-    if output_path is None:
-        return
-
     if len(chains) > 1:
         level = "model"
         logger.info("The supplied object has multiple chains. Performing multi-chain CT analysis...")
@@ -99,6 +95,7 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
         else:
             matrix_plot_model(mat=mat, protid=protid)
 
+    cmap3_exports = []
     if folding_score_enabled or export_cmap3_enabled:
         for c in chains:
             with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
@@ -137,12 +134,17 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
                     dialog.exec_()
 
                 if export_cmap3_enabled:
-                    chain_label = f"{selected_obj}_chain_{c}"
-                    logger.info("Exporting contact map as .csv for chain %s ...", c)
-                    export_cmap3(i, chain_label, n, output_path)
+                    cmap3_exports.append((i, f"{selected_obj}_chain_{c}", n))
             finally:
                 if tmp_path.exists():
                     tmp_path.unlink()
 
-    if export_mat_enabled:
-        export_mat(idx, mat, base_file_typeless, output_path)
+    if export_cmap3_enabled or export_mat_enabled:
+        output_path = resolve_output_path(self, output_directory)
+        if output_path is None:
+            return
+        for i, chain_label, n in cmap3_exports:
+            logger.info("Exporting contact map as .csv for chain %s ...", chain_label)
+            export_cmap3(i, chain_label, n, output_path)
+        if export_mat_enabled:
+            export_mat(idx, mat, base_file_typeless, output_path)
