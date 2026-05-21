@@ -2,7 +2,7 @@
 
 This document reflects the **current plugin/runtime source tree** and lists callable entry points by module category.
 
-**Total Callable Entry Points:** 118
+**Total Callable Entry Points:** 119
 **Python Files With Callables:** 37
 
 ## Table of Contents
@@ -14,7 +14,7 @@ This document reflects the **current plugin/runtime source tree** and lists call
 5. [Analysis Functions](#analysis-functions) (6 functions)
 6. [Utility Functions](#utility-functions) (41 functions)
 7. [GUI Functions](#gui-functions) (44 functions)
-8. [Initialization Functions](#initialization-functions) (11 functions)
+8. [Initialization Functions](#initialization-functions) (12 functions)
 
 ## Calculating Functions
 
@@ -768,25 +768,31 @@ Prints instructions for manual installation of dependencies if automated install
 
 Checks if conda is installed on the system.
 
+### `is_running_as_admin()`
+
+**Module:** `initialization_checks.py`
+
+Returns True if the current process has administrator / root privileges. On Windows calls `IsUserAnAdmin()`; on POSIX checks effective uid == 0.
+
 ### `is_path_user(path)`
 
 **Module:** `initialization_checks.py`
 
 Checks if a given path is within the user's home directory.
 
-### `linux_install(env=LINUX_ENV_FIXED, reqs=LINUX_REQS_FIXED)`
+### `linux_install(reqs=REQUIREMENTS_FILE)`
 
 **Module:** `initialization_checks.py`
 
-Performs installation on Linux.
+Performs installation on Linux using conda.
 
-### `mac_install(env=PYMOL_ENV, reqs=REQUIREMENTS_FILE)`
+### `mac_install(reqs=REQUIREMENTS_FILE)`
 
 **Module:** `initialization_checks.py`
 
-Performs installation on macOS using pip.
+Performs installation on macOS using conda.
 
-### `pymol_install(env=PYMOL_ENV, reqs=REQUIREMENTS_FILE)`
+### `pymol_install(reqs=REQUIREMENTS_FILE)`
 
 **Module:** `initialization_checks.py`
 
@@ -798,7 +804,7 @@ Attempts to install dependencies using the PyMOL terminal and conda.
 
 Register the plugin's core functions as PyMOL commands.
 
-### `win_install(env=PYMOL_ENV, reqs=REQUIREMENTS_FILE)`
+### `win_install(reqs=REQUIREMENTS_FILE)`
 
 **Module:** `initialization_checks.py`
 
@@ -813,7 +819,7 @@ Performs installation on Windows using PowerShell and conda.
 - **Analysis Functions**: 6
 - **Utility Functions**: 41
 - **GUI Functions**: 44
-- **Initialization Functions**: 11
-- **Total**: 118
+- **Initialization Functions**: 12
+- **Total**: 119
 
-*Last Updated: April 10, 2026*
+*Last Updated: May 21, 2026*

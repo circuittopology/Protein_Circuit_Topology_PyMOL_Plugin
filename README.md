@@ -22,7 +22,7 @@ Download the **PyMOL 3.1.6.1** installer for your platform (Windows / Linux / ma
 
 > <https://storage.googleapis.com/pymol-storage/installers/index.html>
 
-During setup, **install PyMOL for the current user only** (select **"Just Me (recommended)"**). This ensures the plugin's automatic dependency installer has the necessary write permissions.
+During setup, **install PyMOL for the current user only** (select **"Just Me (recommended)"**). This ensures the plugin's automatic dependency installer has the necessary write permissions. If you do install PyMOL for **All Users (requires admin privileges)**, ensure you run PyMOL as administrator to increase the chances of automatic conda package installation.
 
 ### 2. Register file extensions
 
@@ -50,6 +50,12 @@ If you need a specific tagged version instead of the latest release, use the Rel
 Once installation is complete, open the plugin's GUI from:
 
 > **Plugin → Protein Circuit Topology Plugin**
+
+## API Documentation
+You can read the full API documentation [here](documentation/api_documentation.pdf).
+
+## Manual
+A guide on how to use the GUI is available [here](documentation/CircuitTopologyManual.pdf).
 
 ## Citation
 
