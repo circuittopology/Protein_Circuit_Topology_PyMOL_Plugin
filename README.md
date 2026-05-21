@@ -74,7 +74,7 @@ Circuit Topology (CT) is a fundamental property of folded polymer chains and pro
 
 ## Dependency Constraints
 
-The table below lists the pinned dependency versions that have been verified to work with this plugin. The [requirements.yml](requirements.yml) file has relaxed dependency constraints in case you do not stick
+The table below lists the pinned dependency versions that have been verified to work with this plugin. The [requirements.yml](requirements.yml) file has relaxed dependency constraints in case you do not follow the installation guide 1:1.
 
 ```yml
 dependencies:
