@@ -63,13 +63,20 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
         QMessageBox.warning(self, "Error", f"The input directory does not exist: {path}")
         return
 
+    if not any(path.glob("*.pdb")) and not any(path.glob("*.cif")):
+        QMessageBox.warning(self, "Error",
+            f"No PDB or CIF files found in the selected directory: {path}."
+            f" If you are trying to analyze a trajectory, please first convert it to multiple PDB files.",
+        )
+        return
+
     output_dir = vals["output_directory"]
 
     if not output_dir and (multi_export_cmap3 or multi_export_mat or multi_export_psc):
         QMessageBox.warning(self, "Error", f"An output directory has not been selected: {output_dir}")
         return
 
-    number_of_files = len(list(path.iterdir()))
+    number_of_files = len(list(path.glob("*.pdb"))) + len(list(path.glob("*.cif")))
     psclist = []
     p = []
     s = []
