@@ -22,4 +22,5 @@ CONTACT_MAP = {
     "Series (S)": "S",
     "Parallel (P)": "P",
     "Inverse parallel (P-)": "IP",
+    "Cross (X)": "X",
 }

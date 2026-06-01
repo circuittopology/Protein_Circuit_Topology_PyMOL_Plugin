@@ -3,6 +3,8 @@ from typing import Any
 
 from pymol import cmd, stored
 
+from utils.validation import chain_selection, object_exists, object_selection
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -15,24 +17,30 @@ def get_residue_range(self: Any, obj_name: str | None) -> None:
         self: The main GUI class instance.
         obj_name (str): The name of the object to analyze.
     """
-    if not obj_name or obj_name == "Select a file.":
+    if not object_exists(obj_name) or not obj_name:
+        self.curr_chain_residues = {}
+        self.chain_combo_box.clear()
+        self.box_res_id.setRange(0, 0)
+        self.box_res_id.setValue(0)
         return
     try:
-        chains = cmd.get_chains(obj_name)
+        chains = cmd.get_chains(object_selection(obj_name))
         self.curr_chain_residues = {}
         for c in chains:
             stored.resi_list = []
-            cmd.iterate(f"{obj_name} and chain {c} and name CA",
+            cmd.iterate(f"{chain_selection(obj_name, c)} and name CA",
                         "stored.resi_list.append(resv)")
             resi_list = stored.resi_list
 
             if resi_list:
                 self.curr_chain_residues[c] = [min(resi_list), max(resi_list)]
-            else:
-                self.box_res_id.setRange(0, 0)
-                self.box_res_id.setValue(0)
 
         self.update_chain_combo_box()
+        if self.curr_chain_residues:
+            self.update_residue_range()
+        else:
+            self.box_res_id.setRange(0, 0)
+            self.box_res_id.setValue(0)
 
     except Exception:
         logger.exception("Error getting residue range")
@@ -54,4 +62,5 @@ def update_residue_range(self: Any) -> None:
         self.box_res_id.setRange(min_resi, max_resi)
         self.box_res_id.setValue(min_resi)
     except KeyError:
-        pass
+        self.box_res_id.setRange(0, 0)
+        self.box_res_id.setValue(0)

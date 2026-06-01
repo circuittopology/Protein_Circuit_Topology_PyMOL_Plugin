@@ -68,21 +68,29 @@ def object_exists(name: str) -> bool:
     Returns:
         bool: True if the object exists, False otherwise.
     """
-    return name in cmd.get_names()
+    if not name:
+        return False
+    try:
+        return name in cmd.get_names("objects")
+    except Exception:  # noqa: BLE001
+        logger.debug("cmd.get_names failed; falling back to get_object_list", exc_info=True)
+        return name in cmd.get_object_list()
 
 
 @contextmanager
-def temp_pdb_export(selection, state=None):
+def temp_pdb_export(selection: str, state: int | None = None):
     """Save a PyMOL selection to a temporary PDB file, yield the path, then clean up."""
     with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
-        tmp_path = tmp.name
-    cmd.save(tmp_path, selection, state=state or cmd.get_state())
-    tmp_path = Path(tmp_path)
+        tmp_path = Path(tmp.name)
     try:
+        cmd.save(str(tmp_path), selection, state=state or cmd.get_state())
         yield tmp_path
     finally:
         if tmp_path.exists():
-            tmp_path.unlink()
+            try:
+                tmp_path.unlink()
+            except OSError:
+                logger.exception("Failed to remove temporary file: %s", tmp_path)
 
 
 def make_param_row(label_text, tooltip, spinbox):
@@ -95,9 +103,16 @@ def make_param_row(label_text, tooltip, spinbox):
     return row
 
 
-def resolve_output_path(self: Any, output_dir: str) -> Path | None:
+def resolve_output_path(self: Any, output_dir: str | Path | None) -> Path | None:
     """Validates and creates the output directory. Returns the Path on success, None on failure."""
-    output_path = Path(output_dir)
+    if not output_dir:
+        QMessageBox.warning(self, "Error", "An output directory has not been selected.")
+        return None
+    try:
+        output_path = Path(output_dir).expanduser()
+    except (TypeError, ValueError) as e:
+        QMessageBox.warning(self, "Error", f"Invalid output directory: {output_dir}\n{e}")
+        return None
     if output_path.exists() and not output_path.is_dir():
         QMessageBox.warning(self, "Error", f"The specified output path is not a directory: {output_path}")
         return None
@@ -109,4 +124,11 @@ def resolve_output_path(self: Any, output_dir: str) -> Path | None:
             logger.exception("Failed to create output directory: %s", output_path)
             QMessageBox.warning(self, "Error", f"Failed to create output directory: {output_path}\n{e}")
             return None
+    try:
+        with tempfile.NamedTemporaryFile(prefix=".ct_write_test_", dir=output_path, delete=True):
+            pass
+    except OSError as e:
+        logger.exception("Output directory is not writable: %s", output_path)
+        QMessageBox.warning(self, "Error", f"The selected output directory is not writable: {output_path}\n{e}")
+        return None
     return output_path

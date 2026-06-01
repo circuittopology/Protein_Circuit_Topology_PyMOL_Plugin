@@ -97,5 +97,5 @@ def get_multiple_values(self: Any) -> dict[str, Any]:
         "filtering_distance": self.filtering_distance_spin.value() if len_filtering else None,
         "length_filter_mode": len_dropdown if len_filtering else None,
         "energy_filtering": energy_filtering,
-        "energy_filtering_mode": "-" if energy_dropdown == "Repulsive/Destabilizing (-)" else "+",
+        "energy_filtering_mode": energy_dropdown if energy_filtering else None,
     }

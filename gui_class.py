@@ -15,7 +15,7 @@ Key responsibilities:
 from typing import cast
 
 from pymol import cmd
-from PyQt5 import QtCore
+from PyQt5 import QtCore  # type: ignore[attr-defined]
 from PyQt5.QtWidgets import QDialog, QTabWidget, QVBoxLayout, QWidget
 
 from analysis.local_ct_analysis import run_local_ct
@@ -51,7 +51,7 @@ from utils.updates import (
 )
 
 if not hasattr(cmd, "object_exists"):
-    cmd.object_exists = object_exists
+    cmd.object_exists = object_exists  # type: ignore[attr-defined]
 
 class CTDialog(QDialog):
     """
@@ -148,7 +148,7 @@ class CTDialog(QDialog):
         """
         if obj_name is None:
             obj_name = self.local_dropdown_objects.currentText()
-        cast("str", obj_name)
+        obj_name = cast("str", obj_name)
         handle_local_object_change(self, obj_name)
 
     @QtCore.pyqtSlot()
@@ -163,7 +163,7 @@ class CTDialog(QDialog):
         """
         if obj_name is None:
             obj_name = self.dropdown_objects.currentText()
-        cast("str", obj_name)
+        obj_name = cast("str", obj_name)
         handle_standard_object_change(self, obj_name)
 
     # non_polymer.py

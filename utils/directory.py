@@ -7,6 +7,19 @@ from PyQt5.QtWidgets import QFileDialog, QLabel, QMessageBox
 
 from utils.config import WARN_MSG
 from utils.non_polymer import new_file_has_non_polymer_atoms
+from utils.validation import (
+    legalize_object_name,
+    list_structure_files,
+    object_exists,
+    set_frame_spinbox_bounds,
+    validate_structure_file,
+)
+
+
+def _ensure_object_loaded(obj_name: str) -> None:
+    if not object_exists(obj_name):
+        msg = f"PyMOL did not create the expected object: {obj_name}"
+        raise RuntimeError(msg)
 
 
 def _load_structure_file(self, label, attr_file, attr_obj):
@@ -14,10 +27,18 @@ def _load_structure_file(self, label, attr_file, attr_obj):
     file_filter = "Structure Files (*.pdb *.cif)"
     file_path, _ = QFileDialog.getOpenFileName(self, "Select Input File", "", file_filter)
     if file_path:
-        set_label_text_elided(file_path, label)
-        obj_name = Path(file_path).stem
-        cmd.load(file_path, obj_name)
-        obj_name = obj_name.replace(" ", "_")
+        try:
+            input_path = validate_structure_file(file_path)
+            obj_name = legalize_object_name(input_path.stem)
+            cmd.load(str(input_path), obj_name)
+            _ensure_object_loaded(obj_name)
+        except Exception as e:  # noqa: BLE001
+            setattr(self, attr_file, None)
+            setattr(self, attr_obj, None)
+            QMessageBox.warning(self, "Error", f"Failed to load structure file:\n{e}")
+            return
+
+        set_label_text_elided(str(input_path), label)
         setattr(self, attr_file, file_path)
         setattr(self, attr_obj, obj_name)
         if new_file_has_non_polymer_atoms(obj_name):
@@ -59,15 +80,29 @@ def choose_input_dir_multi(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    dir_path = Path(QFileDialog.getExistingDirectory(self, "Select Input Directory"))
-    if dir_path.exists():
-        self.selected_input_dir_multi = dir_path
-        set_label_text_elided(str(dir_path), self.input_dir_label_multi)
-        pdb_files = sorted([f.name.replace(" ", "_") for f in dir_path.iterdir() if f.suffix == ".pdb"])
-        self.available_mol_files = pdb_files
-        self.frame_selector_spinbox.setMaximum(len(pdb_files))
-    else:
+    selected_dir = QFileDialog.getExistingDirectory(self, "Select Input Directory")
+    if not selected_dir:
         self.selected_input_dir_multi = None
+        self.available_mol_files = []
+        set_frame_spinbox_bounds(self.frame_selector_spinbox, 0)
+        return
+
+    dir_path = Path(selected_dir)
+    try:
+        structure_files = list_structure_files(dir_path)
+    except (OSError, ValueError) as e:
+        self.selected_input_dir_multi = None
+        self.available_mol_files = []
+        set_frame_spinbox_bounds(self.frame_selector_spinbox, 0)
+        QMessageBox.warning(self, "Error", f"Failed to read input directory:\n{e}")
+        return
+
+    self.selected_input_dir_multi = dir_path
+    set_label_text_elided(str(dir_path), self.input_dir_label_multi)
+    self.available_mol_files = structure_files
+    set_frame_spinbox_bounds(self.frame_selector_spinbox, len(structure_files))
+    if not structure_files:
+        QMessageBox.warning(self, "Error", f"No PDB or CIF files found in the selected directory: {dir_path}.")
 
 
 def set_label_text_elided(file_path: str, label: QLabel) -> None:

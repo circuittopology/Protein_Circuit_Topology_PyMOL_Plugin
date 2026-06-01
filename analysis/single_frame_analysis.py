@@ -1,5 +1,4 @@
 import logging
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -16,13 +15,22 @@ from functions.plots.circuit_plot import circuit_plot
 from functions.plots.matrix_plot import matrix_plot
 from functions.plots.matrix_plot_model import matrix_plot_model
 from functions.plots.stats_plot import stats_plot
-from utils.helpers import resolve_output_path
+from utils.helpers import resolve_output_path, temp_pdb_export
 from utils.non_polymer import has_non_polymer_atoms
+from utils.validation import (
+    chain_selection,
+    get_object_chains,
+    legalize_object_name,
+    list_structure_files,
+    object_exists,
+    selected_frame_file,
+    selection_has_atoms,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
+def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     """
     Runs circuit topology analysis for a single frame of a trajectory or a single PDB file from a directory.
 
@@ -35,23 +43,8 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
                                         "The opened file contains non-polymer atoms, which can interfere with Circuit Topology. Please use the 'Remove Non-Polymer Atoms' button to remove them.")
 
     vals = self.get_multiple_values()
-
     traj_dir = vals.get("traj_directory")
     pdb_dir = vals.get("directory")
-
-    # Check for missing or empty file lists
-    if traj_dir:
-        if not hasattr(self, "avail_dir_traj_files") or not self.avail_dir_traj_files:
-            QMessageBox.critical(self, "Error", "No trajectory files found in the selected trajectory directory.")
-            return
-    elif pdb_dir:
-        if not hasattr(self, "available_mol_files") or not self.available_mol_files:
-            QMessageBox.critical(self, "Error", "No PDB files found in the selected directory.")
-            return
-    else:
-        QMessageBox.critical(self, "Error", "No input source selected (trajectory or directory).")
-        return
-
 
     circuit_plot_enabled = vals["circuit_plot"]
     matrix_plot_enabled = vals["matrix_plot"]
@@ -59,99 +52,138 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0912, PLR0915
     export_cmap3_enabled = vals["export_cmap3"]
     export_mat_enabled = vals["export_mat"]
 
-    # Check to see if GUI has at least one checkbox ticked for the 'run analysis' part
     if not circuit_plot_enabled and not matrix_plot_enabled and not export_cmap3_enabled and not export_mat_enabled and not stats_plot_enabled:
         QMessageBox.warning(self, "Error", "No checkboxes for plotting or exporting have been ticked!")
         return
 
-    # Correctly retrieve the frame
-    if vals["traj_directory"]:
-        file_directory = vals["traj_directory"]
-        frame_idx = self.frame_selector_spinbox.value()
-        selected_file = Path(self.avail_dir_traj_files[frame_idx - 1])
-        full_path = Path(file_directory) / selected_file
-        frame_obj = self.protein_name
-        cmd.set("state", frame_idx, frame_obj)
-        traj_frame_chains = cmd.get_chains(frame_obj)
-        frame_chain, protid = retrieve_chain(full_path)
+    if traj_dir:
+        source_dir = Path(traj_dir)
+        frame_files = [Path(file_path) for file_path in getattr(self, "avail_dir_traj_files", [])]
+    elif pdb_dir:
+        source_dir = Path(pdb_dir)
+        try:
+            frame_files = list_structure_files(source_dir)
+            self.available_mol_files = frame_files
+        except Exception as e:  # noqa: BLE001
+            QMessageBox.critical(self, "Error", f"Failed to read input directory:\n{e}")
+            return
     else:
-        file_directory = vals["directory"]
-        frame_idx = self.frame_selector_spinbox.value()
-        selected_file = Path(self.available_mol_files[frame_idx - 1])
-        full_path = Path(file_directory) / selected_file
-        frame_obj = full_path.stem
-        cmd.load(full_path, frame_obj)
-        traj_frame_chains = cmd.get_chains(frame_obj)
-        frame_chain, protid = retrieve_chain(full_path)
+        QMessageBox.critical(self, "Error", "No input source selected (trajectory or directory).")
+        return
+
+    if not frame_files:
+        QMessageBox.critical(self, "Error", "No PDB or CIF files are available for frame analysis.")
+        return
+
+    normalized_files = [file_path if file_path.is_absolute() else source_dir / file_path for file_path in frame_files]
+    frame_idx = self.frame_selector_spinbox.value()
+    try:
+        full_path = selected_frame_file(normalized_files, frame_idx)
+    except Exception as e:  # noqa: BLE001
+        QMessageBox.critical(self, "Error", str(e))
+        return
+
+    output_path = None
+    if export_cmap3_enabled or export_mat_enabled:
+        output_path = resolve_output_path(self, vals["output_directory"])
+        if output_path is None:
+            return
 
     frame_dist = vals["cutoff_distance"]
     frame_numcontacts = vals["cutoff_numcontacts"]
     frame_neighbour = vals["exclude_neighbour"]
+    loaded_frame_obj = None
 
-    frame_output_directory = vals["output_directory"]
-
-    if not frame_output_directory and (export_cmap3_enabled or export_mat_enabled):
-        QMessageBox.warning(self, "Error", "An output directory has not been selected.")
-        return
-
-    if len(traj_frame_chains) > 1:
-        frame_level = "model"
-        logger.info("This trajectory object has multiple chains. Performing multi-chain CT analysis...")
-    else:
-        frame_level = "chain"
-
-    idx, numbering, protid, _ = get_cmap(frame_chain, level=frame_level, cutoff_distance=frame_dist,
-                                                    cutoff_numcontacts=frame_numcontacts,
-                                                    exclude_neighbour=frame_neighbour)
-
-    # matrix retrieval (depends on object level 'chain' vs 'model' (single- vs multi-chain))
-    if frame_level == "chain":
-        mat, frame_psc, _ = get_matrix(idx, protid)
-    else:
-        mat, frame_psc, _ = get_matrix(index=idx, protid=protid)
-
-    # plotting
-    if circuit_plot_enabled:
-        circuit_plot(index=idx, protid=protid, numbering=numbering)
-    if matrix_plot_enabled:
-        if frame_level == "chain":
-            matrix_plot(mat=mat, protid=protid)
+    try:
+        if traj_dir:
+            frame_obj = getattr(self, "protein_name", None)
+            if not isinstance(frame_obj, str) or not object_exists(frame_obj):
+                msg = "The trajectory molecule is no longer available in PyMOL."
+                raise RuntimeError(msg)  # noqa: TRY301
+            cmd.set("state", frame_idx, frame_obj)
+            traj_frame_chains = get_object_chains(frame_obj)
+            frame_chain, protid = retrieve_chain(full_path)
         else:
-            matrix_plot_model(mat=mat, protid=protid)
+            frame_obj = legalize_object_name(full_path.stem)
+            cmd.load(str(full_path), frame_obj)
+            loaded_frame_obj = frame_obj
+            if not object_exists(frame_obj):
+                msg = f"PyMOL did not create the expected object: {frame_obj}"
+                raise RuntimeError(msg)  # noqa: TRY301
+            traj_frame_chains = get_object_chains(frame_obj)
+            frame_chain, protid = retrieve_chain(full_path)
 
-    if stats_plot_enabled:
-        entangled = get_stats(mat=mat)
-        stats_plot(entangled, frame_psc, protid)
+        if not traj_frame_chains:
+            msg = "No protein chains were found for the selected frame."
+            raise ValueError(msg)  # noqa: TRY301
 
-    cmap3_exports = []
-    if export_cmap3_enabled:
-        for c in traj_frame_chains:
-            with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
-                tmp_path = Path(tmp.name)
-            cmd.save(tmp_path, f"{frame_obj} and chain {c}", state=cmd.get_state())
-            try:
-                curr_chain, _ = retrieve_chain(tmp_path)
-                temp_idx, temp_n, _, _ = get_cmap(curr_chain, cutoff_distance=frame_dist,
-                                                            cutoff_numcontacts=frame_numcontacts,
-                                                            exclude_neighbour=frame_neighbour)
-                cmap3_exports.append((temp_idx, f"{frame_obj}_chain_{c}", temp_n))
-            finally:
-                if tmp_path.exists():
-                    tmp_path.unlink()
+        if len(traj_frame_chains) > 1:
+            frame_level = "model"
+            logger.info("This trajectory object has multiple chains. Performing multi-chain CT analysis...")
+        else:
+            frame_level = "chain"
 
-    if export_cmap3_enabled or export_mat_enabled:
-        output_path = resolve_output_path(self, frame_output_directory)
-        if output_path is None:
+        idx, numbering, protid, _ = get_cmap(
+            frame_chain,
+            level=frame_level,
+            cutoff_distance=frame_dist,
+            cutoff_numcontacts=frame_numcontacts,
+            exclude_neighbour=frame_neighbour,
+        )
+        if idx.size == 0:
+            QMessageBox.warning(self, "Warning", "No residue contacts were found for the selected frame.")
             return
-        for temp_idx, chain_label, temp_n in cmap3_exports:
-            export_cmap3(temp_idx, chain_label, temp_n, output_path)
-        if export_mat_enabled:
-            export_mat(idx, mat, frame_obj, output_path)
 
-    # If we are processing a trajectory that was imported as a directory of PDBs, then we first loaded the corresponding frame to retrieve chain info about it
-    # and now that we are done, we can remove it
-    if vals["directory"]:
-        cmd.delete(frame_obj)
+        if frame_level == "chain":
+            mat, frame_psc, _ = get_matrix(idx, protid)
+        else:
+            mat, frame_psc, _ = get_matrix(index=idx, protid=protid)
+
+        if circuit_plot_enabled:
+            circuit_plot(index=idx, protid=protid, numbering=numbering)
+        if matrix_plot_enabled:
+            if frame_level == "chain":
+                matrix_plot(mat=mat, protid=protid)
+            else:
+                matrix_plot_model(mat=mat, protid=protid)
+
+        if stats_plot_enabled:
+            entangled = get_stats(mat=mat)
+            stats_plot(entangled, frame_psc, protid)
+
+        cmap3_exports = []
+        if export_cmap3_enabled:
+            for c in traj_frame_chains:
+                current_selection = chain_selection(frame_obj, c)
+                if not selection_has_atoms(current_selection):
+                    logger.warning("Skipping empty chain selection: %s", current_selection)
+                    continue
+                with temp_pdb_export(current_selection, state=cmd.get_state()) as tmp_path:
+                    curr_chain, _ = retrieve_chain(tmp_path)
+                temp_idx, temp_n, _, _ = get_cmap(
+                    curr_chain,
+                    cutoff_distance=frame_dist,
+                    cutoff_numcontacts=frame_numcontacts,
+                    exclude_neighbour=frame_neighbour,
+                )
+                if temp_idx.size == 0:
+                    logger.warning("No contacts found for frame chain %s; skipping contact-map export", c)
+                    continue
+                cmap3_exports.append((temp_idx, f"{frame_obj}_chain_{c}", temp_n))
+
+        if export_cmap3_enabled or export_mat_enabled:
+            if output_path is None:
+                return
+            for temp_idx, chain_label, temp_n in cmap3_exports:
+                export_cmap3(temp_idx, chain_label, temp_n, output_path)
+            if export_mat_enabled:
+                export_mat(idx, mat, frame_obj, output_path)
+    except Exception as e:
+        logger.exception("Single-frame analysis failed")
+        QMessageBox.warning(self, "Error", f"Single-frame analysis failed:\n{e}")
+    finally:
+        if loaded_frame_obj and object_exists(loaded_frame_obj):
+            cmd.delete(loaded_frame_obj)
 
 # Enables single frame analysis based on the checkbox
 def toggle_frame_controls(self: Any, enabled: bool) -> None:

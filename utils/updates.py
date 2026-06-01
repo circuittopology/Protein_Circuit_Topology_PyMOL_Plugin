@@ -65,10 +65,12 @@ def update_local_list(self: Any, new_objects: list[str] | None = None) -> None:
 
         selection = self.local_dropdown_objects.currentText()
         self.local_dropdown_objects.clear()
-        if selection in self.current_local_objects:
-            self.local_dropdown_objects.setCurrentText(selection)
         self.local_dropdown_objects.addItems(["Select a file."])
         self.local_dropdown_objects.addItems(self.current_local_objects)
+        if selection in self.current_local_objects:
+            self.local_dropdown_objects.setCurrentText(selection)
+        else:
+            self.local_dropdown_objects.setCurrentIndex(0)
 
 def update_list(self: Any, new_objects: list[str] | None = None) -> None:
     """
@@ -86,7 +88,9 @@ def update_list(self: Any, new_objects: list[str] | None = None) -> None:
 
         selection = self.dropdown_objects.currentText()
         self.dropdown_objects.clear()
-        if selection in self.current_objects:
-            self.dropdown_objects.setCurrentText(selection)
         self.dropdown_objects.addItems(["Select a file."])
         self.dropdown_objects.addItems(self.current_objects)
+        if selection in self.current_objects:
+            self.dropdown_objects.setCurrentText(selection)
+        else:
+            self.dropdown_objects.setCurrentIndex(0)
