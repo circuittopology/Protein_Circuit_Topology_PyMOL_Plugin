@@ -2,8 +2,8 @@
 
 This document reflects the **current plugin/runtime source tree** and lists callable entry points by module category.
 
-**Total Callable Entry Points:** 119
-**Python Files With Callables:** 37
+**Total Callable Entry Points:** 132
+**Python Files With Callables:** 38
 
 ## Table of Contents
 
@@ -12,7 +12,7 @@ This document reflects the **current plugin/runtime source tree** and lists call
 3. [Importing Functions](#importing-functions) (1 functions)
 4. [Exporting Functions](#exporting-functions) (3 functions)
 5. [Analysis Functions](#analysis-functions) (6 functions)
-6. [Utility Functions](#utility-functions) (41 functions)
+6. [Utility Functions](#utility-functions) (54 functions)
 7. [GUI Functions](#gui-functions) (44 functions)
 8. [Initialization Functions](#initialization-functions) (12 functions)
 
@@ -173,6 +173,12 @@ Clears the currently selected single file and updates the UI.
 **Module:** `utils/directory.py`
 
 Shared helper: open a directory dialog and store the result.
+
+### `_ensure_object_loaded(obj_name)`
+
+**Module:** `utils/directory.py`
+
+Raises a RuntimeError if PyMOL did not create the expected object after a load.
 
 ### `_load_structure_file(self, label, attr_file, attr_obj)`
 
@@ -391,6 +397,78 @@ Updates the visibility of output widgets in the local analysis tab based on chec
 **Module:** `utils/updates.py`
 
 Updates the visibility of output widgets in the multi-file analysis
+
+### `is_placeholder_object(obj_name)`
+
+**Module:** `utils/validation.py`
+
+Returns True when a combo-box value is not a real PyMOL object.
+
+### `legalize_object_name(raw_name)`
+
+**Module:** `utils/validation.py`
+
+Returns a PyMOL-safe object name for explicit load operations.
+
+### `object_exists(obj_name)`
+
+**Module:** `utils/validation.py`
+
+Returns True when the named object exists in the current PyMOL session.
+
+### `object_selection(obj_name)`
+
+**Module:** `utils/validation.py`
+
+Returns an exact object selection for a PyMOL object name.
+
+### `chain_selection(obj_name, chain_id)`
+
+**Module:** `utils/validation.py`
+
+Returns a PyMOL selection for one chain of an object.
+
+### `selection_has_atoms(selection)`
+
+**Module:** `utils/validation.py`
+
+Returns True when a PyMOL selection currently contains atoms.
+
+### `get_object_chains(obj_name)`
+
+**Module:** `utils/validation.py`
+
+Returns chains for an existing object, or an empty list on failure.
+
+### `validate_structure_file(path_like)`
+
+**Module:** `utils/validation.py`
+
+Validates a PDB/CIF file path and returns it as a Path.
+
+### `validate_trajectory_file(path_like)`
+
+**Module:** `utils/validation.py`
+
+Validates a supported trajectory file path and returns it as a Path.
+
+### `list_structure_files(directory)`
+
+**Module:** `utils/validation.py`
+
+Returns sorted PDB/CIF files from a directory.
+
+### `set_frame_spinbox_bounds(spinbox, file_count)`
+
+**Module:** `utils/validation.py`
+
+Sets a 1-based frame spinbox range without creating invalid Qt ranges.
+
+### `selected_frame_file(files, frame_index)`
+
+**Module:** `utils/validation.py`
+
+Returns the file for a 1-based frame index or raises a clear error.
 
 ## GUI Functions
 
@@ -810,16 +888,4 @@ Register the plugin's core functions as PyMOL commands.
 
 Performs installation on Windows using PowerShell and conda.
 
-## Function Statistics
-
-- **Calculating Functions**: 6
-- **Plotting Functions**: 6
-- **Importing Functions**: 1
-- **Exporting Functions**: 3
-- **Analysis Functions**: 6
-- **Utility Functions**: 41
-- **GUI Functions**: 44
-- **Initialization Functions**: 12
-- **Total**: 119
-
-*Last Updated: May 21, 2026*
+*Last Updated: June 1, 2026*
