@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 
+from utils.config import TRAJECTORY_COLOR_INFO
 from utils.helpers import make_info_button, make_param_row
 
 
@@ -97,6 +98,12 @@ def _build_plot_group(self: Any) -> QGroupBox:
 def _build_vis_group(self: Any) -> QGroupBox:
     vis_grp = QGroupBox("Visualize Circuit Topology by contact type")
     vis_lay = QVBoxLayout(vis_grp)
+
+    info_row = QHBoxLayout()
+    info_row.addWidget(QLabel("Trajectory support"))
+    info_row.addWidget(make_info_button(TRAJECTORY_COLOR_INFO))
+    info_row.addStretch()
+    vis_lay.addLayout(info_row)
 
     self.S_button = QPushButton("Series (S)")
     self.S_button.clicked.connect(lambda: self.visualize_molecule(contact_type="S"))

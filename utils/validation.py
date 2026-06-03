@@ -78,6 +78,22 @@ def get_object_chains(obj_name: str) -> list[str]:
         return []
 
 
+def count_object_states(obj_name: str) -> int:
+    """Return the number of coordinate states for an object (0 if it doesn't exist)."""
+    if not object_exists(obj_name):
+        return 0
+    try:
+        return int(cmd.count_states(object_selection(obj_name)))
+    except Exception:
+        logger.exception("Unable to count states for object %s", obj_name)
+        return 0
+
+
+def is_trajectory(obj_name: str) -> bool:
+    """Return True when an object has more than one state (a trajectory or NMR ensemble)."""
+    return count_object_states(obj_name) > 1
+
+
 def validate_structure_file(path_like: str | Path) -> Path:
     """Validate a PDB/CIF file path and return it as a Path."""
     path = Path(path_like)

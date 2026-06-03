@@ -2,7 +2,7 @@
 
 This document reflects the **current plugin/runtime source tree** and lists callable entry points by module category.
 
-**Total Callable Entry Points:** 132
+**Total Callable Entry Points:** 137
 **Python Files With Callables:** 38
 
 ## Table of Contents
@@ -11,8 +11,8 @@ This document reflects the **current plugin/runtime source tree** and lists call
 2. [Plotting Functions](#plotting-functions) (6 functions)
 3. [Importing Functions](#importing-functions) (1 functions)
 4. [Exporting Functions](#exporting-functions) (3 functions)
-5. [Analysis Functions](#analysis-functions) (6 functions)
-6. [Utility Functions](#utility-functions) (54 functions)
+5. [Analysis Functions](#analysis-functions) (9 functions)
+6. [Utility Functions](#utility-functions) (56 functions)
 7. [GUI Functions](#gui-functions) (44 functions)
 8. [Initialization Functions](#initialization-functions) (12 functions)
 
@@ -147,6 +147,24 @@ Runs circuit topology analysis for a single frame of a trajectory or a single PD
 **Module:** `analysis/single_frame_analysis.py`
 
 Toggles the enabled state of the frame selector and run button.
+
+### `_safe_delete(*names)`
+
+**Module:** `analysis/visualization.py`
+
+Delete PyMOL objects/selections, ignoring names that do not exist.
+
+### `_color_chains_by_topology(target_obj, contact_type, vals, state)`
+
+**Module:** `analysis/visualization.py`
+
+Colors each chain of a single-state object by its circuit topology.
+
+### `_visualize_trajectory(self, contact_type, selected_obj, vals, n_states)`
+
+**Module:** `analysis/visualization.py`
+
+Colors every state of a trajectory object by its own circuit topology.
 
 ### `visualize_molecule(self, contact_type)`
 
@@ -439,6 +457,18 @@ Returns True when a PyMOL selection currently contains atoms.
 **Module:** `utils/validation.py`
 
 Returns chains for an existing object, or an empty list on failure.
+
+### `count_object_states(obj_name)`
+
+**Module:** `utils/validation.py`
+
+Return the number of coordinate states for an object (0 if it doesn't exist).
+
+### `is_trajectory(obj_name)`
+
+**Module:** `utils/validation.py`
+
+Return True when an object has more than one state (a trajectory or NMR ensemble).
 
 ### `validate_structure_file(path_like)`
 
@@ -888,4 +918,4 @@ Register the plugin's core functions as PyMOL commands.
 
 Performs installation on Windows using PowerShell and conda.
 
-*Last Updated: June 1, 2026*
+*Last Updated: June 3, 2026*
