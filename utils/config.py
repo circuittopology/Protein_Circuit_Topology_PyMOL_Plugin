@@ -29,6 +29,6 @@ TRAJECTORY_COLOR_INFO = (
 CONTACT_MAP = {
     "Series (S)": "S",
     "Parallel (P)": "P",
-    "Inverse parallel (P-)": "IP",
+    "Inverse parallel (IP)": "IP",
     "Cross (X)": "X",
 }

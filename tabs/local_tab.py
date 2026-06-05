@@ -89,7 +89,7 @@ def _build_local_analysis_group(self: Any) -> QGroupBox:
     analysis_lay = QVBoxLayout(analysis_grp)
 
     self.dropdown_contact_type = QComboBox()
-    self.dropdown_contact_type.addItems(["Series (S)", "Parallel (P)", "Inverse parallel (P‑)", "Cross (X)"])  # noqa: RUF001
+    self.dropdown_contact_type.addItems(["Series (S)", "Parallel (P)", "Inverse parallel (IP)", "Cross (X)"])
     analysis_lay.addWidget(QLabel("Contact type:"))
     analysis_lay.addWidget(self.dropdown_contact_type)
 
