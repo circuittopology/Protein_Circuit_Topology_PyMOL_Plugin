@@ -2,7 +2,7 @@
 
 This document reflects the **current plugin/runtime source tree** and lists callable entry points by module category.
 
-**Total Callable Entry Points:** 137
+**Total Callable Entry Points:** 138
 **Python Files With Callables:** 38
 
 ## Table of Contents
@@ -12,7 +12,7 @@ This document reflects the **current plugin/runtime source tree** and lists call
 3. [Importing Functions](#importing-functions) (1 functions)
 4. [Exporting Functions](#exporting-functions) (3 functions)
 5. [Analysis Functions](#analysis-functions) (9 functions)
-6. [Utility Functions](#utility-functions) (56 functions)
+6. [Utility Functions](#utility-functions) (57 functions)
 7. [GUI Functions](#gui-functions) (44 functions)
 8. [Initialization Functions](#initialization-functions) (12 functions)
 
@@ -295,6 +295,12 @@ Create a standard parameter row layout with label, info button, and spinbox.
 **Module:** `utils/helpers.py`
 
 Checks if a PyMOL object exists.
+
+### `show_folding_score_dialog(parent, chain, folding_score)`
+
+**Module:** `utils/helpers.py`
+
+Show the CT folding score for a chain in a small, auto-sized pop-up dialog.
 
 ### `temp_pdb_export(selection, state=None)`
 
@@ -918,4 +924,4 @@ Register the plugin's core functions as PyMOL commands.
 
 Performs installation on Windows using PowerShell and conda.
 
-*Last Updated: June 3, 2026*
+*Last Updated: June 6, 2026*

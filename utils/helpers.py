@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from pymol import cmd
-from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QMessageBox, QPushButton
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout
 
 from utils.config import INFO_BUTTON_STYLE
 
@@ -101,6 +101,43 @@ def make_param_row(label_text, tooltip, spinbox):
     row.addStretch()
     row.addWidget(spinbox)
     return row
+
+
+def show_folding_score_dialog(parent: Any, chain: str, folding_score: float) -> None:
+    """Show the CT folding score for a chain in a small, auto-sized pop-up dialog."""
+    dialog = QDialog(parent)
+    dialog.setWindowTitle("CT Folding Score")
+
+    layout = QVBoxLayout()
+    layout.setContentsMargins(24, 20, 24, 20)
+    layout.setSpacing(12)
+
+    title_label = QLabel(f"CT Folding Score — Chain {chain}")
+    title_label.setAlignment(Qt.AlignCenter)
+    title_label.setStyleSheet("font-size: 11pt; color: palette(mid);")
+    layout.addWidget(title_label)
+
+    score_label = QLabel(f"{folding_score:.4f}")
+    score_label.setAlignment(Qt.AlignCenter)
+    score_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+    score_label.setStyleSheet("font-size: 22pt; font-weight: bold;")
+    layout.addWidget(score_label)
+
+    button_row = QHBoxLayout()
+    button_row.addStretch()
+    ok_button = QPushButton("OK")
+    ok_button.setDefault(True)
+    ok_button.setMinimumWidth(90)
+    ok_button.clicked.connect(dialog.accept)
+    button_row.addWidget(ok_button)
+    button_row.addStretch()
+    layout.addLayout(button_row)
+
+    dialog.setLayout(layout)
+    dialog.setMinimumWidth(260)
+    dialog.adjustSize()
+    dialog.setFixedSize(dialog.sizeHint())
+    dialog.exec_()
 
 
 def resolve_output_path(self: Any, output_dir: str | Path | None) -> Path | None:

@@ -2,8 +2,7 @@ import logging
 from typing import Any
 
 from pymol import cmd
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QLabel, QMessageBox, QPushButton, QVBoxLayout
+from PyQt5.QtWidgets import QMessageBox
 
 from functions.calculating.get_cmap import get_cmap
 from functions.calculating.get_matrix import get_matrix
@@ -14,7 +13,7 @@ from functions.plots.circuit_plot import circuit_plot
 from functions.plots.matrix_plot import matrix_plot
 from functions.plots.matrix_plot_model import matrix_plot_model
 from utils.folding_score import get_folding_score
-from utils.helpers import resolve_output_path, temp_pdb_export
+from utils.helpers import resolve_output_path, show_folding_score_dialog, temp_pdb_export
 from utils.non_polymer import has_non_polymer_atoms
 from utils.validation import (
     chain_selection,
@@ -156,23 +155,9 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
 
                     logger.info("Calculating folding score for chain %s ...", c)
                     folding_score = get_folding_score(m, i, n)
+                    logger.info("Folding score for chain %s: %f", c, folding_score)
 
-                    # Show the score in a pop-up tab (QDialog)
-                    dialog = QDialog(self)
-                    dialog.setWindowTitle("CT Folding Score")
-                    layout = QVBoxLayout()
-
-                    label = QLabel(f"CT Folding Score: {folding_score}")
-                    label.setAlignment(Qt.AlignCenter)
-                    layout.addWidget(label)
-
-                    ok_button = QPushButton("OK")
-                    ok_button.clicked.connect(dialog.accept)
-                    layout.addWidget(ok_button)
-
-                    dialog.setLayout(layout)
-                    dialog.setFixedSize(200, 100)
-                    dialog.exec_()
+                    show_folding_score_dialog(self, c, folding_score)
 
                 if export_cmap3_enabled:
                     cmap3_exports.append((i, f"{selected_obj}_chain_{c}", n))
