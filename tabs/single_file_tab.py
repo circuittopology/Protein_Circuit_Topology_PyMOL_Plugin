@@ -27,7 +27,7 @@ def _build_input_group(self: Any) -> QGroupBox:
     info_btn_single_clear = make_info_button("Clear the current file/object and unload it from PyMOL.")
     self.clear_file_button.setToolTip("Clear the current file/object and unload it from PyMOL.")
     self.clear_file_button.clicked.connect(self.clear_selected_single_file)
-    self.dir_label = QLabel("No file selected")
+    self.dir_label = QLabel("No file selected...")
     self.dir_label.setWordWrap(True)
     self.dir_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
     self.dir_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
