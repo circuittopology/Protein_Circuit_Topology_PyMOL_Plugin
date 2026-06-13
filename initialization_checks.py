@@ -1,17 +1,17 @@
 """
 Installation and initialization utilities for the Circuit Topology plugin.
 
-This module provides platform-aware helpers used by the plugin entrypoint
-to:
+This module provides helpers used by the plugin entrypoint to:
 - Inspect and parse a conda-style requirements YAML.
 - Detect which packages are already available in the current PyMOL
   environment.
-- Perform installation attempts by leveraging PyMOL's embedded Python,
-  pip, or platform-specific tools (conda on Windows/Mac/Linux).
+- Install missing dependencies into PyMOL's own conda environment.
 - Register PyMOL commands that wrap plugin functionality.
 
 Design goals:
-- Be robust in environments where PyMOL is installed system-wide vs user-only.
+- Be robust whether PyMOL is installed system-wide or user-only.
+- Install dependencies into the running interpreter's environment (never the
+  wrong conda distribution or the wrong environment).
 - Provide clear diagnostic output suitable for logging or display in the
   PyMOL terminal.
 """
@@ -36,11 +36,6 @@ PYMOL_ENV = Path(_pymol_path_env) if _pymol_path_env else Path(sys.executable).p
 PLUGIN_DIR = Path(__file__).parent
 REQUIREMENTS_FILE = PLUGIN_DIR / "requirements.yml"
 
-ADMIN_INIT_CMD = ["powershell.exe", "Start-Process", "powershell.exe",
-                "-ArgumentList", '-ExecutionPolicy Bypass -Command "conda init"',
-                "-Verb", "RunAs"]
-
-USER_INIT_CMD = ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", "conda init"]
 
 def is_path_user(path: Path | None) -> bool:
     """
@@ -55,10 +50,7 @@ def is_path_user(path: Path | None) -> bool:
     try:
         if not path:
             return False
-        path = path.resolve()
-        user_dir = Path.home()
-
-        return str(path).startswith(str(user_dir))
+        return path.resolve().is_relative_to(Path.home().resolve())
     except (OSError, ValueError) as e:
         logger.info("Warning: Could not determine if path is user-accessible: %s", e)
         return False
@@ -80,27 +72,6 @@ def is_running_as_admin() -> bool:
     getuid = getattr(os, "getuid", None)
     return getuid is not None and getuid() == 0
 
-def pymol_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
-    """
-    Attempts to install dependencies using the PyMOL terminal and conda.
-
-    Args:
-        reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
-
-    Returns:
-        bool: True if the install commands were issued, False on error.
-    """
-    if not reqs.exists():
-        logger.error("Error: Requirements file not found: %s", reqs)
-        return False
-
-    reqs_fixed = str(reqs).replace("\\", "/")
-
-    logger.info("Using PyMOL terminal with conda to install dependencies...")
-
-    cmd.do("conda init")
-    cmd.do(f"conda env update --file {reqs_fixed}")
-    return True
 
 def install_failed(reqs: Path = REQUIREMENTS_FILE) -> None:
     """
@@ -109,11 +80,6 @@ def install_failed(reqs: Path = REQUIREMENTS_FILE) -> None:
     Args:
         reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
     """
-    install_instruc_dict = {
-        "pandas": "conda install conda-forge::pandas",
-        "matplotlib": "conda install conda-forge::matplotlib",
-    }
-
     try:
         requirements_list = get_requirements(reqs)
     except (FileNotFoundError, ValueError):
@@ -127,23 +93,23 @@ def install_failed(reqs: Path = REQUIREMENTS_FILE) -> None:
         return
 
     if is_path_user(PYMOL_ENV):
-        logger.info("Pymol is in user directory - no admin permissions needed.")
+        logger.info("PyMOL is in a user directory - no admin permissions needed.")
     else:
-        logger.info("Pymol is in system directory - admin permissions may be needed.")
+        logger.info("PyMOL is in a system directory - admin/root permissions are required to install packages.")
 
-    logger.info("Automated installation failed, the following packages need to be installed")
+    logger.info("Automated installation failed. The following packages still need to be installed:")
     logger.info("%s", not_installed)
-    logger.info("""Please note that if PyMOL is installed on the system path, then
-          admin permission will be required to install packages.
-          To install the required packages, run the following commands in the PyMOL terminal:""")
 
-    for pack in not_installed:
-        if pack in install_instruc_dict:
-            logger.info(install_instruc_dict[pack])
-        else:
-            logger.info("conda install %s", pack)
-
-    logger.info("Once all packages are installed, restart PyMOL and reinitialize the plugin.")
+    specs = " ".join(f"conda-forge::{pack}" for pack in not_installed)
+    logger.info(
+        "To install them, open a system terminal (e.g. Anaconda Prompt) where conda is "
+        "available and run the following, then restart PyMOL:",
+    )
+    logger.info('conda install --prefix "%s" %s', sys.prefix, specs)
+    logger.info(
+        "If PyMOL is installed system-wide, run that command from an elevated/administrator "
+        "terminal, or reinstall PyMOL for your user only.",
+    )
 
 
 def _normalize_requirement_name(requirement: str) -> str | None:
@@ -165,6 +131,7 @@ def _normalize_requirement_name(requirement: str) -> str | None:
 
     requirement = requirement.strip()
     return requirement or None
+
 
 def get_requirements(req_path: Path) -> list[str]:
     """
@@ -255,12 +222,12 @@ def _is_package_available(pack: str) -> bool:
 
 def is_conda_installed() -> tuple[bool, Path | None]:
     """
-    Checks if conda is installed on the system.
+    Checks if conda is discoverable on the system PATH.
 
     Returns:
         tuple[bool, Path | None]:
-            A tuple containing a boolean (True if installed)
-            and the path to conda (or error message).
+            A tuple containing a boolean (True if found)
+            and the path to conda (or None).
     """
     command = "where conda" if platform.system() == "Windows" else "which conda"
 
@@ -271,169 +238,76 @@ def is_conda_installed() -> tuple[bool, Path | None]:
         )
         first_line = result.stdout.splitlines()[0].strip()
         return True, Path(first_line)
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, IndexError):
         return False, None
 
 
-def conda_init(user_install: bool) -> bool:
+def _find_conda_executable() -> Path | None:
     """
-    Initializes conda for PowerShell.
-
-    Args:
-        user_install (bool): True if PyMOL is installed in a user directory, False otherwise.
+    Locate the conda executable that owns the running PyMOL environment.
 
     Returns:
-        bool: True if initialization was successful, False otherwise.
+        Path | None: Path to a conda executable, or None if none was found.
     """
-    try:
-        if not user_install:
-            result = subprocess.run(ADMIN_INIT_CMD, check=True, capture_output=True, text=True)  # noqa: S603
-        else:
-            result = subprocess.run(USER_INIT_CMD, check=True, capture_output=True, text=True)  # noqa: S603
+    conda_exe = os.environ.get("CONDA_EXE")
+    if conda_exe and Path(conda_exe).exists():
+        return Path(conda_exe)
 
-        logger.info("Initialization results output: %s", result.stdout)
-        if result.stderr:
-            logger.error("Initialization results error: %s", result.stderr)
+    prefix = Path(sys.prefix)
+    if platform.system() == "Windows":
+        candidates = [prefix / "Scripts" / "conda.exe", prefix / "condabin" / "conda.bat", prefix / "Library" / "bin" / "conda.bat"]
+    else:
+        candidates = [prefix / "bin" / "conda", prefix / "condabin" / "conda"]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
 
-        if result.returncode == 0:
-            logger.info("Conda initialization completed successfully.")
-            return True
-        logger.error("Conda initialization failed. Please check the output for details.")
-        return False  # noqa: TRY300
-    except subprocess.TimeoutExpired:
-        logger.exception("Conda initialization timed out")
+    found, path = is_conda_installed()
+    if found and path:
+        return path
+    return None
+
+
+def install_dependencies(reqs: Path = REQUIREMENTS_FILE) -> bool:
+    """
+    Install plugin dependencies into PyMOL's own conda environment.
+
+    Args:
+        reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
+
+    Returns:
+        bool: True only if conda reports success (exit code 0), False otherwise.
+    """
+    if not reqs.exists():
+        logger.error("Error: Requirements file not found: %s", reqs)
         return False
+
+    conda_exe = _find_conda_executable()
+    if conda_exe is None:
+        logger.error("Conda executable not found - cannot install dependencies.")
+        return False
+
+    reqs_fixed = str(reqs).replace("\\", "/")
+    command = [str(conda_exe), "env", "update", "--file", reqs_fixed, "--prefix", sys.prefix]
+    logger.info("Installing dependencies into %s using %s", sys.prefix, conda_exe)
+
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, check=False)  # noqa: S603
     except OSError:
-        logger.exception("Error in initialization of conda")
+        logger.exception("Error occurred while running conda")
         return False
 
-def win_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
-    """
-    Performs installation on Windows using PowerShell and conda.
-
-    Args:
-        reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
-
-    Returns:
-        bool: True if installation was successful, False otherwise.
-    """
-    if not reqs.exists():
-        logger.error("Error: Requirements file not found: %s", reqs)
-        return False
-
-    conda_installed, path = is_conda_installed()
-    if not conda_installed:
-        logger.error("Error: Conda not found on system")
-        return False
-    conda_path = path or None
-    conda_user_path = is_path_user(conda_path)
-    conda_initialized = conda_init(user_install=conda_user_path)
-
-    if not conda_initialized:
-        return False
-
-    reqs_fixed = str(reqs).replace("\\", "/")
-    win_cmds = f'conda env update --file "{reqs_fixed}"'
-
-    admin_cmd = ["powershell.exe", "Start-Process", "powershell.exe",
-                 "-ArgumentList", f'-ExecutionPolicy Bypass -Command "{win_cmds}"',
-                 "-Verb", "RunAs", "-Wait"]
-    user_cmd = ["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", win_cmds]
-    try:
-        if not conda_user_path:
-            if is_running_as_admin():
-                # Already elevated — run conda directly without spawning a new admin process
-                logger.info("Running installation with existing admin privileges...")
-                result = subprocess.run(user_cmd, check=True, capture_output=True, text=True)  # noqa: S603
-            else:
-                logger.info("Running installation with admin privileges via UAC...")
-                result = subprocess.run(admin_cmd, check=True, capture_output=True, text=True)  # noqa: S603
-        else:
-            logger.info("Running installation with user privileges...")
-            result = subprocess.run(user_cmd, check=True, capture_output=True, text=True)  # noqa: S603
+    if result.stdout:
         logger.info("Installation output: %s", result.stdout)
-        if result.stderr:
-            logger.warning("Installation warnings/errors: %s", result.stderr)
 
-        if result.returncode == 0:
-            logger.info("Installation completed successfully.")
-            return True
-        logger.error("Installation failed. Please check the output for details.")
-        return False  # noqa: TRY300
-    except subprocess.CalledProcessError:
-        logger.exception("Error occurred during installation")
+    if result.returncode != 0:
+        logger.error("Installation failed (exit code %s): %s", result.returncode, result.stderr)
         return False
 
-def mac_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
-    """
-    Performs installation on macOS using conda.
-
-    Args:
-        reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
-
-    Returns:
-        bool: True if installation was successful, False otherwise.
-    """
-    if not reqs.exists():
-        logger.error("Error: Requirements file not found: %s", reqs)
-        return False
-
-    conda_installed, conda_path = is_conda_installed()
-    if not conda_installed or conda_path is None:
-        logger.error("Conda not found on system — cannot install dependencies.")
-        return False
-
-    reqs_fixed = str(reqs).replace("\\", "/")
-    try:
-        result = subprocess.run(  # noqa: S603
-            [str(conda_path), "env", "update", "--file", reqs_fixed],
-            check=True, capture_output=True, text=True,
-        )
-        logger.info("Installation output: %s", result.stdout)
-        if result.stderr:
-            logger.warning("Installation warnings/errors: %s", result.stderr)
-    except subprocess.CalledProcessError as e:
-        logger.exception("Installation failed: %s", e.stderr)
-        return False
-    else:
-        logger.info("Installation completed successfully.")
-        return True
-
-
-def linux_install(reqs: Path = REQUIREMENTS_FILE) -> bool:
-    """
-    Performs installation on Linux using conda.
-
-    Args:
-        reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
-
-    Returns:
-        bool: True if installation was successful, False otherwise.
-    """
-    if not reqs.exists():
-        logger.error("Error: Requirements file not found: %s", reqs)
-        return False
-
-    conda_installed, conda_path = is_conda_installed()
-    if not conda_installed or conda_path is None:
-        logger.error("Conda not found on system — cannot install dependencies.")
-        return False
-
-    reqs_fixed = str(reqs).replace("\\", "/")
-    try:
-        result = subprocess.run(  # noqa: S603
-            [str(conda_path), "env", "update", "--file", reqs_fixed],
-            check=True, capture_output=True, text=True,
-        )
-        logger.info("Installation output: %s", result.stdout)
-        if result.stderr:
-            logger.warning("Installation warnings/errors: %s", result.stderr)
-    except subprocess.CalledProcessError as e:
-        logger.exception("Installation failed: %s", e.stderr)
-        return False
-    else:
-        logger.info("Installation completed successfully.")
-        return True
+    if result.stderr:
+        logger.warning("Installation warnings: %s", result.stderr)
+    logger.info("Installation completed successfully.")
+    return True
 
 
 def register_pymol_functions():

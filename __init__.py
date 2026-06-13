@@ -4,14 +4,15 @@ Plugin package initializer for the Circuit Topology PyMOL plugin.
 This module is the canonical PyMOL plugin entrypoint. PyMOL calls the
 `__init_plugin__` function when it loads the plugin, and this function
 is responsible for preparing the environment, attempting automated
-dependency installation (if enabled), registering PyMOL commands, and
+dependency installation (if needed), registering PyMOL commands, and
 exposing the GUI entry point via the PyMOL plugins menu.
 
-The module intentionally orchestrates retries of different install
-strategies and prints human-readable diagnostics to assist users when
-manual intervention is necessary.
+Dependencies are installed exclusively through PyMOL's own conda
+environment (no pip, no package-manager mixing) and only when the running
+session can actually write to that environment.
 """
 
+import importlib
 import logging
 import platform
 import sys
@@ -28,14 +29,11 @@ from initialization_checks import (
     REQUIREMENTS_FILE,
     check_installed_packages,
     get_requirements,
+    install_dependencies,
     install_failed,
     is_path_user,
     is_running_as_admin,
-    linux_install,
-    mac_install,
-    pymol_install,
     register_pymol_functions,
-    win_install,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -43,24 +41,62 @@ logger = logging.getLogger(__name__)
 
 
 def _show_admin_required_dialog() -> None:
-    """Show a Qt message box telling the user to restart PyMOL as administrator."""
+    """Show a Qt message box explaining that elevated privileges are required."""
+    try:
+        from PyQt5.QtWidgets import QApplication, QMessageBox
+        app = QApplication.instance()
+        if app is None:
+            return
+
+        system = platform.system()
+        if system == "Windows":
+            hint = (
+                'Please close PyMOL, right-click it and choose "Run as administrator", '
+                "then load the plugin again."
+            )
+        elif system == "Darwin":
+            hint = (
+                "Please relaunch PyMOL from an administrator account, or reinstall PyMOL "
+                'for your user only (the recommended "Just Me" option), then load the '
+                "plugin again."
+            )
+        else:
+            hint = (
+                "Please relaunch PyMOL with sufficient privileges (for example via sudo), "
+                "or reinstall PyMOL for your user only, then load the plugin again."
+            )
+
+        msg = QMessageBox()
+        msg.setWindowTitle("Elevated privileges required")
+        msg.setIcon(QMessageBox.Warning)
+        msg.setText(
+            "Automatic dependency installation could not proceed because PyMOL is "
+            "installed system-wide and this session does not have the required "
+            "privileges.\n\n" + hint,
+        )
+        msg.exec_()
+    except Exception:
+        logger.exception("Failed to show admin required dialog")
+
+
+def _show_restart_required_dialog() -> None:
+    """Tell the user dependencies were installed but PyMOL must be restarted."""
     try:
         from PyQt5.QtWidgets import QApplication, QMessageBox
         app = QApplication.instance()
         if app is None:
             return
         msg = QMessageBox()
-        msg.setWindowTitle("Administrator privileges required")
-        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle("Restart required")
+        msg.setIcon(QMessageBox.Information)
         msg.setText(
-            "Automatic dependency installation could not proceed because PyMOL is installed "
-            "system-wide and this session does not have administrator privileges.\n\n"
-            "Please close PyMOL, right-click it and choose "
-            "<b>Run as administrator</b>, then load the plugin again.",
+            "The required dependencies were installed successfully, but PyMOL needs to be "
+            "restarted before the plugin can be used.\n\n"
+            "Please close and reopen PyMOL, then open the plugin again.",
         )
         msg.exec_()
     except Exception:
-        logger.exception("Failed to show admin required dialog")
+        logger.exception("Failed to show restart required dialog")
 
 
 def _try_register() -> bool:
@@ -80,68 +116,51 @@ def __init_plugin__(app=None):  # noqa: ARG001, N807
     """
     Initialize the plugin within PyMOL.
 
-    This function is invoked by PyMOL when the plugin is loaded. It tries the
-    following steps, in order:
+    Invoked by PyMOL when the plugin is loaded. The flow is:
       1. Register PyMOL commands if dependencies are already present.
-      2. If registration fails, attempt to install dependencies using:
-         - PyMOL's internal conda (via `pymol_install`)
-         - Platform-specific installers (`win_install`, `mac_install`, `linux_install`)
-      3. If installation succeeds, register commands and add the menu item to open the GUI.
+      2. Otherwise, if PyMOL is installed system-wide and this session lacks
+         administrator/root privileges, show guidance and stop (a writable
+         environment is required to install).
+      3. Install the missing dependencies into PyMOL's own conda environment.
+      4. Invalidate the import cache and re-register. If the freshly installed
+         packages are not importable in this live session, ask the user to
+         restart PyMOL.
 
     Notes
     -----
-    - The function prints stateful diagnostic messages to the PyMOL console.
-    - The automated install path will be skipped when PyMOL is installed in a
-      system location that requires admin privileges (unless running as admin).
+    - The same privilege gate is applied uniformly on Windows, Linux and macOS.
+    - The function never elevates privileges itself and never mixes package
+      managers — installation goes through conda only.
     """
     logger.info("Beginning ProteinCT plugin initialization")
 
-    auto_install = True
-
-    # Direct registration attempt (dependencies may already be present)
+    # Dependencies may already be present.
     if _try_register():
         return
 
-    if not auto_install:
+    # A system-wide install needs admin/root to write into PyMOL's environment.
+    if not is_path_user(PYMOL_ENV) and not is_running_as_admin():
+        logger.info(
+            "PyMOL is installed system-wide and this session lacks administrator/root "
+            "privileges; automated dependency installation cannot proceed.",
+        )
+        _show_admin_required_dialog()
         install_failed(reqs=REQUIREMENTS_FILE)
         return
 
-    # Check platform constraints for automated install
-    sys_type = platform.system()
-    pymol_path_user = is_path_user(PYMOL_ENV)
-
-    if not pymol_path_user:
-        if sys_type == "Darwin":
-            logger.info(
-                "PyMOL is installed on the system path (macOS); "
-                "automated install will be attempted assuming admin privileges.",
-            )
-        elif is_running_as_admin():
-            logger.info(
-                "PyMOL is installed on the system path and is running as administrator; "
-                "proceeding with install.",
-            )
-        else:
-            logger.info(
-                "PyMOL is installed on the system path; "
-                "automated plugin install cannot proceed without administrator privileges.",
-            )
-            _show_admin_required_dialog()
-            install_failed(reqs=REQUIREMENTS_FILE)
-            return
-
-    # Log what needs installing
+    # Log what needs installing.
     requirements_list = get_requirements(req_path=REQUIREMENTS_FILE)
     _, packs = check_installed_packages(requirements_list)
     logger.info("Packages to install for ProteinCT plugin: %s", packs)
 
-    # Try install strategies in order: PyMOL conda, then platform-specific
-    platform_installers = {"Windows": win_install, "Darwin": mac_install}
-    strategies = [pymol_install, platform_installers.get(sys_type, linux_install)]
-
-    for strategy in strategies:
-        if strategy() and _try_register():
+    # Install into PyMOL's own conda environment, then retry registration.
+    if install_dependencies():
+        importlib.invalidate_caches()
+        if _try_register():
             return
+        # Installed on disk, but not importable in this already-running session.
+        _show_restart_required_dialog()
+        return
 
     install_failed(reqs=REQUIREMENTS_FILE)
 

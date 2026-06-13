@@ -13,8 +13,8 @@ This document reflects the **current plugin/runtime source tree** and lists call
 4. [Exporting Functions](#exporting-functions) (3 functions)
 5. [Analysis Functions](#analysis-functions) (9 functions)
 6. [Utility Functions](#utility-functions) (57 functions)
-7. [GUI Functions](#gui-functions) (44 functions)
-8. [Initialization Functions](#initialization-functions) (12 functions)
+7. [GUI Functions](#gui-functions) (45 functions)
+8. [Initialization Functions](#initialization-functions) (11 functions)
 
 ## Calculating Functions
 
@@ -514,6 +514,12 @@ Returns the file for a 1-based frame index or raises a clear error.
 
 Initialize the plugin within PyMOL.
 
+### `_show_restart_required_dialog()`
+
+**Module:** `__init__.py`
+
+Tell the user dependencies were installed but PyMOL must be restarted.
+
 ### `run_plugin_gui()`
 
 **Module:** `__init__.py`
@@ -858,11 +864,11 @@ Initializes the 'Single-File Analysis' tab in the GUI.
 
 Checks if the required packages are installed in the current environment.
 
-### `conda_init(user_install)`
+### `_find_conda_executable()`
 
 **Module:** `initialization_checks.py`
 
-Initializes conda for PowerShell.
+Locate the conda executable that owns the running PyMOL environment.
 
 ### `get_requirements(req_path)`
 
@@ -906,12 +912,6 @@ Performs installation on Linux using conda.
 
 Performs installation on macOS using conda.
 
-### `pymol_install(reqs=REQUIREMENTS_FILE)`
-
-**Module:** `initialization_checks.py`
-
-Attempts to install dependencies using the PyMOL terminal and conda.
-
 ### `register_pymol_functions()`
 
 **Module:** `initialization_checks.py`
@@ -924,4 +924,4 @@ Register the plugin's core functions as PyMOL commands.
 
 Performs installation on Windows using PowerShell and conda.
 
-*Last Updated: June 6, 2026*
+*Last Updated: June 13, 2026*
