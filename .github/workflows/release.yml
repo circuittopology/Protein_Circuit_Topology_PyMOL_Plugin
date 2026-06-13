@@ -21,19 +21,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Run Ruff
         run: |
           uvx ruff check --exit-zero .
 
-      - name: Build plugin package & Generate Checksum
+      - name: Build plugin package
         id: package
         env:
           ASSET_NAME: protein-circuit-topology-pymol-plugin.zip
         run: |
           git archive \
           --format=zip \
+          --prefix=proteinct_plugin/ \
           --output="${ASSET_NAME}" \
           HEAD \
           analysis \
