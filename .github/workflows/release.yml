@@ -18,6 +18,9 @@ jobs:
       - name: Install Git
         run: apk add --no-cache git
 
+      - name: Trust workspace
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
