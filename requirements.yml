@@ -1,0 +1,3 @@
+dependencies:
+  - conda-forge::pandas
+  - conda-forge::matplotlib

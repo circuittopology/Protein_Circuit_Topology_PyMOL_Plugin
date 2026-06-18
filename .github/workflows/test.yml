@@ -1,0 +1,28 @@
+name: Linter
+
+on:
+  push:
+    branches:
+      - main
+    tags-ignore:
+      - '**'
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: astral/uv:0.10.10-python3.13-alpine3.23
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Ruff
+        run: |
+          uvx ruff check
