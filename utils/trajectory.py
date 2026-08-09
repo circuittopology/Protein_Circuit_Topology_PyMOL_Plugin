@@ -23,6 +23,15 @@ from utils.validation import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+
+def _refresh_objects(self: Any) -> None:
+    """Ask the shared object model to re-poll. Fallback to update_list()."""
+    model = getattr(self, "pymol_objects", None)
+    if model is not None:
+        model.refresh()
+    elif hasattr(self, "update_list"):
+        self.update_list()
+
 def select_mol_file(self: Any) -> None:
     """
     Opens a file dialog to select a structure file (PDB or CIF) for trajectory analysis.
@@ -40,7 +49,7 @@ def select_mol_file(self: Any) -> None:
             if not object_exists(mol_name):
                 msg = f"PyMOL did not create the expected object: {mol_name}"
                 raise RuntimeError(msg)  # noqa: TRY301
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             QMessageBox.warning(self, "Error", f"Failed to load molecule file:\n{e}")
             return
 
@@ -70,7 +79,7 @@ def select_xtc_file(self: Any) -> None:
                 msg = "The trajectory did not add any states to the loaded molecule."
                 raise RuntimeError(msg)  # noqa: TRY301
             remove_non_polymer_atoms()
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             QMessageBox.warning(self, "Error", f"Failed to load trajectory file:\n{e}")
             return
 
@@ -133,7 +142,7 @@ def export_frames_from_traj(self: Any) -> None:  # noqa: PLR0911
         self.selected_traj_dir_multi = outdir_path
         logger.info("%s frames were saved to %s", end, outdir_path)
         self.traj_status_label.setText(f"Exported {end} frames to {outdir_path}")
-        self.update_list()
+        _refresh_objects(self)
 
         mol_files = list_structure_files(outdir_path)
         self.avail_dir_traj_files = mol_files

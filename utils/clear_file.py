@@ -2,6 +2,8 @@ from typing import Any
 
 from pymol import cmd
 
+from utils.validation import object_exists
+
 
 def clear_selected_single_file(self: Any) -> None:
     """
@@ -10,7 +12,7 @@ def clear_selected_single_file(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    if hasattr(self, "selected_obj_name") and cmd.object_exists(self.selected_obj_name):
+    if hasattr(self, "selected_obj_name") and object_exists(self.selected_obj_name):
         cmd.delete(self.selected_obj_name)
     self.selected_file = None
     self.dir_label.setText("No file selected...")
@@ -24,7 +26,7 @@ def clear_selected_local_file(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    if hasattr(self, "local_selected_obj_name") and cmd.object_exists(self.local_selected_obj_name):
+    if hasattr(self, "local_selected_obj_name") and object_exists(self.local_selected_obj_name):
         cmd.delete(self.local_selected_obj_name)
     self.local_selected_file = None
     self.local_dir_label.setText("No file selected...")

@@ -32,7 +32,7 @@ def _load_structure_file(self, label, attr_file, attr_obj):
             obj_name = legalize_object_name(input_path.stem)
             cmd.load(str(input_path), obj_name)
             _ensure_object_loaded(obj_name)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             setattr(self, attr_file, None)
             setattr(self, attr_obj, None)
             QMessageBox.warning(self, "Error", f"Failed to load structure file:\n{e}")

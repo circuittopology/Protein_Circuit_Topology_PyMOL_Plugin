@@ -35,6 +35,13 @@ PYMOL_ENV = Path(_pymol_path_env) if _pymol_path_env else Path(sys.executable).p
 # Get directory of env and requirements.yml
 PLUGIN_DIR = Path(__file__).parent
 REQUIREMENTS_FILE = PLUGIN_DIR / "requirements.yml"
+_CONDA_TO_IMPORT = {
+    "biopython": "Bio",
+    "matplotlib-base": "matplotlib",
+    "pyqt": "PyQt5",
+    "pyqt5-sip": "PyQt5.sip",
+    "qt-main": "PyQt5",
+}
 
 
 def is_path_user(path: Path | None) -> bool:
@@ -67,7 +74,7 @@ def is_running_as_admin() -> bool:
         try:
             import ctypes
             return bool(ctypes.windll.shell32.IsUserAnAdmin())
-        except Exception:  # noqa: BLE001
+        except Exception:
             return False
     getuid = getattr(os, "getuid", None)
     return getuid is not None and getuid() == 0
@@ -191,29 +198,22 @@ def check_installed_packages(requirements_list: list[str]) -> tuple[bool, list[s
 
     Returns:
         tuple[bool, list[str]]:
-            True if all installed, False otherwise,
-            and a list of packages (missing if False, installed if True).
+            True if all installed, False otherwise.
     """
-    not_installed = []
-    installed = []
-
-    for pack in requirements_list:
-        if _is_package_available(pack):
-            installed.append(pack)
-        else:
-            not_installed.append(pack)
-
-    all_installed = len(not_installed) == 0
-    return all_installed, not_installed if not all_installed else installed
-
+    not_installed = [pack for pack in requirements_list if not _is_package_available(pack)]
+    return len(not_installed) == 0, not_installed
 
 def _is_package_available(pack: str) -> bool:
-    """Check if a single package is importable."""
+    """Check whether a conda-named package is importable in this interpreter."""
+    name = (pack or "").strip()
+    if not name:
+        return False
+    module = _CONDA_TO_IMPORT.get(name.lower(), name)
     try:
-        return importlib.util.find_spec(pack) is not None
+        return importlib.util.find_spec(module) is not None
     except (ImportError, ValueError, ModuleNotFoundError):
         try:
-            __import__(pack)
+            __import__(module)
         except ImportError:
             return False
         else:
@@ -349,9 +349,19 @@ def register_pymol_functions():
     cmd.extend("retrieve_chain", retrieve_chain)
 
     # Exporting functions
-    from functions.exporting.export_psc import export_psc
-    cmd.extend("export_psc", export_psc)
+    from functions.exporting.export_psx import export_psx
+    cmd.extend("export_psx", export_psx)
     from functions.exporting.export_cmap3 import export_cmap3
     cmd.extend("export_cmap3", export_cmap3)
     from functions.exporting.export_mat import export_mat
     cmd.extend("export_mat", export_mat)
+
+    from utils.topology import color_by_topology, get_topology_vector
+    cmd.extend("get_topology_vector", get_topology_vector)
+    cmd.extend("color_by_topology", color_by_topology)
+    from utils.folding_score import get_folding_score
+    cmd.extend("get_folding_score", get_folding_score)
+    from utils.non_polymer import has_non_polymer_atoms, remove_non_polymer_atoms
+
+    cmd.extend("remove_non_polymer_atoms", remove_non_polymer_atoms)
+    cmd.extend("has_non_polymer_atoms", has_non_polymer_atoms)

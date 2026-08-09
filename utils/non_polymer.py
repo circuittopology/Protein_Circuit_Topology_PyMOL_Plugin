@@ -4,8 +4,22 @@ from typing import Any
 from pymol import cmd
 from PyQt5.QtWidgets import QMessageBox
 
+from utils.config import WARN_MSG
+from utils.validation import object_exists
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
+def _suppression_owner(widget: Any) -> Any:
+    """Determine object that should hold the 'don't show again' flag."""
+    window = getattr(widget, "window", None)
+    if callable(window):
+        try:
+            return window() or widget
+        except Exception:
+            return widget
+    return widget
+
 
 def show_warning_dialog(self: Any) -> None:
     """
@@ -15,7 +29,8 @@ def show_warning_dialog(self: Any) -> None:
     Args:
         self: The main GUI class instance.
     """
-    if getattr(self, "_suppress_non_polymer_warning", False):
+    owner = _suppression_owner(self)
+    if getattr(owner, "_suppress_non_polymer_warning", False):
         remove_non_polymer_atoms()
         return
 
@@ -35,7 +50,7 @@ def show_warning_dialog(self: Any) -> None:
     if clicked == continue_btn:
         remove_non_polymer_atoms()
     elif clicked == never_show_btn:
-        self._suppress_non_polymer_warning = True
+        owner._suppress_non_polymer_warning = True
         remove_non_polymer_atoms()
     else:
         logger.info("User cancelled.")
@@ -77,3 +92,8 @@ def new_file_has_non_polymer_atoms(obj_name: str) -> bool:
     cmd.refresh()
     atom_count = cmd.count_atoms(f"{obj_name} and not polymer")
     return atom_count > 0
+
+def warn_if_non_polymer(parent: Any, obj_name: str) -> None:
+    """Warn when a newly selected object carries non-polymer atoms (tab-agnostic)."""
+    if object_exists(obj_name) and new_file_has_non_polymer_atoms(obj_name):
+        QMessageBox.warning(parent, "Warning", WARN_MSG)
