@@ -26,22 +26,21 @@ def retrieve_chain(input_file: Path, chainid: int | str = 0) -> tuple[Chain, str
     Returns:
         tuple: A tuple containing the chain object (Bio.PDB.Chain.Chain) and the protein ID (str).
     """
-    input_file_str = str(input_file)
-    # determines which format is used
-    if input_file_str.endswith("cif"):
-        input_filepath = input_file_str
-        # Supress harmless warnings
+    input_path = Path(input_file)
+    input_file_str = str(input_path)
+    structure_id = input_path.stem
+    if input_path.suffix.lower() == ".cif":
+        # Suppress harmless warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", BiopythonWarning)
             # Import the protein data
-            structure = MMCIFParser().get_structure(input_file_str.replace(".cif", ""), input_filepath)
+            structure = MMCIFParser().get_structure(structure_id, input_file_str)
     else:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", BiopythonWarning)
 
-            input_filepath = input_file_str
             # import protein data
-            structure = PDBParser(PERMISSIVE=True).get_structure(input_file_str.replace(".pdb", ""), input_filepath)
+            structure = PDBParser(PERMISSIVE=True).get_structure(structure_id, input_file_str)
 
     if structure:
         model = structure[0]
