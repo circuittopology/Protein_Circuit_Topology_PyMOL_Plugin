@@ -73,7 +73,7 @@ def run_local_ct(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     local_neighbour = vals["exclude_neighbour"]
     base_file_typeless = f"{curr_local_obj}_chain_{curr_chain}"
     try:
-        with temp_pdb_export(selected_obj, state=cmd.get_state()) as tmp_path:
+        with temp_pdb_export(selected_obj, state=cmd.get_state(), label=curr_local_obj) as tmp_path:
             local_chain, protid = retrieve_chain(tmp_path)
     except Exception as e:
         logger.exception("Failed to export or parse local selection: %s", selected_obj)

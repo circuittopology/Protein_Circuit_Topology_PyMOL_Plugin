@@ -14,7 +14,7 @@ from functions.calculating.get_stats import get_stats
 from functions.calculating.length_filter import length_filter
 from functions.exporting.export_cmap3 import export_cmap3
 from functions.exporting.export_mat import export_mat
-from functions.exporting.export_psc import export_psc
+from functions.exporting.export_psx import export_psx
 from functions.importing.retrieve_chain import retrieve_chain
 from functions.plots.circuit_plot import circuit_plot
 from functions.plots.matrix_plot import matrix_plot
@@ -56,13 +56,13 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     multi_matrix_plot = vals["matrix_plot"]
     multi_stats_plot = vals["stats_plot"]
     multi_export_cmap3 = vals["export_cmap3"]
-    multi_export_psc = vals["export_psc"]
+    multi_export_psx = vals["export_psx"]
     multi_export_mat = vals["export_mat"]
     multi_input_dir = vals["directory"]
     multi_traj_dir = vals["traj_directory"]
-    multi_plot_psc = vals["plot_psc"]
+    multi_plot_psx = vals["plot_psx"]
 
-    if not (multi_circuit_plot or multi_matrix_plot or multi_stats_plot or multi_export_cmap3 or multi_export_mat or multi_export_psc):
+    if not (multi_circuit_plot or multi_matrix_plot or multi_stats_plot or multi_export_cmap3 or multi_export_mat or multi_export_psx):
         QMessageBox.warning(self, "Error", CHECKBOX_WARN)
         return
 
@@ -73,7 +73,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     path = Path(multi_traj_dir or multi_input_dir)
     try:
         input_files = list_structure_files(path)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         QMessageBox.warning(self, "Error", f"Failed to read input directory:\n{e}")
         return
 
@@ -86,13 +86,13 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
 
     output_dir = vals["output_directory"]
     output_path = None
-    if multi_export_cmap3 or multi_export_mat or multi_export_psc:
+    if multi_export_cmap3 or multi_export_mat or multi_export_psx:
         output_path = resolve_output_path(self, output_dir)
         if output_path is None:
             return
 
     number_of_files = len(input_files)
-    psclist = []
+    psxlist = []
     p = []
     s = []
     x = []
@@ -157,7 +157,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                         protid=protid,
                         potential_sign=multi_energy_mode,
                     )
-                except Exception:  # noqa: BLE001
+                except Exception:
                     logger.warning("Energy filtering failed for %s", multi_obj, exc_info=True)
                     skipped_count += 1
                     continue
@@ -174,7 +174,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                         idx = idx[np.abs(idx[:, 0].astype(int) - idx[:, 1].astype(int)) == int(multi_filtering_dist)]
                     else:
                         idx = length_filter(index=idx, distance=multi_filtering_dist, mode=multi_filter_mode)
-                except Exception:  # noqa: BLE001
+                except Exception:
                     logger.warning("Length filtering failed for %s", multi_obj, exc_info=True)
                     skipped_count += 1
                     continue
@@ -182,21 +182,21 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                     skipped_count += 1
                     continue
 
-            mat, psc_result, _ = get_matrix(index=idx, protid=protid)
+            mat, psx_result, _ = get_matrix(index=idx, protid=protid)
             if multi_level == "chain":
-                p.append(psc_result[1])
-                s.append(psc_result[2])
-                x.append(psc_result[3])
-                psclist.append(psc_result)
+                p.append(psx_result[1])
+                s.append(psx_result[2])
+                x.append(psx_result[3])
+                psxlist.append(psx_result)
             else:
-                adj_psc = [psc_result[0], psc_result[1], psc_result[2], psc_result[3]]
-                p.append(psc_result[1])
-                s.append(psc_result[2])
-                x.append(psc_result[3])
-                adj_psc.append({"I2": psc_result[4], "I3": psc_result[5], "I4": psc_result[6]})
-                adj_psc.append({"T2": psc_result[7], "T3": psc_result[8]})
-                adj_psc.append({"L": psc_result[-1]})
-                psclist.append(adj_psc)
+                adj_psx = [psx_result[0], psx_result[1], psx_result[2], psx_result[3]]
+                p.append(psx_result[1])
+                s.append(psx_result[2])
+                x.append(psx_result[3])
+                adj_psx.append({"I2": psx_result[4], "I3": psx_result[5], "I4": psx_result[6]})
+                adj_psx.append({"T2": psx_result[7], "T3": psx_result[8]})
+                adj_psx.append({"L": psx_result[-1]})
+                psxlist.append(adj_psx)
 
             entangled = get_stats(mat)
 
@@ -210,7 +210,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                 circuit_plot(index=idx, protid=protid, numbering=numbering)
 
             if multi_stats_plot:
-                stats_plot(entangled, psc_result, protid)
+                stats_plot(entangled, psx_result, protid)
 
             if multi_export_cmap3:
                 if output_path is None:
@@ -220,7 +220,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                     if not selection_has_atoms(current_selection):
                         logger.warning("Skipping empty chain selection: %s", current_selection)
                         continue
-                    with temp_pdb_export(current_selection, state=cmd.get_state()) as tmp_path:
+                    with temp_pdb_export(current_selection, state=cmd.get_state(), label=multi_obj) as tmp_path:
                         curr_multi_chain, _ = retrieve_chain(tmp_path)
                     temp_i, temp_num, _, _ = get_cmap(
                         curr_multi_chain,
@@ -246,22 +246,22 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
             if object_exists(multi_obj):
                 cmd.delete(multi_obj)
 
-    if multi_export_psc:
-        if not psclist:
-            QMessageBox.warning(self, "Warning", "No PSC results were produced, so no PSC CSV was exported.")
+    if multi_export_psx:
+        if not psxlist:
+            QMessageBox.warning(self, "Warning", "No PSX results were produced, so no PSX CSV was exported.")
         else:
             try:
                 if output_path is None:
                     return
-                export_psc(psclist, output_path)
+                export_psx(psxlist, output_path)
             except Exception as e:
-                logger.exception("PSC export failed")
-                QMessageBox.warning(self, "Error", f"PSC export failed:\n{e}")
+                logger.exception("PSX export failed")
+                QMessageBox.warning(self, "Error", f"PSX export failed:\n{e}")
                 return
 
-    if multi_plot_psc:
+    if multi_plot_psx:
         if not p:
-            QMessageBox.warning(self, "Warning", "No PSC results were available to plot.")
+            QMessageBox.warning(self, "Warning", "No PSX results were available to plot.")
         else:
             plt.rcParams.update({"font.size": 14})
             time = range(len(p))

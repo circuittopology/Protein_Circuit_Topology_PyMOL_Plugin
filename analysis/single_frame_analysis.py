@@ -64,7 +64,7 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
         try:
             frame_files = list_structure_files(source_dir)
             self.available_mol_files = frame_files
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to read input directory:\n{e}")
             return
     else:
@@ -79,7 +79,7 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
     frame_idx = self.frame_selector_spinbox.value()
     try:
         full_path = selected_frame_file(normalized_files, frame_idx)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         QMessageBox.critical(self, "Error", str(e))
         return
 
@@ -135,9 +135,9 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
             return
 
         if frame_level == "chain":
-            mat, frame_psc, _ = get_matrix(idx, protid)
+            mat, frame_psx, _ = get_matrix(idx, protid)
         else:
-            mat, frame_psc, _ = get_matrix(index=idx, protid=protid)
+            mat, frame_psx, _ = get_matrix(index=idx, protid=protid)
 
         if circuit_plot_enabled:
             circuit_plot(index=idx, protid=protid, numbering=numbering)
@@ -149,7 +149,7 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
 
         if stats_plot_enabled:
             entangled = get_stats(mat=mat)
-            stats_plot(entangled, frame_psc, protid)
+            stats_plot(entangled, frame_psx, protid)
 
         cmap3_exports = []
         if export_cmap3_enabled:
@@ -158,7 +158,7 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
                 if not selection_has_atoms(current_selection):
                     logger.warning("Skipping empty chain selection: %s", current_selection)
                     continue
-                with temp_pdb_export(current_selection, state=cmd.get_state()) as tmp_path:
+                with temp_pdb_export(current_selection, state=cmd.get_state(), label=frame_obj) as tmp_path:
                     curr_chain, _ = retrieve_chain(tmp_path)
                 temp_idx, temp_n, _, _ = get_cmap(
                     curr_chain,

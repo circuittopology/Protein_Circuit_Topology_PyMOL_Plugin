@@ -26,7 +26,7 @@ def _safe_delete(*names: str) -> None:
     for name in names:
         try:
             cmd.delete(name)
-        except Exception:  # noqa: BLE001, PERF203
+        except Exception:  # noqa: PERF203
             logger.debug("Cleanup delete failed for %s", name, exc_info=True)
 
 
@@ -54,7 +54,7 @@ def _color_chains_by_topology(target_obj: str, contact_type: str, vals: dict[str
             logger.warning("Skipping empty chain selection: %s", current_selection)
             continue
 
-        with temp_pdb_export(current_selection, state=state) as tmp_path:
+        with temp_pdb_export(current_selection, state=state, label=target_obj) as tmp_path:
             visual_chain, protid = retrieve_chain(tmp_path)
 
         idx, numbering, protid, _ = get_cmap(
@@ -66,8 +66,8 @@ def _color_chains_by_topology(target_obj: str, contact_type: str, vals: dict[str
         if idx.size == 0:
             logger.warning("No contacts found for chain %s. Skipping visualization...", chain_id)
             continue
-        mat, psc, _ = get_matrix(idx, protid)
-        if psc == [protid, 0, 0, 0]:
+        mat, psx, _ = get_matrix(idx, protid)
+        if psx == [protid, 0, 0, 0]:
             logger.warning(
                 "Cannot create topology matrix for chain %s, so visualization for this chain cannot be performed!", chain_id)
             continue

@@ -74,7 +74,7 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
         return
 
     try:
-        with temp_pdb_export(object_selection(selected_obj)) as tmp_path:
+        with temp_pdb_export(object_selection(selected_obj), label=selected_obj) as tmp_path:
             single_chain, protid = retrieve_chain(tmp_path)
     except Exception as e:
         logger.exception("Failed to export or parse selected object: %s", selected_obj)
@@ -104,7 +104,7 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
             QMessageBox.warning(self, "Warning", "No residue contacts were found with the current parameters.")
             return
         if level == "chain":
-            mat, psc, _ = get_matrix(idx, protid)
+            mat, psx, _ = get_matrix(idx, protid)
         else:
             mat, _, _ = get_matrix(idx, protid)
     except Exception as e:
@@ -134,7 +134,7 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                 logger.warning("Skipping empty chain selection: %s", current_selection)
                 continue
             try:
-                with temp_pdb_export(current_selection, state=cmd.get_state()) as tmp_path:
+                with temp_pdb_export(current_selection, state=cmd.get_state(), label=selected_obj) as tmp_path:
                     folding_chain, p = retrieve_chain(tmp_path)
                 i, n, p, _= get_cmap(
                     folding_chain,
@@ -145,11 +145,11 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                 if i.size == 0:
                     logger.warning("No contacts found for chain %s; skipping chain-level work", c)
                     continue
-                m, psc, _ = get_matrix(i, p)
+                m, psx, _ = get_matrix(i, p)
 
                 if folding_score_enabled:
                     # To handle incomplete chains
-                    if psc == [p, 0, 0, 0]:
+                    if psx == [p, 0, 0, 0]:
                         logger.warning("Cannot create topology matrix for chain %s, so folding score cannot be calculated!", c)
                         continue
 

@@ -1,0 +1,24 @@
+*.csv text eol=lf
+*.pdb text eol=lf
+*.cif text eol=lf
+*.pml text eol=lf
+*.py  text eol=lf
+*.yml text eol=lf
+*.md  text eol=lf
+
+*.xtc binary
+*.dcd binary
+*.trr binary
+*.nc  binary
+*.pse binary
+*.png binary
+*.pdf binary
+*.zip binary
+
+tests/upstream/ export-ignore
+
+.github/       export-ignore
+.vscode/       export-ignore
+.ruff_cache/   export-ignore
+__pycache__/   export-ignore
+.gitattributes export-ignore

@@ -33,7 +33,7 @@ def export_mat(index: np.ndarray, mat: np.ndarray, protid: str, output_dir: Path
 
     if np.shape(index)[1] == _mat_small:
 
-        d = {0:"-",1:"S",2:"P",3:"P-1",4:"C",5:"CP",6:"CP-1",7:"CS"}
+        d = {0:"-",1:"S",2:"P",3:"P-1",4:"X",5:"CP",6:"CP-1",7:"CS"}
         c = np.vectorize(d.get)(mat.astype(int))
 
         names = [f"[{index[i,0]} - {index[i,1]}]" for i in range(len(index))]
@@ -45,7 +45,7 @@ def export_mat(index: np.ndarray, mat: np.ndarray, protid: str, output_dir: Path
 
     elif np.shape(index)[1] == _mat_large:
 
-        d = {0:"-",1:"P",2:"S",3:"C",4:"I",5:"T",6:"L"}
+        d = {0:"-",1:"P",2:"S",3:"X",4:"I",5:"T",6:"L"}
         c = np.vectorize(d.get)(mat.astype(int))
 
         names = [f"[{index[i,0]}({index[i,2]}) - {index[i,1]}({index[i,3]})]" for i in range(len(index))]

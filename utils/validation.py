@@ -24,7 +24,7 @@ def legalize_object_name(raw_name: str) -> str:
     name = raw_name.strip() or "object"
     try:
         return str(cmd.get_legal_name(name))
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.debug("Falling back to simple object-name normalization", exc_info=True)
         return name.replace(" ", "_")
 
@@ -36,7 +36,7 @@ def object_exists(obj_name: str | None) -> bool:
     assert obj_name is not None
     try:
         return obj_name in cmd.get_names("objects")
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.debug("cmd.get_names failed; falling back to get_object_list", exc_info=True)
         try:
             return obj_name in cmd.get_object_list()
