@@ -1,19 +1,17 @@
 # Protein Circuit Topology Plugin - Complete API Documentation
 
-This document reflects the **current plugin/runtime source tree** and lists callable entry points by module category.
-
-**Total Callable Entry Points:** 138
-**Python Files With Callables:** 38
+**Total Callable Entry Points:** 166
+**Python Files With Callables:** 39
 
 ## Table of Contents
 
 1. [Calculating Functions](#calculating-functions) (6 functions)
-2. [Plotting Functions](#plotting-functions) (6 functions)
+2. [Plotting Functions](#plotting-functions) (7 functions)
 3. [Importing Functions](#importing-functions) (1 functions)
 4. [Exporting Functions](#exporting-functions) (3 functions)
 5. [Analysis Functions](#analysis-functions) (9 functions)
-6. [Utility Functions](#utility-functions) (57 functions)
-7. [GUI Functions](#gui-functions) (45 functions)
+6. [Utility Functions](#utility-functions) (60 functions)
+7. [GUI Functions](#gui-functions) (69 functions)
 8. [Initialization Functions](#initialization-functions) (11 functions)
 
 ## Calculating Functions
@@ -56,13 +54,19 @@ Calculates local circuit topology statistics for each residue.
 
 ## Plotting Functions
 
+### `discrete_cmap(colors)`
+
+**Module:** `functions/plots/_palette.py`
+
+Return (cmap, norm) mapping integer code i to colors[i], for any subset of codes.
+
 ### `circuit_plot(index, protid, numbering)`
 
 **Module:** `functions/plots/circuit_plot.py`
 
 Plots the circuit topology of a protein as a series of arcs.
 
-### `local_topology_plot(index, mat, numbering, protid, siteid, relation)`
+### `local_topology_plot(index, mat, numbering, siteid, relation)`
 
 **Module:** `functions/plots/local_topology_plot.py`
 
@@ -78,15 +82,15 @@ Plots the topological relationship matrix for a single chain.
 
 Plots the topological relationship matrix for a whole model (multiple chains).
 
-### `autopct_funct(pct)`
-
-**Module:** `functions/plots/stats_plot.py`
-
-### `stats_plot(entangled, psc, protid)`
+### `stats_plot(entangled, psx, protid)`
 
 **Module:** `functions/plots/stats_plot.py`
 
 Plots the fraction of entangled contacts versus distance from
+
+### `autopct_funct(pct)`
+
+**Module:** `functions/plots/stats_plot.py`
 
 ## Importing Functions
 
@@ -110,11 +114,11 @@ Exports a residue contact map (as a binary matrix) to a CSV file.
 
 Exports the topological relationship matrix to a CSV file.
 
-### `export_psc(psclist, output_dir)`
+### `export_psx(psxlist, output_dir)`
 
-**Module:** `functions/exporting/export_psc.py`
+**Module:** `functions/exporting/export_psx.py`
 
-Exports the counts of Parallel, Series, and Cross contacts (and others) to a CSV file.
+Exports the counts of Parallel (P), Series (S), and Cross (X) contacts (and others) to a CSV file.
 
 ## Analysis Functions
 
@@ -174,29 +178,21 @@ Visualizes the circuit topology on the selected molecule in PyMOL by coloring re
 
 ## Utility Functions
 
-### `clear_selected_local_file(self)`
-
-**Module:** `utils/clear_file.py`
-
-Clears the currently selected local file and updates the UI.
-
 ### `clear_selected_single_file(self)`
 
 **Module:** `utils/clear_file.py`
 
 Clears the currently selected single file and updates the UI.
 
-### `_choose_output_dir(self, attr_name, label)`
+### `clear_selected_local_file(self)`
 
-**Module:** `utils/directory.py`
+**Module:** `utils/clear_file.py`
 
-Shared helper: open a directory dialog and store the result.
+Clears the currently selected local file and updates the UI.
 
 ### `_ensure_object_loaded(obj_name)`
 
 **Module:** `utils/directory.py`
-
-Raises a RuntimeError if PyMOL did not create the expected object after a load.
 
 ### `_load_structure_file(self, label, attr_file, attr_obj)`
 
@@ -204,15 +200,15 @@ Raises a RuntimeError if PyMOL did not create the expected object after a load.
 
 Shared helper: open a file dialog, load into PyMOL, check for non-polymer atoms.
 
+### `_choose_output_dir(self, attr_name, label)`
+
+**Module:** `utils/directory.py`
+
+Shared helper: open a directory dialog and store the result.
+
 ### `choose_file(self)`
 
 **Module:** `utils/directory.py`
-
-### `choose_input_dir_multi(self)`
-
-**Module:** `utils/directory.py`
-
-Opens directory dialog to select the input directory containing PDBs for multi-file analysis.
 
 ### `choose_local_file(self)`
 
@@ -230,6 +226,12 @@ Opens directory dialog to select the input directory containing PDBs for multi-f
 
 **Module:** `utils/directory.py`
 
+### `choose_input_dir_multi(self)`
+
+**Module:** `utils/directory.py`
+
+Opens directory dialog to select the input directory containing PDBs for multi-file analysis.
+
 ### `set_label_text_elided(file_path, label)`
 
 **Module:** `utils/directory.py`
@@ -241,6 +243,18 @@ Sets the text of a QLabel to an elided version of the file path if it's too long
 **Module:** `utils/folding_score.py`
 
 Calculate the folding score based on the given relations, using topology data.
+
+### `get_vis_vals(self)`
+
+**Module:** `utils/get_values.py`
+
+Retrieves visualization parameters from the GUI.
+
+### `get_values(self)`
+
+**Module:** `utils/get_values.py`
+
+Retrieves parameters for single-file analysis from the GUI.
 
 ### `get_local_values(self)`
 
@@ -254,29 +268,11 @@ Retrieves parameters for local analysis from the GUI.
 
 Retrieves parameters for multi-file analysis from the GUI.
 
-### `get_values(self)`
-
-**Module:** `utils/get_values.py`
-
-Retrieves parameters for single-file analysis from the GUI.
-
-### `get_vis_vals(self)`
-
-**Module:** `utils/get_values.py`
-
-Retrieves visualization parameters from the GUI.
-
-### `_poll_pymol_objects(self)`
+### `update_chain_combo_box(self)`
 
 **Module:** `utils/helpers.py`
 
-Single poll that refreshes both object dropdowns from one cmd call.
-
-### `init_timers(self)`
-
-**Module:** `utils/helpers.py`
-
-Initializes timers for updating object lists.
+Updates the chain combo box with the chains available in the currently selected object.
 
 ### `make_info_button(tooltip)`
 
@@ -284,17 +280,17 @@ Initializes timers for updating object lists.
 
 Creates a small info button with a tooltip.
 
+### `temp_pdb_export(selection, state=None, label=None)`
+
+**Module:** `utils/helpers.py`
+
+Save a PyMOL selection to a temporary PDB file, yield the path, then clean up.
+
 ### `make_param_row(label_text, tooltip, spinbox)`
 
 **Module:** `utils/helpers.py`
 
 Create a standard parameter row layout with label, info button, and spinbox.
-
-### `object_exists(name)`
-
-**Module:** `utils/helpers.py`
-
-Checks if a PyMOL object exists.
 
 ### `show_folding_score_dialog(parent, chain, folding_score)`
 
@@ -302,17 +298,29 @@ Checks if a PyMOL object exists.
 
 Show the CT folding score for a chain in a small, auto-sized pop-up dialog.
 
-### `temp_pdb_export(selection, state=None)`
+### `resolve_output_path(self, output_dir)`
 
 **Module:** `utils/helpers.py`
 
-Save a PyMOL selection to a temporary PDB file, yield the path, then clean up.
+Validates and creates the output directory. Returns the Path on success, None on failure.
 
-### `update_chain_combo_box(self)`
+### `_suppression_owner(widget)`
 
-**Module:** `utils/helpers.py`
+**Module:** `utils/non_polymer.py`
 
-Updates the chain combo box with the chains available in the currently selected object.
+Determine object that should hold the 'don't show again' flag.
+
+### `show_warning_dialog(self)`
+
+**Module:** `utils/non_polymer.py`
+
+Shows a warning dialog before removing non-polymer atoms.
+
+### `remove_non_polymer_atoms()`
+
+**Module:** `utils/non_polymer.py`
+
+Removes all non-polymer atoms from the PyMOL session.
 
 ### `has_non_polymer_atoms()`
 
@@ -326,29 +334,41 @@ Checks if there are any non-polymer atoms in the PyMOL session.
 
 Checks if a specific object contains non-polymer atoms.
 
-### `remove_non_polymer_atoms()`
+### `warn_if_non_polymer(parent, obj_name)`
 
 **Module:** `utils/non_polymer.py`
 
-Removes all non-polymer atoms from the PyMOL session.
+Warn when a newly selected object carries non-polymer atoms (tab-agnostic).
 
-### `show_warning_dialog(self)`
+### `__init__(self, parent=None)`
 
-**Module:** `utils/non_polymer.py`
+**Module:** `utils/pymol_objects.py`
 
-Shows a warning dialog before removing non-polymer atoms.
+**Type:** `PymolObjects` method
 
-### `handle_local_object_change(self, obj_name)`
+### `objects(self)`
 
-**Module:** `utils/object_change.py`
+**Module:** `utils/pymol_objects.py`
 
-Handles changes to the selected object in the local analysis tab.
+**Type:** `PymolObjects` method
 
-### `handle_standard_object_change(self, obj_name)`
+The object list as of the last poll.
 
-**Module:** `utils/object_change.py`
+### `refresh(self)`
 
-Handles changes to the selected object in the standard analysis tab.
+**Module:** `utils/pymol_objects.py`
+
+**Type:** `PymolObjects` method
+
+Re-read PyMOL's object list and emit `changed` if it moved.
+
+### `stop(self)`
+
+**Module:** `utils/pymol_objects.py`
+
+**Type:** `PymolObjects` method
+
+Stop polling. Called from CTDialog.closeEvent so a hidden dialog leaves no live timer.
 
 ### `get_residue_range(self, obj_name)`
 
@@ -362,23 +382,23 @@ Retrieves the residue range for each chain in the specified object.
 
 Updates the residue range spinbox based on the currently selected chain.
 
-### `color_by_topology(molecule_name, topology_vector, numbering, topology_type)`
-
-**Module:** `utils/topology.py`
-
-Colors a PyMOL object based on a topology vector.
-
 ### `get_topology_vector(mat, index, topology_type, numbering)`
 
 **Module:** `utils/topology.py`
 
 Calculates a topology vector representing the density of a specific contact type
 
-### `export_frames_from_traj(self)`
+### `color_by_topology(molecule_name, topology_vector, numbering, topology_type)`
+
+**Module:** `utils/topology.py`
+
+Colors a PyMOL object based on a topology vector.
+
+### `_refresh_objects(self)`
 
 **Module:** `utils/trajectory.py`
 
-Exports each frame of the loaded trajectory as a separate PDB file.
+Ask the shared object model to re-poll. Fallback to update_list().
 
 ### `select_mol_file(self)`
 
@@ -392,29 +412,11 @@ Opens a file dialog to select a structure file (PDB or CIF) for trajectory analy
 
 Opens a file dialog to select a trajectory file (XTC, DCD, TRR, NC).
 
-### `update_list(self, new_objects=None)`
+### `export_frames_from_traj(self)`
 
-**Module:** `utils/updates.py`
+**Module:** `utils/trajectory.py`
 
-Updates the list of available objects in the single-file analysis dropdown.
-
-### `update_local_list(self, new_objects=None)`
-
-**Module:** `utils/updates.py`
-
-Updates the list of available objects in the local analysis dropdown.
-
-### `update_output_widgets(self)`
-
-**Module:** `utils/updates.py`
-
-Update visibility of output widgets for single-file export options.
-
-### `update_output_widgets_local(self)`
-
-**Module:** `utils/updates.py`
-
-Updates the visibility of output widgets in the local analysis tab based on checkbox states.
+Exports each frame of the loaded trajectory as a separate PDB file.
 
 ### `update_output_widgets_multi(self)`
 
@@ -422,47 +424,71 @@ Updates the visibility of output widgets in the local analysis tab based on chec
 
 Updates the visibility of output widgets in the multi-file analysis
 
+### `update_output_widgets_local(self)`
+
+**Module:** `utils/updates.py`
+
+Updates the visibility of output widgets in the local analysis tab based on checkbox states.
+
+### `update_output_widgets(self)`
+
+**Module:** `utils/updates.py`
+
+Update visibility of output widgets for single-file export options.
+
+### `update_local_list(self, new_objects=None)`
+
+**Module:** `utils/updates.py`
+
+Updates the list of available objects in the local analysis dropdown.
+
+### `update_list(self, new_objects=None)`
+
+**Module:** `utils/updates.py`
+
+Updates the list of available objects in the single-file analysis dropdown.
+
 ### `is_placeholder_object(obj_name)`
 
 **Module:** `utils/validation.py`
 
-Returns True when a combo-box value is not a real PyMOL object.
+Return True when a combo-box value is not a real PyMOL object.
 
 ### `legalize_object_name(raw_name)`
 
 **Module:** `utils/validation.py`
 
-Returns a PyMOL-safe object name for explicit load operations.
+Return a PyMOL-safe object name for explicit load operations.
 
 ### `object_exists(obj_name)`
 
 **Module:** `utils/validation.py`
 
-Returns True when the named object exists in the current PyMOL session.
+Return True when the named object exists in the current PyMOL session.
 
 ### `object_selection(obj_name)`
 
 **Module:** `utils/validation.py`
 
-Returns an exact object selection for a PyMOL object name.
+Return an exact object selection for a PyMOL object name.
 
 ### `chain_selection(obj_name, chain_id)`
 
 **Module:** `utils/validation.py`
 
-Returns a PyMOL selection for one chain of an object.
+Return a PyMOL selection for one chain of an object.
 
 ### `selection_has_atoms(selection)`
 
 **Module:** `utils/validation.py`
 
-Returns True when a PyMOL selection currently contains atoms.
+Return True when a PyMOL selection currently contains atoms.
 
 ### `get_object_chains(obj_name)`
 
 **Module:** `utils/validation.py`
 
-Returns chains for an existing object, or an empty list on failure.
+Return chains for an existing object, or an empty list on failure.
 
 ### `count_object_states(obj_name)`
 
@@ -480,45 +506,57 @@ Return True when an object has more than one state (a trajectory or NMR ensemble
 
 **Module:** `utils/validation.py`
 
-Validates a PDB/CIF file path and returns it as a Path.
+Validate a PDB/CIF file path and return it as a Path.
 
 ### `validate_trajectory_file(path_like)`
 
 **Module:** `utils/validation.py`
 
-Validates a supported trajectory file path and returns it as a Path.
+Validate a supported trajectory file path and return it as a Path.
 
 ### `list_structure_files(directory)`
 
 **Module:** `utils/validation.py`
 
-Returns sorted PDB/CIF files from a directory.
+Return sorted PDB/CIF files from a directory.
 
 ### `set_frame_spinbox_bounds(spinbox, file_count)`
 
 **Module:** `utils/validation.py`
 
-Sets a 1-based frame spinbox range without creating invalid Qt ranges.
+Set a 1-based frame spinbox range without creating invalid Qt ranges.
 
 ### `selected_frame_file(files, frame_index)`
 
 **Module:** `utils/validation.py`
 
-Returns the file for a 1-based frame index or raises a clear error.
+Return the file for a 1-based frame index or raise a clear error.
 
 ## GUI Functions
 
-### `__init_plugin__(app=None)`
+### `_show_admin_required_dialog()`
 
 **Module:** `__init__.py`
 
-Initialize the plugin within PyMOL.
+Show a Qt message box explaining that elevated privileges are required.
 
 ### `_show_restart_required_dialog()`
 
 **Module:** `__init__.py`
 
 Tell the user dependencies were installed but PyMOL must be restarted.
+
+### `_try_register()`
+
+**Module:** `__init__.py`
+
+Attempt to register plugin functions and add the GUI menu item.
+
+### `__init_plugin__(app=None)`
+
+**Module:** `__init__.py`
+
+Initialize the plugin within PyMOL.
 
 ### `run_plugin_gui()`
 
@@ -532,175 +570,23 @@ Create or raise the plugin GUI dialog.
 
 **Type:** `CTDialog` method
 
-Construct the dialog and perform UI initialization.
+Construct the dialog: window chrome, the three tabs, then the shared object model.
 
-### `_poll_pymol_objects(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Single timer callback that refreshes both object dropdowns.
-
-### `choose_file(self)`
+### `_on_objects_changed(self, objects)`
 
 **Module:** `gui_class.py`
 
 **Type:** `CTDialog` method
 
-Open a file chooser to select a single input file (single-file tab).
+Refresh both object dropdowns from one polled list.
 
-### `choose_input_dir_multi(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Open a directory chooser for selecting multiple input files (multi-file).
-
-### `choose_local_file(self)`
+### `closeEvent(self, event)`
 
 **Module:** `gui_class.py`
 
 **Type:** `CTDialog` method
 
-Open a file chooser to select a local PDB/file for local analysis.
-
-### `choose_local_output_dir(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Open a directory chooser for specifying the output folder (local analysis).
-
-### `choose_output_dir(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Open a directory chooser for specifying the output folder (single-file).
-
-### `choose_output_dir_multi(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Open a directory chooser for specifying the output folder (multi-file).
-
-### `clear_selected_local_file(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Clear the selected local file control value(s).
-
-### `clear_selected_single_file(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Clear the selected single-file control value(s).
-
-### `export_frames_from_traj(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Export frames from an opened trajectory according to UI parameters.
-
-### `get_local_values(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Return settings from the local analysis tab UI controls.
-
-### `get_multiple_values(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Return settings from the multi-file analysis tab UI controls.
-
-### `get_residue_range(self, obj_name=None)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Request the residue range for an object and update the UI.
-
-### `get_values(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Return settings from the single-file tab UI controls.
-
-### `get_vis_vals(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Return visualization-specific values from the UI.
-
-### `handle_local_object_change(self, obj_name=None)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Handle changes in the local object dropdown.
-
-### `handle_standard_object_change(self, obj_name=None)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Handle changes in the standard object dropdown.
-
-### `init_local_tab(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Initialize widgets and layout for the local analysis tab.
-
-### `init_multi_file_tab(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Initialize widgets and layout for the multi-file analysis tab.
-
-### `init_single_file_tab(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Initialize widgets and layout for the single-file analysis tab.
-
-### `init_timers(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Initialize any repeating timers used by the GUI (e.g., polling PyMOL state).
+Stop polling when the dialog closes.
 
 ### `init_ui(self)`
 
@@ -710,133 +596,109 @@ Initialize any repeating timers used by the GUI (e.g., polling PyMOL state).
 
 Create the top-level tab widget and initialize each feature tab.
 
-### `run_local_ct(self)`
+### `__init__(self, dialog, parent=None)`
 
-**Module:** `gui_class.py`
+**Module:** `tabs/local_tab.py`
 
-**Type:** `CTDialog` method
+**Type:** `LocalTab` method
 
-Run local circuit-topology analysis using current local-tab settings.
+### `pymol_objects(self)`
 
-### `run_multi_analysis(self)`
+**Module:** `tabs/local_tab.py`
 
-**Module:** `gui_class.py`
+**Type:** `LocalTab` method
 
-**Type:** `CTDialog` method
+### `get_local_values(self)`
 
-Run the batch multi-file analysis flow.
+**Module:** `tabs/local_tab.py`
 
-### `run_single_frame_analysis(self)`
+**Type:** `LocalTab` method
 
-**Module:** `gui_class.py`
+Every setting this tab exposes.
 
-**Type:** `CTDialog` method
+### `clear_selected_local_file(self)`
 
-Run an analysis for the currently selected single frame.
+**Module:** `tabs/local_tab.py`
 
-### `run_standard_analysis(self)`
+**Type:** `LocalTab` method
 
-**Module:** `gui_class.py`
+### `choose_local_file(self)`
 
-**Type:** `CTDialog` method
+**Module:** `tabs/local_tab.py`
 
-Run the standard single-file analysis flow using current UI settings.
+**Type:** `LocalTab` method
 
-### `select_mol_file(self)`
+### `choose_local_output_dir(self)`
 
-**Module:** `gui_class.py`
+**Module:** `tabs/local_tab.py`
 
-**Type:** `CTDialog` method
+**Type:** `LocalTab` method
 
-Select a molecular file used by the trajectory tools.
+### `handle_local_object_change(self, obj_name=None)`
 
-### `select_xtc_file(self)`
+**Module:** `tabs/local_tab.py`
 
-**Module:** `gui_class.py`
+**Type:** `LocalTab` method
 
-**Type:** `CTDialog` method
+### `get_residue_range(self, obj_name=None)`
 
-Select an XTC (trajectory) file used by the trajectory tools.
+**Module:** `tabs/local_tab.py`
 
-### `show_warning_dialog(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Display a warning dialog when a non-polymeric selection is detected.
-
-### `toggle_frame_controls(self, enabled)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Enable or disable UI controls that affect frame selection.
-
-### `update_chain_combo_box(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Refresh the chain selection combobox based on the currently selected object.
-
-### `update_list(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Refresh the object list shown in the single-file tab.
-
-### `update_local_list(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Refresh the object list shown in the local-analysis tab.
-
-### `update_output_widgets(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Update widgets that display or depend on the output path (single-file).
-
-### `update_output_widgets_local(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Update widgets that display or depend on the output path (local-analysis).
-
-### `update_output_widgets_multi(self)`
-
-**Module:** `gui_class.py`
-
-**Type:** `CTDialog` method
-
-Update widgets that display or depend on the output path (multi-file).
+**Type:** `LocalTab` method
 
 ### `update_residue_range(self)`
 
-**Module:** `gui_class.py`
+**Module:** `tabs/local_tab.py`
 
-**Type:** `CTDialog` method
+**Type:** `LocalTab` method
 
-Apply the current residue-range widget values to the model or internal state.
+### `update_chain_combo_box(self)`
 
-### `visualize_molecule(self, contact_type)`
+**Module:** `tabs/local_tab.py`
 
-**Module:** `gui_class.py`
+**Type:** `LocalTab` method
 
-**Type:** `CTDialog` method
+### `update_output_widgets_local(self)`
 
-Trigger molecule visualization in PyMOL.
+**Module:** `tabs/local_tab.py`
+
+**Type:** `LocalTab` method
+
+### `run_local_ct(self)`
+
+**Module:** `tabs/local_tab.py`
+
+**Type:** `LocalTab` method
+
+### `show_warning_dialog(self)`
+
+**Module:** `tabs/local_tab.py`
+
+**Type:** `LocalTab` method
+
+Shared with the Single-File tab.
+
+### `update_local_list(self)`
+
+**Module:** `tabs/local_tab.py`
+
+**Type:** `LocalTab` method
+
+### `_build_local_input_group(self)`
+
+**Module:** `tabs/local_tab.py`
+
+### `_build_local_params_group(self)`
+
+**Module:** `tabs/local_tab.py`
+
+### `_build_local_analysis_group(self)`
+
+**Module:** `tabs/local_tab.py`
+
+### `_build_local_export_group(self)`
+
+**Module:** `tabs/local_tab.py`
 
 ### `init_local_tab(self)`
 
@@ -844,11 +706,229 @@ Trigger molecule visualization in PyMOL.
 
 Initializes the 'Local Circuit Topology' tab in the GUI.
 
+### `__init__(self, dialog, parent=None)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+### `pymol_objects(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+The shared object model, so utils.trajectory can request a refresh.
+
+### `get_multiple_values(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+Every setting this tab exposes.
+
+### `choose_input_dir_multi(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+### `choose_output_dir_multi(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+### `select_mol_file(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+### `select_xtc_file(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+### `export_frames_from_traj(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+### `update_output_widgets_multi(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+### `run_multi_analysis(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+### `run_single_frame_analysis(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+### `toggle_frame_controls(self, enabled)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+### `update_list(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+**Type:** `MultiFileTab` method
+
+Legacy name still called by helper code; routes through the shared model.
+
+### `_build_multi_dir_group(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+### `_build_multi_traj_group(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+### `_build_multi_params_group(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+### `_build_multi_frame_widgets(self, layout)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+### `_build_multi_filters_group(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+### `_build_multi_plot_group(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
+### `_build_multi_export_group(self)`
+
+**Module:** `tabs/multiple_file_tab.py`
+
 ### `init_multi_file_tab(self)`
 
 **Module:** `tabs/multiple_file_tab.py`
 
 Initializes the 'Multi-File Analysis' tab in the GUI.
+
+### `__init__(self, dialog, parent=None)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+### `pymol_objects(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+### `get_values(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+Every setting this tab exposes.
+
+### `get_vis_vals(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+### `clear_selected_single_file(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+### `choose_file(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+### `choose_output_dir(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+### `handle_standard_object_change(self, obj_name=None)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+### `update_output_widgets(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+### `visualize_molecule(self, contact_type)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+### `run_standard_analysis(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+### `show_warning_dialog(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+Shared with the Local tab; the suppression flag lives on the parent dialog.
+
+### `update_list(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+**Type:** `SingleFileTab` method
+
+### `_build_input_group(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+### `_build_params_group(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+### `_build_plot_group(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+### `_build_vis_group(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+### `_build_export_group(self)`
+
+**Module:** `tabs/single_file_tab.py`
+
+### `_build_folding_group(self)`
+
+**Module:** `tabs/single_file_tab.py`
 
 ### `init_single_file_tab(self)`
 
@@ -858,23 +938,17 @@ Initializes the 'Single-File Analysis' tab in the GUI.
 
 ## Initialization Functions
 
-### `check_installed_packages(requirements_list)`
+### `is_path_user(path)`
 
 **Module:** `initialization_checks.py`
 
-Checks if the required packages are installed in the current environment.
+Checks if a given path is within the user's home directory.
 
-### `_find_conda_executable()`
-
-**Module:** `initialization_checks.py`
-
-Locate the conda executable that owns the running PyMOL environment.
-
-### `get_requirements(req_path)`
+### `is_running_as_admin()`
 
 **Module:** `initialization_checks.py`
 
-Parses the requirements.yml file to get a list of required packages.
+Returns True if the current process has administrator / root privileges.
 
 ### `install_failed(reqs=REQUIREMENTS_FILE)`
 
@@ -882,35 +956,47 @@ Parses the requirements.yml file to get a list of required packages.
 
 Prints instructions for manual installation of dependencies if automated installation fails.
 
+### `_normalize_requirement_name(requirement)`
+
+**Module:** `initialization_checks.py`
+
+Convert a conda-style dependency entry into its package name.
+
+### `get_requirements(req_path)`
+
+**Module:** `initialization_checks.py`
+
+Parses the requirements.yml file to get a list of required packages.
+
+### `check_installed_packages(requirements_list)`
+
+**Module:** `initialization_checks.py`
+
+Checks if the required packages are installed in the current environment.
+
+### `_is_package_available(pack)`
+
+**Module:** `initialization_checks.py`
+
+Check whether a conda-named package is importable in this interpreter.
+
 ### `is_conda_installed()`
 
 **Module:** `initialization_checks.py`
 
-Checks if conda is installed on the system.
+Checks if conda is discoverable on the system PATH.
 
-### `is_running_as_admin()`
-
-**Module:** `initialization_checks.py`
-
-Returns True if the current process has administrator / root privileges. On Windows calls `IsUserAnAdmin()`; on POSIX checks effective uid == 0.
-
-### `is_path_user(path)`
+### `_find_conda_executable()`
 
 **Module:** `initialization_checks.py`
 
-Checks if a given path is within the user's home directory.
+Locate the conda executable that owns the running PyMOL environment.
 
-### `linux_install(reqs=REQUIREMENTS_FILE)`
-
-**Module:** `initialization_checks.py`
-
-Performs installation on Linux using conda.
-
-### `mac_install(reqs=REQUIREMENTS_FILE)`
+### `install_dependencies(reqs=REQUIREMENTS_FILE)`
 
 **Module:** `initialization_checks.py`
 
-Performs installation on macOS using conda.
+Install plugin dependencies into PyMOL's own conda environment.
 
 ### `register_pymol_functions()`
 
@@ -918,10 +1004,4 @@ Performs installation on macOS using conda.
 
 Register the plugin's core functions as PyMOL commands.
 
-### `win_install(reqs=REQUIREMENTS_FILE)`
-
-**Module:** `initialization_checks.py`
-
-Performs installation on Windows using PowerShell and conda.
-
-*Last Updated: June 13, 2026*
+*Last Updated: August 09, 2026*
