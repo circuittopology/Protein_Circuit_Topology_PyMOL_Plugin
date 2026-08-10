@@ -12,10 +12,86 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
     QSpinBox,
     QVBoxLayout,
+    QWidget,
 )
 
 from utils.config import TRAJECTORY_COLOR_INFO
 from utils.helpers import make_info_button, make_param_row
+
+
+class SingleFileTab(QWidget):
+    """The Single-File Analysis tab widget class."""
+
+    def __init__(self, dialog, parent=None):
+        super().__init__(parent)
+        self.dialog = dialog
+        self.single_file_tab = self
+        self.current_objects: list[str] = []
+        init_single_file_tab(self)
+
+    @property
+    def pymol_objects(self):
+        return getattr(self.dialog, "pymol_objects", None)
+
+    def get_values(self):
+        """Every setting this tab exposes."""
+        from utils.get_values import get_values
+
+        return get_values(self)
+
+    def get_vis_vals(self):
+        from utils.get_values import get_vis_vals
+
+        return get_vis_vals(self)
+
+    def clear_selected_single_file(self):
+        from utils.clear_file import clear_selected_single_file
+
+        clear_selected_single_file(self)
+
+    def choose_file(self):
+        from utils.directory import choose_file
+
+        choose_file(self)
+
+    def choose_output_dir(self):
+        from utils.directory import choose_output_dir
+
+        choose_output_dir(self)
+
+    def handle_standard_object_change(self, obj_name: str | None = None):
+        from utils.non_polymer import warn_if_non_polymer
+
+        if obj_name is None:
+            obj_name = self.dropdown_objects.currentText()
+
+        warn_if_non_polymer(self, obj_name)
+
+    def update_output_widgets(self):
+        from utils.updates import update_output_widgets
+
+        update_output_widgets(self)
+
+    def visualize_molecule(self, contact_type: str):
+        from analysis.visualization import visualize_molecule
+
+        visualize_molecule(self, contact_type)
+
+    def run_standard_analysis(self):
+        from analysis.single_file_analysis import run_standard_analysis
+
+        run_standard_analysis(self)
+
+    def show_warning_dialog(self):
+        """Shared with the Local tab; the suppression flag lives on the parent dialog."""
+        from utils.non_polymer import show_warning_dialog
+
+        show_warning_dialog(self)
+
+    def update_list(self):
+        model = self.pymol_objects
+        if model is not None:
+            model.refresh()
 
 
 def _build_input_group(self: Any) -> QGroupBox:
