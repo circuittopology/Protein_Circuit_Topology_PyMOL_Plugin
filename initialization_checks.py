@@ -361,7 +361,4 @@ def register_pymol_functions():
     cmd.extend("color_by_topology", color_by_topology)
     from utils.folding_score import get_folding_score
     cmd.extend("get_folding_score", get_folding_score)
-    from utils.non_polymer import has_non_polymer_atoms, remove_non_polymer_atoms
 
-    cmd.extend("remove_non_polymer_atoms", remove_non_polymer_atoms)
-    cmd.extend("has_non_polymer_atoms", has_non_polymer_atoms)

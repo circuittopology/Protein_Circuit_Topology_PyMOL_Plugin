@@ -16,13 +16,13 @@ from functions.plots.matrix_plot import matrix_plot
 from functions.plots.matrix_plot_model import matrix_plot_model
 from functions.plots.stats_plot import stats_plot
 from utils.helpers import resolve_output_path, temp_pdb_export
-from utils.non_polymer import has_non_polymer_atoms
 from utils.validation import (
     chain_selection,
     get_object_chains,
     legalize_object_name,
     list_structure_files,
     object_exists,
+    polymer_selection,
     selected_frame_file,
     selection_has_atoms,
 )
@@ -37,11 +37,6 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
     Args:
         self: The main GUI class instance.
     """
-    # check for non-polymer atoms
-    if has_non_polymer_atoms():
-        QMessageBox.warning(self, "Warning",
-                                        "The opened file contains non-polymer atoms, which can interfere with Circuit Topology. Please use the 'Remove Non-Polymer Atoms' button to remove them.")
-
     vals = self.get_multiple_values()
     traj_dir = vals.get("traj_directory")
     pdb_dir = vals.get("directory")
@@ -102,7 +97,11 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
                 raise RuntimeError(msg)  # noqa: TRY301
             cmd.set("state", frame_idx, frame_obj)
             traj_frame_chains = get_object_chains(frame_obj)
-            frame_chain, protid = retrieve_chain(full_path)
+
+            with temp_pdb_export(
+                polymer_selection(frame_obj), state=frame_idx, label=full_path.stem,
+            ) as tmp_path:
+                frame_chain, protid = retrieve_chain(tmp_path)
         else:
             frame_obj = legalize_object_name(full_path.stem)
             cmd.load(str(full_path), frame_obj)

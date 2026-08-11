@@ -5,8 +5,7 @@ from pymol import cmd
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFileDialog, QLabel, QMessageBox
 
-from utils.config import WARN_MSG
-from utils.non_polymer import new_file_has_non_polymer_atoms
+from utils.non_polymer import report_excluded_atoms
 from utils.validation import (
     legalize_object_name,
     list_structure_files,
@@ -41,8 +40,7 @@ def _load_structure_file(self, label, attr_file, attr_obj):
         set_label_text_elided(str(input_path), label)
         setattr(self, attr_file, file_path)
         setattr(self, attr_obj, obj_name)
-        if new_file_has_non_polymer_atoms(obj_name):
-            QMessageBox.warning(self, "Warning", WARN_MSG)
+        report_excluded_atoms(obj_name)
     else:
         setattr(self, attr_file, None)
 

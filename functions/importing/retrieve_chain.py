@@ -6,13 +6,19 @@ Created on Mon May 24 17:00:09 2021
 Function for creating the chain object used in Bio.PDB and all the functions. Can specify which chain
 
 """
+import logging
 import warnings
+from itertools import pairwise
 from pathlib import Path
 
 from Bio import BiopythonWarning
 from Bio.PDB.Chain import Chain
 from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio.PDB.PDBParser import PDBParser
+
+logger = logging.getLogger(__name__)
+
+_MAX_REPORTED = 5
 
 
 def retrieve_chain(input_file: Path, chainid: int | str = 0) -> tuple[Chain, str]:  # noqa: PLR0912
@@ -76,5 +82,43 @@ def retrieve_chain(input_file: Path, chainid: int | str = 0) -> tuple[Chain, str
         raise TypeError(msg_0)
 
     protid = structure.id + "_" + chain.id
+    warn_about_numbering(chain, protid)
 
     return chain, protid
+
+
+def warn_about_numbering(chain: Chain, protid: str) -> list[str]:
+    """Report the two residue-numbering situations that contact detection handles imprecisely."""
+    residues = [res for res in chain if res.id[0] == " "]
+    messages = []
+
+    seen: dict[int, int] = {}
+    for res in residues:
+        seen[res.id[1]] = seen.get(res.id[1], 0) + 1
+    duplicated = sorted(num for num, count in seen.items() if count > 1)
+    if duplicated:
+        shown = ", ".join(str(n) for n in duplicated[:_MAX_REPORTED])
+        if len(duplicated) > _MAX_REPORTED:
+            shown += f", and {len(duplicated) - _MAX_REPORTED} more"
+        messages.append(
+            f"{protid}: {len(duplicated)} residue number(s) occur more than once, i.e. insertion "
+            f"codes are in use ({shown}). Contact detection matches on the residue number alone, so "
+            f"atoms of the inserted residues are attributed to the first residue with that number.",
+        )
+
+    numbers = [res.id[1] for res in residues]
+    breaks = [(a, b) for a, b in pairwise(numbers) if b - a > 1]
+    if breaks:
+        shown = ", ".join(f"{a}->{b}" for a, b in breaks[:_MAX_REPORTED])
+        if len(breaks) > _MAX_REPORTED:
+            shown += f", and {len(breaks) - _MAX_REPORTED} more"
+        messages.append(
+            f"{protid}: {len(breaks)} chain break(s) in the residue numbering ({shown}). "
+            f"Neighbour exclusion is applied by position in the residue list rather than by residue "
+            f"number, so residues flanking a break are treated as sequence neighbours.",
+        )
+
+    for message in messages:
+        logger.warning(message)
+
+    return messages

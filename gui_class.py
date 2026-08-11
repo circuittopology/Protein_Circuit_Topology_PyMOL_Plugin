@@ -35,7 +35,6 @@ class CTDialog(QDialog):
         The three feature tabs, each self-contained.
     pymol_objects : PymolObjects
         Shared poller for the PyMOL object list.
-    _suppress_non_polymer_warning : bool
         Session-wide "don't show again" flag, set via utils.non_polymer.
     """
 

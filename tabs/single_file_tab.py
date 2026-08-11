@@ -15,7 +15,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from utils.config import TRAJECTORY_COLOR_INFO
+from utils.config import NON_POLYMER_INFO, TRAJECTORY_COLOR_INFO
 from utils.helpers import make_info_button, make_param_row
 
 
@@ -60,12 +60,12 @@ class SingleFileTab(QWidget):
         choose_output_dir(self)
 
     def handle_standard_object_change(self, obj_name: str | None = None):
-        from utils.non_polymer import warn_if_non_polymer
+        """Log what analysis will ignore. Non-polymer atoms need no action from the user."""
+        from utils.non_polymer import report_excluded_atoms
 
         if obj_name is None:
             obj_name = self.dropdown_objects.currentText()
-
-        warn_if_non_polymer(self, obj_name)
+        report_excluded_atoms(obj_name)
 
     def update_output_widgets(self):
         from utils.updates import update_output_widgets
@@ -81,12 +81,6 @@ class SingleFileTab(QWidget):
         from analysis.single_file_analysis import run_standard_analysis
 
         run_standard_analysis(self)
-
-    def show_warning_dialog(self):
-        """Shared with the Local tab; the suppression flag lives on the parent dialog."""
-        from utils.non_polymer import show_warning_dialog
-
-        show_warning_dialog(self)
 
     def update_list(self):
         model = self.pymol_objects
@@ -266,18 +260,8 @@ def init_single_file_tab(self: Any) -> None:
     t1_layout.addWidget(_build_export_group(self))
     t1_layout.addWidget(_build_folding_group(self))
 
-    # Button for clearing nonprotein elements
     remove_row_tab1 = QHBoxLayout()
-    self.remove_non_polymer_button_tab1 = QPushButton("Remove Non-Polymer Atoms")
-    self.remove_non_polymer_button_tab1.clicked.connect(self.show_warning_dialog)
-    info_button_tab1 = make_info_button(
-        """The Circuit Topology tool only processes protein atoms.
-        If your loaded PyMOL object contains non-polymer atoms, the tool will not be able to
-        handle them. Upon clicking this button, non-polymer atoms will be removed.
-        Be aware that heteroatoms in CIF files can interfere with Circuit Topology.""",
-        )
-    remove_row_tab1.addWidget(self.remove_non_polymer_button_tab1)
-    remove_row_tab1.addWidget(info_button_tab1)
+    remove_row_tab1.addWidget(make_info_button(NON_POLYMER_INFO))
     remove_row_tab1.addStretch()
     t1_layout.addLayout(remove_row_tab1)
 

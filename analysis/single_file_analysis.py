@@ -14,12 +14,12 @@ from functions.plots.matrix_plot import matrix_plot
 from functions.plots.matrix_plot_model import matrix_plot_model
 from utils.folding_score import get_folding_score
 from utils.helpers import resolve_output_path, show_folding_score_dialog, temp_pdb_export
-from utils.non_polymer import has_non_polymer_atoms
+from utils.non_polymer import report_excluded_atoms
 from utils.validation import (
     chain_selection,
     get_object_chains,
     object_exists,
-    object_selection,
+    polymer_selection,
     selection_has_atoms,
 )
 
@@ -34,13 +34,6 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     Args:
         self: The main GUI class instance.
     """
-    # check for non-polymer atoms
-    if has_non_polymer_atoms():
-        QMessageBox.warning(
-            self, "Warning",
-            "The opened file contains non-polymer atoms, which can interfere with Circuit Topology. Please use the 'Remove Non-Polymer Atoms' button to remove them.",
-        )
-
     vals = self.get_values()
     selected_obj = self.dropdown_objects.currentText()
     if not object_exists(selected_obj):
@@ -69,12 +62,14 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     if not chains:
         QMessageBox.warning(self, "Error", f"No protein chains were found for object: {selected_obj}")
         return
-    if not selection_has_atoms(object_selection(selected_obj)):
-        QMessageBox.warning(self, "Error", f"The selected object has no atoms to analyze: {selected_obj}")
+    if not selection_has_atoms(polymer_selection(selected_obj)):
+        QMessageBox.warning(self, "Error", f"The selected object has no polymer atoms to analyze: {selected_obj}")
         return
 
+    report_excluded_atoms(selected_obj)
+
     try:
-        with temp_pdb_export(object_selection(selected_obj), label=selected_obj) as tmp_path:
+        with temp_pdb_export(polymer_selection(selected_obj), label=selected_obj) as tmp_path:
             single_chain, protid = retrieve_chain(tmp_path)
     except Exception as e:
         logger.exception("Failed to export or parse selected object: %s", selected_obj)

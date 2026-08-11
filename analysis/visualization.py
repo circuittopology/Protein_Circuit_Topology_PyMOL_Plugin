@@ -14,6 +14,7 @@ from utils.validation import (
     count_object_states,
     get_object_chains,
     object_exists,
+    polymer_selection,
     selection_has_atoms,
 )
 
@@ -210,8 +211,22 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
         _visualize_trajectory(self, contact_type, selected_obj, vals, n_states)
         return
 
+    result_obj = f"{selected_obj}_topo"
+    _safe_delete(result_obj)
     try:
-        _color_chains_by_topology(selected_obj, contact_type, vals, state=cmd.get_state())
+        cmd.create(result_obj, polymer_selection(selected_obj))
+        if not object_exists(result_obj):
+            msg = f"PyMOL did not create the copy '{result_obj}'"
+            raise RuntimeError(msg)  # noqa: TRY301
+        _color_chains_by_topology(result_obj, contact_type, vals, state=cmd.get_state())
     except Exception as e:
         logger.exception("Visualization failed for %s", selected_obj)
+        _safe_delete(result_obj)
         QMessageBox.warning(self, "Error", f"Visualization failed:\n{e}")
+        return
+
+    cmd.disable(selected_obj)
+    logger.info(
+        "Coloured '%s' by %s topology. '%s' keeps its original B-factors.",
+        result_obj, contact_type, selected_obj,
+    )

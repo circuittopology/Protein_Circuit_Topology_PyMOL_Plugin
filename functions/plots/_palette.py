@@ -24,6 +24,14 @@ MODEL_COLORS = (
 )
 MODEL_LABELS = ("-", "P", "S", "X", "I", "T", "L")
 
+CONTACT_COLORS = {
+    "P": SINGLE_CHAIN_COLORS[2],
+    "S": SINGLE_CHAIN_COLORS[1],
+    "X": SINGLE_CHAIN_COLORS[4],
+}
+
+PYMOL_CONTACT_COLORS = {"P": "ctp", "S": "cts", "X": "ctx"}
+
 
 def discrete_cmap(colors):
     """Return (cmap, norm) mapping integer code i to colors[i], for any subset of codes."""

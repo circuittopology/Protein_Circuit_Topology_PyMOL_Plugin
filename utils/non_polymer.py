@@ -1,99 +1,49 @@
+"""Reporting non-polymer content, without touching it."""
 import logging
-from typing import Any
+from collections import Counter
 
 from pymol import cmd
-from PyQt5.QtWidgets import QMessageBox
 
-from utils.config import WARN_MSG
-from utils.validation import object_exists
+from utils.validation import object_exists, object_selection
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-def _suppression_owner(widget: Any) -> Any:
-    """Determine object that should hold the 'don't show again' flag."""
-    window = getattr(widget, "window", None)
-    if callable(window):
-        try:
-            return window() or widget
-        except Exception:
-            return widget
-    return widget
+_MAX_NAMED_RESIDUES = 4
+
+def non_polymer_counts(obj_name: str) -> Counter:
+    """Residue-name histogram of the non-polymer atoms in one object. Empty when there are none."""
+    if not object_exists(obj_name):
+        return Counter()
+    names: list[str] = []
+    try:
+        cmd.iterate(
+            f"({object_selection(obj_name)}) and not polymer",
+            "names.append(resn)",
+            space={"names": names},
+        )
+    except Exception:
+        logger.debug("Could not inspect non-polymer atoms of %s", obj_name, exc_info=True)
+        return Counter()
+    return Counter(names)
 
 
-def show_warning_dialog(self: Any) -> None:
-    """
-    Shows a warning dialog before removing non-polymer atoms.
-    Allows the user to proceed, cancel, or disable the warning for the session.
+def report_excluded_atoms(obj_name: str) -> str:
+    """Log what analysis will ignore. Returns the message or empty string."""
+    counts = non_polymer_counts(obj_name)
+    if not counts:
+        return ""
 
-    Args:
-        self: The main GUI class instance.
-    """
-    owner = _suppression_owner(self)
-    if getattr(owner, "_suppress_non_polymer_warning", False):
-        remove_non_polymer_atoms()
-        return
+    ranked = counts.most_common()
+    named = ", ".join(f"{n} {resn}" for resn, n in ranked[:_MAX_NAMED_RESIDUES])
+    if len(ranked) > _MAX_NAMED_RESIDUES:
+        named += f", +{len(ranked) - _MAX_NAMED_RESIDUES} more"
 
-    msg_box = QMessageBox(self)
-    msg_box.setWindowTitle("Warning")
-    msg_box.setText("All non-polymer elements will be removed.")
-    msg_box.setIcon(QMessageBox.Warning)
+    notice = (
+        f"Excluded {sum(counts.values())} non-polymer atom(s) from the analysis of "
+        f"'{obj_name}' ({named}). '{obj_name}' itself is unchanged."
+    )
 
-    continue_btn = msg_box.addButton("Continue", QMessageBox.AcceptRole)
-    msg_box.addButton("Cancel", QMessageBox.RejectRole)
-    never_show_btn = msg_box.addButton("Don't show again", QMessageBox.DestructiveRole)
+    logger.info(notice)
 
-    msg_box.exec_()
-
-    clicked = msg_box.clickedButton()
-
-    if clicked == continue_btn:
-        remove_non_polymer_atoms()
-    elif clicked == never_show_btn:
-        owner._suppress_non_polymer_warning = True
-        remove_non_polymer_atoms()
-    else:
-        logger.info("User cancelled.")
-
-# generic
-def remove_non_polymer_atoms() -> None:
-    """
-    Removes all non-polymer atoms from the PyMOL session.
-    """
-    before_atoms = cmd.count_atoms("all")
-    cmd.remove("not polymer")
-    cmd.refresh()
-    after_atoms = cmd.count_atoms("all")
-    logger.info("Removed all non-polymer atoms! Atom count has changed from %s to %s", before_atoms, after_atoms)
-    cmd.zoom("all")
-
-# generic
-def has_non_polymer_atoms() -> bool:
-    """
-    Checks if there are any non-polymer atoms in the PyMOL session.
-
-    Returns:
-        bool: True if non-polymer atoms exist, False otherwise.
-    """
-    atom_count = cmd.count_atoms("not polymer")
-    return atom_count > 0
-
-# generic
-def new_file_has_non_polymer_atoms(obj_name: str) -> bool:
-    """
-    Checks if a specific object contains non-polymer atoms.
-
-    Args:
-        obj_name (str): The name of the object to check.
-
-    Returns:
-        bool: True if the object contains non-polymer atoms, False otherwise.
-    """
-    cmd.refresh()
-    atom_count = cmd.count_atoms(f"{obj_name} and not polymer")
-    return atom_count > 0
-
-def warn_if_non_polymer(parent: Any, obj_name: str) -> None:
-    """Warn when a newly selected object carries non-polymer atoms (tab-agnostic)."""
-    if object_exists(obj_name) and new_file_has_non_polymer_atoms(obj_name):
-        QMessageBox.warning(parent, "Warning", WARN_MSG)
+    return notice

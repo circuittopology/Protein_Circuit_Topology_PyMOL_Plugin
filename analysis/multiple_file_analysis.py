@@ -16,25 +16,27 @@ from functions.exporting.export_cmap3 import export_cmap3
 from functions.exporting.export_mat import export_mat
 from functions.exporting.export_psx import export_psx
 from functions.importing.retrieve_chain import retrieve_chain
+from functions.plots._palette import CONTACT_COLORS
 from functions.plots.circuit_plot import circuit_plot
 from functions.plots.matrix_plot import matrix_plot
 from functions.plots.matrix_plot_model import matrix_plot_model
 from functions.plots.stats_plot import stats_plot
-from utils.config import CHECKBOX_WARN, WARN_MSG
+from utils.config import CHECKBOX_WARN
 from utils.helpers import resolve_output_path, temp_pdb_export
-from utils.non_polymer import has_non_polymer_atoms
 from utils.validation import (
     chain_selection,
     get_object_chains,
     legalize_object_name,
     list_structure_files,
     object_exists,
-    object_selection,
     selection_has_atoms,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
+# How many structure names to spell out before summarising the rest.
+_MAX_LISTED = 5
 
 # Slight rewrite to match their notebook code because we had bugs
 def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
@@ -45,10 +47,6 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     Args:
         self: The main GUI class instance.
     """
-    # check for non-polymer atoms
-    if has_non_polymer_atoms():
-        QMessageBox.warning(self, "Warning", WARN_MSG)
-
     vals = self.get_multiple_values()
     multi_energy_filtering = vals["energy_filtering"]
     multi_len_filtering = vals["length_filtering"]
@@ -98,6 +96,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     x = []
     processed_count = 0
     skipped_count = 0
+    skipped_filters: list[tuple[str, list[str]]] = []
 
     cutoff_dist_multi = vals["cutoff_distance"]
     multi_neighbours = vals["exclude_neighbour"]
@@ -123,7 +122,6 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
             if not object_exists(multi_obj):
                 msg = f"PyMOL did not create the expected object: {multi_obj}"
                 raise RuntimeError(msg)  # noqa: TRY301
-            cmd.remove(f"({object_selection(multi_obj)}) and not polymer")
             multi_obj_chains = get_object_chains(multi_obj)
             if not multi_obj_chains:
                 msg = "No protein chains were found after loading."
@@ -147,6 +145,17 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
             if idx.size == 0:
                 skipped_count += 1
                 continue
+
+            if multi_level != "chain" and (multi_energy_filtering or multi_len_filtering):
+                requested = [
+                    name for name, on in (("energy", multi_energy_filtering), ("length", multi_len_filtering))
+                    if on
+                ]
+                skipped_filters.append((multi_obj, requested))
+                logger.warning(
+                    "%s has %d chains, so %s filtering does not apply and was not performed.",
+                    multi_obj, len(multi_obj_chains), " and ".join(requested),
+                )
 
             if multi_energy_filtering and multi_level == "chain":
                 try:
@@ -265,9 +274,9 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
         else:
             plt.rcParams.update({"font.size": 14})
             time = range(len(p))
-            plt.plot(time, p, label="P", color="red", linewidth=1.5)
-            plt.plot(time, s, label="S", color="green", linewidth=1.5)
-            plt.plot(time, x, label="X", color="blue", linewidth=1.5)
+            plt.plot(time, p, label="P", color=CONTACT_COLORS["P"], linewidth=1.5)
+            plt.plot(time, s, label="S", color=CONTACT_COLORS["S"], linewidth=1.5)
+            plt.plot(time, x, label="X", color=CONTACT_COLORS["X"], linewidth=1.5)
             plt.xlabel("Frame #")
             plt.ylabel("Number of contacts")
             plt.legend()
@@ -277,4 +286,13 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     message = f"Processed {processed_count} of {number_of_files} files."
     if skipped_count:
         message += f"\nSkipped {skipped_count} files."
+
+    if skipped_filters:
+        listed = ", ".join(f"{name} ({' and '.join(kinds)})" for name, kinds in skipped_filters[:_MAX_LISTED])
+        if len(skipped_filters) > _MAX_LISTED:
+            listed += f", and {len(skipped_filters) - _MAX_LISTED} more"
+        message += (
+            f"\n\nFiltering was NOT applied to {len(skipped_filters)} multi-chain structure(s): "
+            f"{listed}. Energy and length filtering currently support single-chain objects only."
+        )
     QMessageBox.information(self, "Multi-file analysis complete", message)

@@ -8,7 +8,7 @@ from pymol import cmd
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
 from utils.helpers import resolve_output_path
-from utils.non_polymer import remove_non_polymer_atoms
+from utils.non_polymer import report_excluded_atoms
 from utils.validation import (
     legalize_object_name,
     list_structure_files,
@@ -78,7 +78,8 @@ def select_xtc_file(self: Any) -> None:
             if cmd.count_states(object_selection(protein_name)) < 1:
                 msg = "The trajectory did not add any states to the loaded molecule."
                 raise RuntimeError(msg)  # noqa: TRY301
-            remove_non_polymer_atoms()
+
+            report_excluded_atoms(protein_name)
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Failed to load trajectory file:\n{e}")
             return

@@ -12,9 +12,8 @@ from functions.exporting.export_cmap3 import export_cmap3
 from functions.exporting.export_mat import export_mat
 from functions.importing.retrieve_chain import retrieve_chain
 from functions.plots.local_topology_plot import local_topology_plot
-from utils.config import CHECKBOX_WARN, LOCAL_CT_WARN, WARN_MSG
+from utils.config import CHECKBOX_WARN, LOCAL_CT_WARN
 from utils.helpers import resolve_output_path, temp_pdb_export
-from utils.non_polymer import has_non_polymer_atoms
 from utils.validation import chain_selection, get_object_chains, object_exists, selection_has_atoms
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -28,10 +27,6 @@ def run_local_ct(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     Args:
         self: The main GUI class instance.
     """
-    # check for non-polymer atoms
-    if has_non_polymer_atoms():
-        QMessageBox.warning(self, "Warning", WARN_MSG)
-
     vals = self.get_local_values()
     # Retrieve imported file as a selected object in PyMOL
     curr_local_obj = self.local_dropdown_objects.currentText()

@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from utils.config import NON_POLYMER_INFO
 from utils.helpers import make_info_button, make_param_row
 
 
@@ -55,11 +56,12 @@ class LocalTab(QWidget):
         choose_local_output_dir(self)
 
     def handle_local_object_change(self, obj_name: str | None = None):
-        from utils.non_polymer import warn_if_non_polymer
+        """Log what analysis will ignore, then refresh the chain/residue controls."""
+        from utils.non_polymer import report_excluded_atoms
 
         if obj_name is None:
             obj_name = self.local_dropdown_objects.currentText()
-        warn_if_non_polymer(self, obj_name)
+        report_excluded_atoms(obj_name)
         self.get_residue_range(obj_name)
 
     def get_residue_range(self, obj_name: str | None = None):
@@ -88,12 +90,6 @@ class LocalTab(QWidget):
         from analysis.local_ct_analysis import run_local_ct
 
         run_local_ct(self)
-
-    def show_warning_dialog(self):
-        """Shared with the Single-File tab."""
-        from utils.non_polymer import show_warning_dialog
-
-        show_warning_dialog(self)
 
     def update_local_list(self):
         model = self.pymol_objects
@@ -240,14 +236,8 @@ def init_local_tab(self: Any) -> None:
     local_layout.addWidget(_build_local_analysis_group(self))
     local_layout.addWidget(_build_local_export_group(self))
 
-    # Button for clearing nonprotein elements
     remove_row = QHBoxLayout()
-    self.remove_non_polymer_button = QPushButton("Remove Non-Polymer Atoms")
-    self.remove_non_polymer_button.clicked.connect(self.show_warning_dialog)
-    info_button_local = make_info_button(
-        "The Circuit Topology tool only processes protein atoms. If your loaded PyMOL object contains non-polymer atoms, the tool will not be able to handle them. Upon clicking this button, non-polymer atoms will be removed. Be aware that heteroatoms in CIF files can interfere with Circuit Topology.")
-    remove_row.addWidget(self.remove_non_polymer_button)
-    remove_row.addWidget(info_button_local)
+    remove_row.addWidget(make_info_button(NON_POLYMER_INFO))
     remove_row.addStretch()
     local_layout.addLayout(remove_row)
 
