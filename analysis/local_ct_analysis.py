@@ -97,8 +97,6 @@ def run_local_ct(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
         QMessageBox.warning(self, "Error", f"Local analysis failed:\n{e}")
         return
 
-    report_empty_local_result(idx, mat, residue_id, selected_residue_id, contact)
-
     try:
         if local_ct_plot:
             local_topology_plot(idx, mat, numbering, residue_id, contact)
@@ -108,6 +106,8 @@ def run_local_ct(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
         logger.exception("Local CT output failed for %s", selected_obj)
         QMessageBox.warning(self, "Error", f"Local CT output failed:\n{e}")
         return
+
+    report_empty_local_result(idx, mat, residue_id, selected_residue_id, contact)
 
     if export_cmap3_enabled or export_mat_enabled:
         if output_path is None:

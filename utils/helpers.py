@@ -6,7 +6,15 @@ from typing import Any
 
 from pymol import cmd
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout
+from PyQt5.QtWidgets import (
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QVBoxLayout,
+)
 
 from utils.config import INFO_BUTTON_STYLE
 
@@ -51,21 +59,24 @@ def temp_pdb_export(selection: str, state: int | None = None, label: str | None 
 
 
 def notify(message: str) -> str:
-    """Put a message on PyMOL's command line, and in the log."""
+    """
+    Put a message on PyMOL's command line.
+    """
     print(message)  # noqa: T201
-    logger.info(message)
     return message
 
 
 def make_note_row(text: str, tooltip: str) -> QHBoxLayout:
-    """A quiet grey caption with an info button, for stating behaviour the user need not act on."""
+    """
+    A quiet grey caption with its info button pinned to the right.
+    """
     label = QLabel(text)
     label.setWordWrap(True)
     label.setStyleSheet("color: palette(mid); font-size: 8pt;")
+    label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
     row = QHBoxLayout()
-    row.addWidget(label)
-    row.addWidget(make_info_button(tooltip))
-    row.addStretch()
+    row.addWidget(label, 1)
+    row.addWidget(make_info_button(tooltip), 0, Qt.AlignRight | Qt.AlignTop)
     return row
 
 
