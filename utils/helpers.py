@@ -50,7 +50,26 @@ def temp_pdb_export(selection: str, state: int | None = None, label: str | None 
         yield tmp_path
 
 
-def make_param_row(label_text, tooltip, spinbox):
+def notify(message: str) -> str:
+    """Put a message on PyMOL's command line, and in the log."""
+    print(message)  # noqa: T201
+    logger.info(message)
+    return message
+
+
+def make_note_row(text: str, tooltip: str) -> QHBoxLayout:
+    """A quiet grey caption with an info button, for stating behaviour the user need not act on."""
+    label = QLabel(text)
+    label.setWordWrap(True)
+    label.setStyleSheet("color: palette(mid); font-size: 8pt;")
+    row = QHBoxLayout()
+    row.addWidget(label)
+    row.addWidget(make_info_button(tooltip))
+    row.addStretch()
+    return row
+
+
+def make_param_row(label_text: str, tooltip: str, spinbox: Any) -> QHBoxLayout:
     """Create a standard parameter row layout with label, info button, and spinbox."""
     row = QHBoxLayout()
     row.addWidget(QLabel(label_text))

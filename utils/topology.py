@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib.colors import to_rgb
 from pymol import cmd
 
-from functions.plots._palette import CONTACT_COLORS, PYMOL_CONTACT_COLORS
+from functions.plots._palette import PYMOL_CONTACT_COLORS, VIEWER_CONTACT_COLORS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -76,7 +76,7 @@ def color_by_topology(
         logger.error("Please select a valid contact type!")
         return None
 
-    cmd.set_color(color_name, to_rgb(CONTACT_COLORS[topology_type]))
+    cmd.set_color(color_name, to_rgb(VIEWER_CONTACT_COLORS[topology_type]))
     color_palette = f"white_{color_name}"
     topo_obj = molecule_name
     residual_values = {str(res): float(val) for res, val in zip(numbering, topology_vector, strict=True)}
@@ -94,7 +94,7 @@ def color_by_topology(
     _make_scale_bar(topo_obj, topology_type, color_name, min_val, max_val)
     logger.info(
         "Coloured %s by %s topology over the range %.3f (white) to %.3f (%s).",
-        molecule_name, topology_type, min_val, max_val, CONTACT_COLORS[topology_type],
+        molecule_name, topology_type, min_val, max_val, VIEWER_CONTACT_COLORS[topology_type],
     )
 
     return (min_val, max_val)

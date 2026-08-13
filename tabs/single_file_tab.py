@@ -15,8 +15,8 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from utils.config import NON_POLYMER_INFO, TRAJECTORY_COLOR_INFO
-from utils.helpers import make_info_button, make_param_row
+from utils.config import NON_POLYMER_INFO, NON_POLYMER_NOTE, TRAJECTORY_COLOR_INFO
+from utils.helpers import make_info_button, make_note_row, make_param_row
 
 
 class SingleFileTab(QWidget):
@@ -114,6 +114,7 @@ def _build_input_group(self: Any) -> QGroupBox:
     self.dropdown_objects.currentTextChanged.connect(self.handle_standard_object_change)
     input_lay.addWidget(QLabel("Loaded PyMOL objects:"))
     input_lay.addWidget(self.dropdown_objects)
+    input_lay.addLayout(make_note_row(NON_POLYMER_NOTE, NON_POLYMER_INFO))
 
     return input_grp
 
@@ -259,11 +260,6 @@ def init_single_file_tab(self: Any) -> None:
     t1_layout.addWidget(_build_vis_group(self))
     t1_layout.addWidget(_build_export_group(self))
     t1_layout.addWidget(_build_folding_group(self))
-
-    remove_row_tab1 = QHBoxLayout()
-    remove_row_tab1.addWidget(make_info_button(NON_POLYMER_INFO))
-    remove_row_tab1.addStretch()
-    t1_layout.addLayout(remove_row_tab1)
 
     self.run_button = QPushButton("Run analysis")
     self.run_button.clicked.connect(self.run_standard_analysis)

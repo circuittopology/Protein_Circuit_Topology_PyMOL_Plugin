@@ -14,6 +14,7 @@ from functions.importing.retrieve_chain import retrieve_chain
 from functions.plots.local_topology_plot import local_topology_plot
 from utils.config import CHECKBOX_WARN, LOCAL_CT_WARN
 from utils.helpers import resolve_output_path, temp_pdb_export
+from utils.local_ct_report import report_empty_local_result
 from utils.validation import chain_selection, get_object_chains, object_exists, selection_has_atoms
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -95,6 +96,8 @@ def run_local_ct(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
         logger.exception("Local CT analysis failed for %s", selected_obj)
         QMessageBox.warning(self, "Error", f"Local analysis failed:\n{e}")
         return
+
+    report_empty_local_result(idx, mat, residue_id, selected_residue_id, contact)
 
     try:
         if local_ct_plot:

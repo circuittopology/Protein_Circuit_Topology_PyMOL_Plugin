@@ -8,6 +8,7 @@ Function that creates a topological relations matrix plot for a single chain
 import matplotlib.pyplot as plt
 import numpy as np
 
+from functions.plots._display import show
 from functions.plots._palette import (
     SINGLE_CHAIN_COLORS,
     SINGLE_CHAIN_LABELS,
@@ -39,3 +40,4 @@ def matrix_plot(mat: np.ndarray, protid: str) -> None:
     cbar.ax.tick_params(length=0)
 
     cbar.set_label("Topological relation")
+    show(fig)

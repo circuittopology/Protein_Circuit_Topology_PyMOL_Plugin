@@ -7,6 +7,8 @@ QGroupBox::title {subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px;}"
 
 INFO_BUTTON_STYLE = "QPushButton { border: none; color: gray; }"
 
+NON_POLYMER_NOTE = "Waters, ions and ligands are excluded automatically."
+
 NON_POLYMER_INFO = (
     "Circuit Topology analyses polymer atoms only. Waters, ions, ligands and other non-polymer "
     "atoms are excluded automatically at analysis time, and nucleic-acid and UNK residues are "

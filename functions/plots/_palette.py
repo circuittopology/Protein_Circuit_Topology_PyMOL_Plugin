@@ -30,6 +30,12 @@ CONTACT_COLORS = {
     "X": SINGLE_CHAIN_COLORS[4],
 }
 
+VIEWER_CONTACT_COLORS = {
+    "P": "#4d9bf0",
+    "S": "#b98cf5",
+    "X": "#f9b11f",
+}
+
 PYMOL_CONTACT_COLORS = {"P": "ctp", "S": "cts", "X": "ctx"}
 
 

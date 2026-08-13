@@ -15,8 +15,8 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from utils.config import NON_POLYMER_INFO
-from utils.helpers import make_info_button, make_param_row
+from utils.config import NON_POLYMER_INFO, NON_POLYMER_NOTE
+from utils.helpers import make_info_button, make_note_row, make_param_row
 
 
 class LocalTab(QWidget):
@@ -124,6 +124,7 @@ def _build_local_input_group(self: Any) -> QGroupBox:
     self.local_dropdown_objects.currentTextChanged.connect(self.handle_local_object_change)
     input_lay.addWidget(QLabel("Loaded PyMOL objects:"))
     input_lay.addWidget(self.local_dropdown_objects)
+    input_lay.addLayout(make_note_row(NON_POLYMER_NOTE, NON_POLYMER_INFO))
 
     return input_grp
 
@@ -235,11 +236,6 @@ def init_local_tab(self: Any) -> None:
     local_layout.addWidget(_build_local_params_group(self))
     local_layout.addWidget(_build_local_analysis_group(self))
     local_layout.addWidget(_build_local_export_group(self))
-
-    remove_row = QHBoxLayout()
-    remove_row.addWidget(make_info_button(NON_POLYMER_INFO))
-    remove_row.addStretch()
-    local_layout.addLayout(remove_row)
 
     self.local_run_button = QPushButton("Run local analysis")
     self.local_run_button.clicked.connect(self.run_local_ct)

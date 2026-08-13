@@ -10,6 +10,8 @@ from collections.abc import Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
+from functions.plots._display import show
+
 _contact_count = 3
 
 def stats_plot(entangled: np.ndarray, psx: Sequence[float], protid: str) -> None:
@@ -37,7 +39,7 @@ def stats_plot(entangled: np.ndarray, psx: Sequence[float], protid: str) -> None
     else:
         legend_labels = base_labels[:len(psx)]
     ax2.legend(legend_labels, bbox_to_anchor=(.5, -0.5, 0.5, 0.5))
-    plt.show()
+    show(fig)
 
 def autopct_funct(pct: float) -> str:
     return f"{pct:.1f}%" if pct >= 1.0 else ""

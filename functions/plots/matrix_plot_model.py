@@ -8,6 +8,7 @@ Function that creates a topological relations matrix plot for a whole model
 import matplotlib.pyplot as plt
 import numpy as np
 
+from functions.plots._display import show
 from functions.plots._palette import MODEL_COLORS, MODEL_LABELS, discrete_cmap
 
 
@@ -39,3 +40,4 @@ def matrix_plot_model(mat: np.ndarray, protid: str) -> None:
     cbar.ax.set_yticklabels(MODEL_LABELS)
     cbar.ax.tick_params(length=0)
     cbar.set_label("Topological relation")
+    show(fig)
