@@ -51,6 +51,48 @@ Once installation is complete, open the plugin's GUI from:
 
 > **Plugin → Protein Circuit Topology Plugin**
 
+### What the automatic installer changes in the PyMOL conda environment
+- It locates the conda of the running PyMOL — `CONDA_EXE` first, then the usual paths under
+  `sys.prefix`, then `conda` on `PATH`.
+- It runs, once:
+  ```
+  <conda> env update --file requirements.yml --prefix <PyMOL's sys.prefix>
+  ```
+- **This updates PyMOL's own conda environment in place.** It does not create a new environment and
+  does not touch any other environment on your system. Packages come from `conda-forge`.
+- No administrator rights are needed if PyMOL was installed "Just Me". If it was installed
+  system-wide, the update will fail and the plugin prints the exact command to run yourself from an
+  elevated terminal.
+- Nothing is uninstalled or downgraded beyond what conda needs to satisfy the version ranges in
+  [`requirements.yml`](requirements.yml).
+
+### Manual installation
+If you would rather not let the plugin touch your environment, install the dependencies yourself **before** loading the plugin. It only auto-installs what is missing.
+```bash
+# Into PyMOL's own environment. Find the prefix with:  python -c "import sys; print(sys.prefix)"
+conda install --prefix <PyMOL's sys.prefix> -c conda-forge \
+    "numpy>=1.23,<2" "pandas>=2.0,<3" "matplotlib>=3.7,<4" "biopython>=1.80,<2"
+```
+
+For a bit-for-bit reproduction of the environment the reference outputs were generated in, use the
+lock file rather than the ranges:
+
+```bash
+conda create --name proteinct --file ci/conda-lock-<platform>.txt
+```
+
+## Reproducing the published outputs
+```bash
+pymol -cqy reproduce.pml
+```
+
+Runs the full pipeline on the bundled example structures and **compares every CSV it produces against
+the committed reference outputs** in `tests/data/expected/`, exiting non-zero if any number moved.
+
+## Performance
+Wall time, memory and trajectory disk usage, with the hardware stated:
+[benchmarks/README.md](benchmarks/README.md).
+
 ## API Documentation
 You can read the full API documentation [here](documentation/api_documentation.pdf).
 

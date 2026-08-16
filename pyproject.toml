@@ -85,6 +85,7 @@ ignore = [
 
 "ci/**" = [
     "T201",
+    "S603",
     "INP001",
     "BLE001",
     "TRY003",
@@ -94,6 +95,18 @@ ignore = [
     "PLR0911",
     "PLR2004",
     "ARG005",
+]
+
+"benchmarks/**" = [
+    "T201",
+    "INP001",
+    "S603",
+    "ANN",
+    "TRY003",
+    "EM101",
+    "EM102",
+    "PLR2004",
+    "C901",
 ]
 
 [tool.ruff.lint.isort]
