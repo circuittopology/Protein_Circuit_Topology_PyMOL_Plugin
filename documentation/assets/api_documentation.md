@@ -1,6 +1,6 @@
 # Protein Circuit Topology Plugin - Complete API Documentation
 
-**Total Callable Entry Points:** 168
+**Total Callable Entry Points:** 169
 **Python Files With Callables:** 41
 
 ## Table of Contents
@@ -8,7 +8,7 @@
 2. [Plotting Functions](#plotting-functions) (8 functions)
 3. [Importing Functions](#importing-functions) (2 functions)
 4. [Exporting Functions](#exporting-functions) (3 functions)
-5. [Analysis Functions](#analysis-functions) (10 functions)
+5. [Analysis Functions](#analysis-functions) (11 functions)
 6. [Utility Functions](#utility-functions) (61 functions)
 7. [GUI Functions](#gui-functions) (67 functions)
 8. [Initialization Functions](#initialization-functions) (11 functions)
@@ -175,11 +175,17 @@ Toggles the enabled state of the frame selector and run button.
 
 Delete PyMOL objects/selections, ignoring names that do not exist.
 
-### `_color_chains_by_topology(target_obj, contact_type, vals, state)`
+### `_color_chains_by_topology(target_obj, contact_type, vals, state, *, scale_bar=True)`
 
 **Module:** `analysis/visualization.py`
 
 Colors each chain of a single-state object by its circuit topology.
+
+### `_color_every_state(state_objs, contact_type, vals, split_prefix)`
+
+**Module:** `analysis/visualization.py`
+
+Colour each per-state object, quietly and without repainting the scene N times.
 
 ### `_visualize_trajectory(self, contact_type, selected_obj, vals, n_states)`
 
@@ -405,7 +411,7 @@ Per-residue participation in one class of contact-contact relation.
 
 Colour a PyMOL object by a topology vector
 
-### `_make_scale_bar(topo_obj, topology_type, color_name, min_val, max_val)`
+### `make_scale_bar(topo_obj, topology_type, color_name, min_val, max_val)`
 
 **Module:** `utils/topology.py`
 

@@ -62,7 +62,7 @@ def color_by_topology(
     Colour a PyMOL object by a topology vector
 
     Args:
-        molecule_name (str): The PyMOL object to colour.
+        molecule_name (str): The object OR selection to colour; its polymer atoms are used.
         topology_vector (numpy.ndarray): One value per residue, aligned to `numbering`.
         numbering (numpy.ndarray): Residue numbers.
         topology_type (str): 'P', 'S' or 'X'.
@@ -78,20 +78,17 @@ def color_by_topology(
 
     cmd.set_color(color_name, to_rgb(VIEWER_CONTACT_COLORS[topology_type]))
     color_palette = f"white_{color_name}"
-    topo_obj = molecule_name
     residual_values = {str(res): float(val) for res, val in zip(numbering, topology_vector, strict=True)}
 
-    resi_list = "+".join(map(str, numbering))
+    scope = f"({molecule_name}) and polymer"
     if value_range is None:
         min_val, max_val = float(np.min(topology_vector)), float(np.max(topology_vector))
     else:
         min_val, max_val = float(value_range[0]), float(value_range[1])
 
-    cmd.alter(topo_obj, "b = residual_values.get(str(resi), 0.0)", space={"residual_values": residual_values})
-    selection = f"{topo_obj} and resi {resi_list}"
-    cmd.spectrum("b", color_palette, selection=selection, minimum=min_val, maximum=max_val)
+    cmd.alter(scope, "b = residual_values.get(str(resi), 0.0)", space={"residual_values": residual_values})
+    cmd.spectrum("b", color_palette, selection=scope, minimum=min_val, maximum=max_val)
 
-    _make_scale_bar(topo_obj, topology_type, color_name, min_val, max_val)
     logger.info(
         "Coloured %s by %s topology over the range %.3f (white) to %.3f (%s).",
         molecule_name, topology_type, min_val, max_val, VIEWER_CONTACT_COLORS[topology_type],
@@ -100,7 +97,7 @@ def color_by_topology(
     return (min_val, max_val)
 
 
-def _make_scale_bar(
+def make_scale_bar(
     topo_obj: str, topology_type: str, color_name: str, min_val: float, max_val: float,
 ) -> str | None:
     """Put a labelled colour bar in the viewer so the numbers behind the colours are visible."""

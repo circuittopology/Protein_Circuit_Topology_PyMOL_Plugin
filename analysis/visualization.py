@@ -7,8 +7,9 @@ from PyQt5.QtWidgets import QMessageBox
 from functions.calculating.get_cmap import get_cmap
 from functions.calculating.get_matrix import get_matrix
 from functions.importing.retrieve_chain import retrieve_chain
+from functions.plots._palette import PYMOL_CONTACT_COLORS
 from utils.helpers import temp_pdb_export
-from utils.topology import color_by_topology, get_topology_vector
+from utils.topology import color_by_topology, get_topology_vector, make_scale_bar
 from utils.validation import (
     chain_selection,
     count_object_states,
@@ -31,7 +32,9 @@ def _safe_delete(*names: str) -> None:
             logger.debug("Cleanup delete failed for %s", name, exc_info=True)
 
 
-def _color_chains_by_topology(target_obj: str, contact_type: str, vals: dict[str, Any], state: int) -> int:
+def _color_chains_by_topology(
+    target_obj: str, contact_type: str, vals: dict[str, Any], state: int, *, scale_bar: bool = True,
+) -> tuple[int, tuple[float, float] | None]:
     """
     Colors each chain of a single-state object by its circuit topology.
 
@@ -42,13 +45,15 @@ def _color_chains_by_topology(target_obj: str, contact_type: str, vals: dict[str
         state (int): The coordinate state to export and analyze.
 
     Returns:
-        int: The number of chains that were successfully colored.
+        (chains coloured, the (low, high) range spanning them) - the range is None when nothing
+        was coloured.
     """
     vis_dist = vals["cutoff_distance"]
     vis_numcontacts = vals["cutoff_numcontacts"]
     vis_neighbour = vals["exclude_neighbour"]
 
     colored = 0
+    low = high = None
     for chain_id in get_object_chains(target_obj):
         current_selection = chain_selection(target_obj, chain_id)
         if not selection_has_atoms(current_selection):
@@ -77,14 +82,47 @@ def _color_chains_by_topology(target_obj: str, contact_type: str, vals: dict[str
         if top_vec is None:
             logger.warning("Invalid contact type for chain %s. Skipping visualization...", chain_id)
             continue
-        color_by_topology(
-            molecule_name=target_obj,
+        used = color_by_topology(
+            molecule_name=current_selection,
             topology_vector=top_vec,
             numbering=numbering,
             topology_type=contact_type,
         )
+        if used is not None:
+            low = used[0] if low is None else min(low, used[0])
+            high = used[1] if high is None else max(high, used[1])
         colored += 1
-    return colored
+
+    if scale_bar and low is not None:
+        make_scale_bar(target_obj, contact_type, PYMOL_CONTACT_COLORS[contact_type], low, high)
+    return colored, (None if low is None else (low, high))
+
+
+def _color_every_state(
+    state_objs: list[str], contact_type: str, vals: dict[str, Any], split_prefix: str,
+) -> tuple[int, tuple[float, float] | None]:
+    """Colour each per-state object, quietly and without repainting the scene N times."""
+    cmd.disable(f"{split_prefix}*")
+    cmd.set("suspend_updates", 1)
+    colored_states = 0
+    overall: tuple[float, float] | None = None
+    try:
+        for state_obj in state_objs:
+            try:
+                count, used = _color_chains_by_topology(
+                    state_obj, contact_type, vals, state=1, scale_bar=False,
+                )
+                if count > 0:
+                    colored_states += 1
+                if used is not None:
+                    overall = used if overall is None else (
+                        min(overall[0], used[0]), max(overall[1], used[1]),
+                    )
+            except Exception:  # noqa: PERF203
+                logger.exception("Failed to color state object %s; skipping it.", state_obj)
+    finally:
+        cmd.set("suspend_updates", 0)
+    return colored_states, overall
 
 
 def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals: dict[str, Any], n_states: int) -> None:
@@ -119,24 +157,23 @@ def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals:
     _safe_delete(f"{split_prefix}*", result_obj)
     before = set(cmd.get_object_list())
 
+    polymer_src = f"{selected_obj}_polymer_src"
+    _safe_delete(polymer_src)
     try:
-        cmd.split_states(selected_obj, prefix=split_prefix)
+        cmd.create(polymer_src, polymer_selection(selected_obj), 0, 0)
+        cmd.split_states(polymer_src, prefix=split_prefix)
     except Exception as e:
         logger.exception("Failed to split trajectory %s into per-state objects", selected_obj)
         QMessageBox.warning(self, "Error", f"Failed to split the trajectory into states:\n{e}")
         return
-    state_objs = sorted(set(cmd.get_object_list()) - before)
+    finally:
+        _safe_delete(polymer_src)
+    state_objs = sorted(set(cmd.get_object_list()) - before - {polymer_src})
     if not state_objs:
         QMessageBox.warning(self, "Error", "Splitting the trajectory produced no per-state objects.")
         return
 
-    colored_states = 0
-    for state_obj in state_objs:
-        try:
-            if _color_chains_by_topology(state_obj, contact_type, vals, state=1) > 0:
-                colored_states += 1
-        except Exception:  # noqa: PERF203
-            logger.exception("Failed to color state object %s; skipping it.", state_obj)
+    colored_states, overall = _color_every_state(state_objs, contact_type, vals, split_prefix)
 
     if colored_states == 0:
         _safe_delete(f"{split_prefix}*")
@@ -169,6 +206,8 @@ def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals:
         return
 
     _safe_delete(f"{split_prefix}*")
+    if overall is not None:
+        make_scale_bar(result_obj, contact_type, PYMOL_CONTACT_COLORS[contact_type], *overall)
     cmd.disable(selected_obj)
     cmd.set("all_states", 0)
     cmd.frame(1)
