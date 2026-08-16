@@ -12,10 +12,80 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
     QSpinBox,
     QVBoxLayout,
+    QWidget,
 )
 
-from utils.config import TRAJECTORY_COLOR_INFO
-from utils.helpers import make_info_button, make_param_row
+from utils.config import NON_POLYMER_INFO, NON_POLYMER_NOTE, TRAJECTORY_COLOR_INFO
+from utils.helpers import make_info_button, make_note_row, make_param_row
+
+
+class SingleFileTab(QWidget):
+    """The Single-File Analysis tab widget class."""
+
+    def __init__(self, dialog, parent=None):
+        super().__init__(parent)
+        self.dialog = dialog
+        self.single_file_tab = self
+        self.current_objects: list[str] = []
+        init_single_file_tab(self)
+
+    @property
+    def pymol_objects(self):
+        return getattr(self.dialog, "pymol_objects", None)
+
+    def get_values(self):
+        """Every setting this tab exposes."""
+        from utils.get_values import get_values
+
+        return get_values(self)
+
+    def get_vis_vals(self):
+        from utils.get_values import get_vis_vals
+
+        return get_vis_vals(self)
+
+    def clear_selected_single_file(self):
+        from utils.clear_file import clear_selected_single_file
+
+        clear_selected_single_file(self)
+
+    def choose_file(self):
+        from utils.directory import choose_file
+
+        choose_file(self)
+
+    def choose_output_dir(self):
+        from utils.directory import choose_output_dir
+
+        choose_output_dir(self)
+
+    def handle_standard_object_change(self, obj_name: str | None = None):
+        """Log what analysis will ignore. Non-polymer atoms need no action from the user."""
+        from utils.non_polymer import report_excluded_atoms
+
+        if obj_name is None:
+            obj_name = self.dropdown_objects.currentText()
+        report_excluded_atoms(obj_name)
+
+    def update_output_widgets(self):
+        from utils.updates import update_output_widgets
+
+        update_output_widgets(self)
+
+    def visualize_molecule(self, contact_type: str):
+        from analysis.visualization import visualize_molecule
+
+        visualize_molecule(self, contact_type)
+
+    def run_standard_analysis(self):
+        from analysis.single_file_analysis import run_standard_analysis
+
+        run_standard_analysis(self)
+
+    def update_list(self):
+        model = self.pymol_objects
+        if model is not None:
+            model.refresh()
 
 
 def _build_input_group(self: Any) -> QGroupBox:
@@ -44,6 +114,7 @@ def _build_input_group(self: Any) -> QGroupBox:
     self.dropdown_objects.currentTextChanged.connect(self.handle_standard_object_change)
     input_lay.addWidget(QLabel("Loaded PyMOL objects:"))
     input_lay.addWidget(self.dropdown_objects)
+    input_lay.addLayout(make_note_row(NON_POLYMER_NOTE, NON_POLYMER_INFO))
 
     return input_grp
 
@@ -189,21 +260,6 @@ def init_single_file_tab(self: Any) -> None:
     t1_layout.addWidget(_build_vis_group(self))
     t1_layout.addWidget(_build_export_group(self))
     t1_layout.addWidget(_build_folding_group(self))
-
-    # Button for clearing nonprotein elements
-    remove_row_tab1 = QHBoxLayout()
-    self.remove_non_polymer_button_tab1 = QPushButton("Remove Non-Polymer Atoms")
-    self.remove_non_polymer_button_tab1.clicked.connect(self.show_warning_dialog)
-    info_button_tab1 = make_info_button(
-        """The Circuit Topology tool only processes protein atoms.
-        If your loaded PyMOL object contains non-polymer atoms, the tool will not be able to
-        handle them. Upon clicking this button, non-polymer atoms will be removed.
-        Be aware that heteroatoms in CIF files can interfere with Circuit Topology.""",
-        )
-    remove_row_tab1.addWidget(self.remove_non_polymer_button_tab1)
-    remove_row_tab1.addWidget(info_button_tab1)
-    remove_row_tab1.addStretch()
-    t1_layout.addLayout(remove_row_tab1)
 
     self.run_button = QPushButton("Run analysis")
     self.run_button.clicked.connect(self.run_standard_analysis)

@@ -12,9 +12,89 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
     QSpinBox,
     QVBoxLayout,
+    QWidget,
 )
 
-from utils.helpers import make_info_button, make_param_row
+from utils.config import NON_POLYMER_INFO, NON_POLYMER_NOTE
+from utils.helpers import make_info_button, make_note_row, make_param_row
+
+
+class LocalTab(QWidget):
+    """The Local Circuit Topology tab widget class."""
+
+    def __init__(self, dialog, parent=None):
+        super().__init__(parent)
+        self.dialog = dialog
+        self.local_tab = self
+        self.curr_chain_residues: dict = {}
+        self.current_local_objects: list[str] = []
+        init_local_tab(self)
+
+    @property
+    def pymol_objects(self):
+        return getattr(self.dialog, "pymol_objects", None)
+
+    def get_local_values(self):
+        """Every setting this tab exposes."""
+        from utils.get_values import get_local_values
+
+        return get_local_values(self)
+
+    def clear_selected_local_file(self):
+        from utils.clear_file import clear_selected_local_file
+
+        clear_selected_local_file(self)
+
+    def choose_local_file(self):
+        from utils.directory import choose_local_file
+
+        choose_local_file(self)
+
+    def choose_local_output_dir(self):
+        from utils.directory import choose_local_output_dir
+
+        choose_local_output_dir(self)
+
+    def handle_local_object_change(self, obj_name: str | None = None):
+        """Log what analysis will ignore, then refresh the chain/residue controls."""
+        from utils.non_polymer import report_excluded_atoms
+
+        if obj_name is None:
+            obj_name = self.local_dropdown_objects.currentText()
+        report_excluded_atoms(obj_name)
+        self.get_residue_range(obj_name)
+
+    def get_residue_range(self, obj_name: str | None = None):
+        from utils.residues import get_residue_range
+
+        if obj_name is None:
+            obj_name = self.local_dropdown_objects.currentText()
+        get_residue_range(self, obj_name)
+
+    def update_residue_range(self):
+        from utils.residues import update_residue_range
+
+        update_residue_range(self)
+
+    def update_chain_combo_box(self):
+        from utils.helpers import update_chain_combo_box
+
+        update_chain_combo_box(self)
+
+    def update_output_widgets_local(self):
+        from utils.updates import update_output_widgets_local
+
+        update_output_widgets_local(self)
+
+    def run_local_ct(self):
+        from analysis.local_ct_analysis import run_local_ct
+
+        run_local_ct(self)
+
+    def update_local_list(self):
+        model = self.pymol_objects
+        if model is not None:
+            model.refresh()
 
 
 def _build_local_input_group(self: Any) -> QGroupBox:
@@ -42,10 +122,9 @@ def _build_local_input_group(self: Any) -> QGroupBox:
 
     self.local_dropdown_objects = QComboBox()
     self.local_dropdown_objects.currentTextChanged.connect(self.handle_local_object_change)
-    self.local_dropdown_objects.currentTextChanged.connect(
-        lambda: self.get_residue_range(self.local_dropdown_objects.currentText()))
     input_lay.addWidget(QLabel("Loaded PyMOL objects:"))
     input_lay.addWidget(self.local_dropdown_objects)
+    input_lay.addLayout(make_note_row(NON_POLYMER_NOTE, NON_POLYMER_INFO))
 
     return input_grp
 
@@ -157,17 +236,6 @@ def init_local_tab(self: Any) -> None:
     local_layout.addWidget(_build_local_params_group(self))
     local_layout.addWidget(_build_local_analysis_group(self))
     local_layout.addWidget(_build_local_export_group(self))
-
-    # Button for clearing nonprotein elements
-    remove_row = QHBoxLayout()
-    self.remove_non_polymer_button = QPushButton("Remove Non-Polymer Atoms")
-    self.remove_non_polymer_button.clicked.connect(self.show_warning_dialog)
-    info_button_local = make_info_button(
-        "The Circuit Topology tool only processes protein atoms. If your loaded PyMOL object contains non-polymer atoms, the tool will not be able to handle them. Upon clicking this button, non-polymer atoms will be removed. Be aware that heteroatoms in CIF files can interfere with Circuit Topology.")
-    remove_row.addWidget(self.remove_non_polymer_button)
-    remove_row.addWidget(info_button_local)
-    remove_row.addStretch()
-    local_layout.addLayout(remove_row)
 
     self.local_run_button = QPushButton("Run local analysis")
     self.local_run_button.clicked.connect(self.run_local_ct)

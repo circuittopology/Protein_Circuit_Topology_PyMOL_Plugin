@@ -1,0 +1,14 @@
+name: proteinct-ci
+channels:
+  - schrodinger
+  - conda-forge
+dependencies:
+  - python=3.10
+  - schrodinger::pymol-bundle=3.1.6.1
+  - schrodinger::pymol=3.1.6.1
+  - conda-forge::numpy=1.26.4
+  - conda-forge::pandas=2.3.3
+  - conda-forge::matplotlib=3.9.1
+  - conda-forge::biopython=1.85
+  - conda-forge::pyqt=5.15.*
+  - conda-forge::pytest=8.3.*

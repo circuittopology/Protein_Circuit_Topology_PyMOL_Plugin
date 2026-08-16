@@ -1,11 +1,13 @@
 from setuptools import find_packages, setup
 
-# Setup for the plugin
 setup(
     name="circuit_topology_lacdr",
-    version="v0.0.1",
-    description = "PyMOL plugin for Circuit Topology GUI",
+    version="v0.0.2",
+    description="PyMOL plugin for Circuit Topology GUI",
     author="LACDR",
     packages=find_packages(),
-    install_requires=["numpy", "pandas", "matplotlib", "pyqt", "biopython"],
+    package_data={"functions.calculating": ["matrix_potential.txt"]},
+    install_requires=["numpy", "pandas", "matplotlib", "biopython"],
+    extras_require={"gui": ["PyQt5"]},
+    python_requires=">=3.10",
 )

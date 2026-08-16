@@ -19,6 +19,78 @@ from PyQt5.QtWidgets import (
 from utils.helpers import make_info_button, make_param_row
 
 
+class MultiFileTab(QWidget):
+    """The Multi-File Analysis tab widget class."""
+
+    def __init__(self, dialog, parent=None):
+        super().__init__(parent)
+        self.dialog = dialog
+        self.multi_file_tab = self
+        init_multi_file_tab(self)
+
+    @property
+    def pymol_objects(self):
+        """The shared object model, so utils.trajectory can request a refresh."""
+        return getattr(self.dialog, "pymol_objects", None)
+
+    def get_multiple_values(self):
+        """Every setting this tab exposes."""
+        from utils.get_values import get_multiple_values
+
+        return get_multiple_values(self)
+
+    def choose_input_dir_multi(self):
+        from utils.directory import choose_input_dir_multi
+
+        choose_input_dir_multi(self)
+
+    def choose_output_dir_multi(self):
+        from utils.directory import choose_output_dir_multi
+
+        choose_output_dir_multi(self)
+
+    def select_mol_file(self):
+        from utils.trajectory import select_mol_file
+
+        select_mol_file(self)
+
+    def select_xtc_file(self):
+        from utils.trajectory import select_xtc_file
+
+        select_xtc_file(self)
+
+    def export_frames_from_traj(self):
+        from utils.trajectory import export_frames_from_traj
+
+        export_frames_from_traj(self)
+
+    def update_output_widgets_multi(self):
+        from utils.updates import update_output_widgets_multi
+
+        update_output_widgets_multi(self)
+
+    def run_multi_analysis(self):
+        from analysis.multiple_file_analysis import run_multi_analysis
+
+        run_multi_analysis(self)
+
+    def run_single_frame_analysis(self):
+        from analysis.single_frame_analysis import run_single_frame_analysis
+
+        run_single_frame_analysis(self)
+
+    def toggle_frame_controls(self, enabled: bool):
+        from analysis.single_frame_analysis import toggle_frame_controls
+
+        toggle_frame_controls(self, enabled=enabled)
+
+    def update_list(self):
+        """Legacy name still called by helper code; routes through the shared model."""
+        model = self.pymol_objects
+        if model is not None:
+            model.refresh()
+
+
 def _build_multi_dir_group(self: Any) -> QGroupBox:
     dir_grp = QGroupBox("Directory")
     dir_lay = QVBoxLayout(dir_grp)
@@ -191,16 +263,16 @@ def _build_multi_export_group(self: Any) -> QGroupBox:
     export_lay = QVBoxLayout(export_grp)
     self.checkbox_export_cmap3_multi = QCheckBox("Contact map (.csv)")
     self.checkbox_export_matrix_multi = QCheckBox("Relations matrix (.csv)")
-    self.checkbox_export_psc_multi = QCheckBox("P,S,X list (.csv)")
-    self.checkbox_export_psc_multi.setToolTip(
+    self.checkbox_export_psx_multi = QCheckBox("P,S,X list (.csv)")
+    self.checkbox_export_psx_multi.setToolTip(
         "Counts the number of Parallel (P), Series (S), and Cross (X) contacts per residue in each file. P,S,X list only applies to multiple-file analysis. For per-frame analysis, ticking this option will have no effect.")
-    for cb in (self.checkbox_export_cmap3_multi, self.checkbox_export_matrix_multi, self.checkbox_export_psc_multi):
+    for cb in (self.checkbox_export_cmap3_multi, self.checkbox_export_matrix_multi, self.checkbox_export_psx_multi):
         export_lay.addWidget(cb)
-    self.checkbox_plot_psc = QCheckBox("P,S,X contacts plotted over time")
-    self.checkbox_plot_psc.setToolTip("Informative only for protein trajectories")
-    self.checkbox_plot_psc.setEnabled(False)
-    self.checkbox_export_psc_multi.toggled.connect(self.checkbox_plot_psc.setEnabled)
-    export_lay.addWidget(self.checkbox_plot_psc)
+    self.checkbox_plot_psx = QCheckBox("P,S,X contacts plotted over time")
+    self.checkbox_plot_psx.setToolTip("Informative only for protein trajectories")
+    self.checkbox_plot_psx.setEnabled(False)
+    self.checkbox_export_psx_multi.toggled.connect(self.checkbox_plot_psx.setEnabled)
+    export_lay.addWidget(self.checkbox_plot_psx)
     self.output_txt_multi = QLabel("Output directory:")
     self.output_dir_button_multi = QPushButton("Choose output directory …")
     self.output_dir_label_multi = QLabel("No output directory selected")
@@ -216,7 +288,7 @@ def _build_multi_export_group(self: Any) -> QGroupBox:
     export_lay.addWidget(self.output_dir_button_multi)
     export_lay.addWidget(self.output_dir_label_multi)
 
-    for cb in (self.checkbox_export_cmap3_multi, self.checkbox_export_matrix_multi, self.checkbox_export_psc_multi):
+    for cb in (self.checkbox_export_cmap3_multi, self.checkbox_export_matrix_multi, self.checkbox_export_psx_multi):
         cb.toggled.connect(self.update_output_widgets_multi)
 
     return export_grp
@@ -252,6 +324,7 @@ def init_multi_file_tab(self: Any) -> None:
     scroll_layout.addWidget(self.run_multi_button)
     scroll_layout.addStretch()
 
+    self.checkbox_length_filtering.toggled.connect(self.filtering_distance_label.setVisible)
     self.checkbox_length_filtering.toggled.connect(self.filtering_distance_spin.setVisible)
     self.checkbox_length_filtering.toggled.connect(self.dropdown_length_filter_mode.setVisible)
     self.checkbox_energy_filtering.toggled.connect(self.dropdown_energy_mode.setVisible)

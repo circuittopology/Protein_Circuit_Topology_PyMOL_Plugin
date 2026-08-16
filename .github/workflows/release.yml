@@ -1,4 +1,4 @@
-name: Lint and Release
+name: Release
 
 on:
   push:
@@ -10,46 +10,20 @@ permissions:
 
 jobs:
   build-and-release:
-    runs-on: ubuntu-latest
-    container:
-      image: astral/uv:0.10.10-python3.13-alpine3.23
+    runs-on: ubuntu-24.04
 
     steps:
-      - name: Install Git
-        run: apk add --no-cache git
-
-      - name: Trust workspace
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
-      - name: Run Ruff
-        run: |
-          uvx ruff check --exit-zero .
 
       - name: Build plugin package
         id: package
         env:
           ASSET_NAME: protein-circuit-topology-pymol-plugin.zip
         run: |
-          git archive \
-          --format=zip \
-          --prefix=proteinct_plugin/ \
-          --output="${ASSET_NAME}" \
-          HEAD \
-          analysis \
-          functions \
-          tabs \
-          utils \
-          __init__.py \
-          gui_class.py \
-          initialization_checks.py \
-          setup.py \
-          requirements.yml \
-          LICENSE
+          bash ci/build_plugin_zip.sh "${ASSET_NAME}"
 
           echo "zip_file=${ASSET_NAME}" >> "${GITHUB_OUTPUT}"
 

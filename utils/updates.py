@@ -16,9 +16,9 @@ def update_output_widgets_multi(self: Any) -> None:
     """
     cmap_check = self.checkbox_export_cmap3_multi.isChecked()
     matrix_check = self.checkbox_export_matrix_multi.isChecked()
-    psc_check = self.checkbox_export_psc_multi.isChecked()
+    psx_check = self.checkbox_export_psx_multi.isChecked()
 
-    show = (cmap_check or matrix_check or psc_check)
+    show = (cmap_check or matrix_check or psx_check)
 
     self.output_txt_multi.setVisible(show)
     self.output_dir_button_multi.setVisible(show)

@@ -1,0 +1,223 @@
+name: Installer end-to-end
+
+on:
+  push:
+    branches: [main]
+    tags: ["*"]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYMOL_VERSION: 3.1.6.1
+  QT_QPA_PLATFORM: offscreen
+  MPLBACKEND: Agg
+  PYTHONUTF8: "1"
+
+jobs:
+  windows:
+    name: Windows .exe installer
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache the PyMOL installer
+        id: cache-installer
+        uses: actions/cache@v4
+        with:
+          path: installer
+          key: pymol-installer-win-${{ env.PYMOL_VERSION }}
+
+      - name: Download the PyMOL installer
+        if: steps.cache-installer.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          mkdir -p installer
+          curl -sSfL --retry 3 \
+            -o installer/pymol-setup.exe \
+            "https://storage.googleapis.com/pymol-storage/installers/PyMOL-${PYMOL_VERSION}-Windows-x86_64.exe"
+          ls -l installer
+
+      - name: Install PyMOL silently
+        shell: pwsh
+        run: |
+          $exe = "installer\pymol-setup.exe"
+          $dir = "C:\pymol"
+          Write-Host "installing to $dir"
+          $p = Start-Process -FilePath $exe -Wait -PassThru -ArgumentList `
+            '/S', '/RegisterPython=0', '/NoRegistry=1', "/InstallationType=JustMe", "/D=$dir"
+          if ($p.ExitCode -ne 0) { throw "installer exited $($p.ExitCode)" }
+          if (-not (Test-Path "$dir\python.exe")) { throw "no python.exe under $dir" }
+          & "$dir\python.exe" -c "import pymol; print('PyMOL', pymol.cmd.get_version()[0])"
+
+      - name: Report what the bundle already provides
+        shell: bash
+        run: |
+          /c/pymol/python.exe -c "
+          import importlib.util as u
+          for m in ('numpy','pandas','matplotlib','Bio','PyQt5'):
+              print(f'{m:12}', 'present' if u.find_spec(m) else 'MISSING')
+          "
+
+      - name: Install pytest into the throwaway PyMOL
+        shell: bash
+        run: /c/pymol/python.exe -m pip install --quiet --disable-pip-version-check pytest
+
+      - name: Build the release ZIP
+        shell: bash
+        run: |
+          bash ci/build_plugin_zip.sh plugin.zip
+
+      - name: Install the plugin through PyMOL's Plugin Manager
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/plugins"
+          /c/pymol/python.exe ci/install_plugin_headless.py plugin.zip "$RUNNER_TEMP/plugins"
+
+      - name: Run the test suite inside the installed PyMOL
+        shell: bash
+        run: /c/pymol/python.exe -m pytest -v --durations=10
+
+  linux:
+    name: Linux bundle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache the PyMOL bundle
+        id: cache-bundle
+        uses: actions/cache@v4
+        with:
+          path: installer
+          key: pymol-bundle-linux-${{ env.PYMOL_VERSION }}
+
+      - name: Download the PyMOL bundle
+        if: steps.cache-bundle.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p installer
+          curl -sSfL --retry 3 \
+            -o installer/pymol-linux.tar.bz2 \
+            "https://storage.googleapis.com/pymol-storage/installers/PyMOL-${PYMOL_VERSION}_appveyor2641-Linux-x86_64-py310.tar.bz2"
+          ls -l installer
+
+      - name: Unpack and locate the bundled interpreter
+        run: |
+          mkdir -p "$HOME/pymol-install"
+          tar -xjf installer/pymol-linux.tar.bz2 -C "$HOME/pymol-install"
+          PYBIN="$(find "$HOME/pymol-install" -maxdepth 4 -type f -name 'python3.10' -perm -u+x | head -n1)"
+          if [ -z "$PYBIN" ]; then
+            echo "could not find a bundled python3.10; tree was:"
+            find "$HOME/pymol-install" -maxdepth 3 | head -50
+            exit 1
+          fi
+          echo "PYBIN=$PYBIN" >> "$GITHUB_ENV"
+          "$PYBIN" -c "import pymol; print('PyMOL', pymol.cmd.get_version()[0])"
+
+      - name: Install pytest into the throwaway PyMOL
+        run: |
+          "$PYBIN" -m ensurepip --default-pip || true
+          "$PYBIN" -m pip install --quiet --disable-pip-version-check pytest
+
+      - name: Build the release ZIP
+        run: |
+          bash ci/build_plugin_zip.sh plugin.zip
+
+      - name: Install the plugin through PyMOL's Plugin Manager
+        run: |
+          mkdir -p "$RUNNER_TEMP/plugins"
+          "$PYBIN" ci/install_plugin_headless.py plugin.zip "$RUNNER_TEMP/plugins"
+
+      - name: Run the test suite inside the installed PyMOL
+        run: |
+          "$PYBIN" -m pytest -v --durations=10
+
+  macos:
+    name: macOS .dmg installer
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Check that x86-64 binaries can run (Rosetta 2)
+        run: |
+          echo "runner arch: $(uname -m)"
+          if ! /usr/bin/arch -x86_64 /usr/bin/true 2>/dev/null; then
+            echo "::error::Rosetta 2 is unavailable here, so the x86-64 PyMOL .dmg cannot run."
+            echo "::error::Options: keep macOS verification manual, or point this job at"
+            echo "::error::conda-forge pymol-open-source, which does publish an osx-arm64"
+            echo "::error::build (schrodinger publishes none)."
+            exit 1
+          fi
+          echo "Rosetta 2 present: x86-64 binaries can run"
+
+      - name: Cache the PyMOL disk image
+        id: cache-dmg
+        uses: actions/cache@v4
+        with:
+          path: installer
+          key: pymol-dmg-macos-${{ env.PYMOL_VERSION }}
+
+      - name: Download the PyMOL disk image
+        if: steps.cache-dmg.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p installer
+          curl -sSfL --retry 3 \
+            -o installer/pymol.dmg \
+            "https://storage.googleapis.com/pymol-storage/installers/PyMOL-${PYMOL_VERSION}_0-MacOS-py310.dmg"
+          ls -lh installer
+
+      - name: Mount the image and install the app
+        run: |
+          set -euo pipefail
+          MNT="$(mktemp -d)"
+          hdiutil attach installer/pymol.dmg -mountpoint "$MNT" -nobrowse -noverify -noautoopen
+          echo "image contents:"; ls -la "$MNT"
+          APP="$(find "$MNT" -maxdepth 1 -name '*.app' -print -quit)"
+          if [ -z "$APP" ]; then
+            echo "::error::no .app bundle found in the disk image"; ls -la "$MNT"; exit 1
+          fi
+          cp -R "$APP" "$HOME/"
+          hdiutil detach "$MNT"
+          echo "APP_PATH=$HOME/$(basename "$APP")" >> "$GITHUB_ENV"
+
+      - name: Locate the bundled interpreter
+        run: |
+          set -euo pipefail
+          PYBIN="$(find "$APP_PATH" -type f \( -name 'python3.10' -o -name 'python3' \) -perm -u+x | head -n1)"
+          if [ -z "$PYBIN" ]; then
+            echo "::error::no interpreter found inside $APP_PATH"
+            find "$APP_PATH" -maxdepth 4 -type d | head -40
+            exit 1
+          fi
+          echo "PYBIN=$PYBIN" >> "$GITHUB_ENV"
+          /usr/bin/arch -x86_64 "$PYBIN" -c "import pymol; print('PyMOL', pymol.cmd.get_version()[0])"
+
+      - name: Install pytest into the throwaway PyMOL
+        run: |
+          /usr/bin/arch -x86_64 "$PYBIN" -m ensurepip --default-pip || true
+          /usr/bin/arch -x86_64 "$PYBIN" -m pip install --quiet --disable-pip-version-check pytest
+
+      - name: Build the release ZIP
+        run: |
+          bash ci/build_plugin_zip.sh plugin.zip
+
+      - name: Install the plugin through PyMOL's Plugin Manager
+        run: |
+          mkdir -p "$RUNNER_TEMP/plugins"
+          /usr/bin/arch -x86_64 "$PYBIN" ci/install_plugin_headless.py plugin.zip "$RUNNER_TEMP/plugins"
+
+      - name: Run the test suite inside the installed PyMOL
+        run: |
+          /usr/bin/arch -x86_64 "$PYBIN" -m pytest -v --durations=10

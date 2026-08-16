@@ -27,8 +27,8 @@ def get_matrix(index: np.ndarray, protid: str) -> tuple[np.ndarray, list, dict]:
     """
     if index.shape == (0,):
         mat = np.zeros((len(index), len(index)),dtype = "int")
-        psc = [protid,0,0,0]
-        return mat,psc,{}
+        psx = [protid,0,0,0]
+        return mat,psx,{}
     #Determines whether index came from model or single chain
     if np.shape(index)[1] == 2:  # noqa: PLR2004
         #create a numerical and character matrix based on the amount of nonzero values found in the previous function
@@ -90,9 +90,9 @@ def get_matrix(index: np.ndarray, protid: str) -> tuple[np.ndarray, list, dict]:
                     mat[x, y]=4
                     mat[y, x]=4
         total = sum([contact_p,contact_s,contact_x])
-        psc = [protid,contact_p,contact_s,contact_x,round(contact_p/total if total != 0 else 0,3),round(contact_s/total if total != 0 else 0,3),round(contact_x/total if total != 0 else 0,3)]
+        psx = [protid,contact_p,contact_s,contact_x,round(contact_p/total if total != 0 else 0,3),round(contact_s/total if total != 0 else 0,3),round(contact_x/total if total != 0 else 0,3)]
 
-        return mat,psc,{}
+        return mat,psx,{}
 
     if np.shape(index)[1] == 4:  # noqa: PLR2004
         chainids = np.unique(index[:,2:])

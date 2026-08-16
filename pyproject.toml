@@ -1,6 +1,7 @@
 [tool.ruff]
 target-version = "py310"
 line-length = 120
+extend-exclude = ["tests/upstream"]
 
 [tool.ruff.lint]
 select = [
@@ -52,7 +53,6 @@ select = [
     "FURB",   # refurb
     "LOG",    # flake8-logging
     "RUF",    # Ruff-specific rules
-    "AIR3",    # Airflow v3
 ]
 
 ignore = [
@@ -64,12 +64,53 @@ ignore = [
     "FIX002", # Line contains TODO
     "E402",   # wrong-import-position
     "PLC0415", # import-outside-toplevel
-    "N999"
+    "N999",
+    "BLE001",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",
+    "INP001",
+    "PLR2004",
+    "PT018",
+    "ARG001",
+    "ARG005",
+    "ANN",
+    "SLF001",
+    "N802",
+    "TRY003",
+    "ICN001",
+]
+
+"ci/**" = [
+    "T201",
+    "S603",
+    "INP001",
+    "BLE001",
+    "TRY003",
+    "EM101",
+    "EM102",
+    "ANN",
+    "PLR0911",
+    "PLR2004",
+    "ARG005",
+]
+
+"benchmarks/**" = [
+    "T201",
+    "INP001",
+    "S603",
+    "ANN",
+    "TRY003",
+    "EM101",
+    "EM102",
+    "PLR2004",
+    "C901",
 ]
 
 [tool.ruff.lint.isort]
-# Mirroring GCI sections (Standard -> First Party -> Default)
-known-first-party = ["dags"]
+known-first-party = ["analysis", "functions", "tabs", "utils"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.ruff.lint.mccabe]
@@ -81,11 +122,15 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
 [tool.coverage.run]
-source = ["dags"]
+source = ["analysis", "functions", "tabs", "utils"]
 omit = [
-    "dags/**/__init__.py",
-    "dags/**/__pycache__/*",
+    "**/__init__.py",
+    "**/__pycache__/*",
 ]
 
 [tool.coverage.report]

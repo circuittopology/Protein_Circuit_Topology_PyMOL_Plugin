@@ -24,7 +24,7 @@ def legalize_object_name(raw_name: str) -> str:
     name = raw_name.strip() or "object"
     try:
         return str(cmd.get_legal_name(name))
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.debug("Falling back to simple object-name normalization", exc_info=True)
         return name.replace(" ", "_")
 
@@ -36,7 +36,7 @@ def object_exists(obj_name: str | None) -> bool:
     assert obj_name is not None
     try:
         return obj_name in cmd.get_names("objects")
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.debug("cmd.get_names failed; falling back to get_object_list", exc_info=True)
         try:
             return obj_name in cmd.get_object_list()
@@ -50,9 +50,16 @@ def object_selection(obj_name: str) -> str:
     return f"%{obj_name}"
 
 
+def polymer_selection(obj_name: str) -> str:
+    """
+    Return the analysable part of an object: its polymer atoms only (replaces the old 'remove non-polymer' step).
+    """
+    return f"({object_selection(obj_name)}) and polymer"
+
+
 def chain_selection(obj_name: str, chain_id: str) -> str:
-    """Return a PyMOL selection for one chain of an object."""
-    base_selection = object_selection(obj_name)
+    """Return a PyMOL selection for one polymer chain of an object."""
+    base_selection = polymer_selection(obj_name)
     if chain_id:
         return f"({base_selection}) and chain {chain_id}"
     return base_selection
@@ -68,11 +75,11 @@ def selection_has_atoms(selection: str) -> bool:
 
 
 def get_object_chains(obj_name: str) -> list[str]:
-    """Return chains for an existing object, or an empty list on failure."""
+    """Return the polymer chains of an existing object, or an empty list on failure."""
     if not object_exists(obj_name):
         return []
     try:
-        return list(cmd.get_chains(object_selection(obj_name)))
+        return list(cmd.get_chains(polymer_selection(obj_name)))
     except Exception:
         logger.exception("Unable to get chains for object %s", obj_name)
         return []

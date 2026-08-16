@@ -5,20 +5,21 @@ from pathlib import Path
 from typing import Any
 
 from pymol import cmd
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QVBoxLayout,
+)
 
 from utils.config import INFO_BUTTON_STYLE
 
 logger = logging.getLogger(__name__)
 
-
-def _poll_pymol_objects(self: Any) -> None:
-    """Single poll that refreshes both object dropdowns from one cmd call."""
-    from utils.updates import update_list, update_local_list
-    new_objects = cmd.get_object_list()
-    update_list(self, new_objects)
-    update_local_list(self, new_objects)
 
 def update_chain_combo_box(self: Any) -> None:
     """
@@ -47,53 +48,39 @@ def make_info_button(tooltip: str) -> QPushButton:
     btn.setToolTip(tooltip)
     return btn
 
-def init_timers(self: Any) -> None:
-    """
-    Initializes timers for updating object lists.
-
-    Args:
-        self: The main GUI class instance.
-    """
-    self.timer = QTimer(self)
-    self.timer.timeout.connect(self._poll_pymol_objects)
-    self.timer.start(2000)
-
-def object_exists(name: str) -> bool:
-    """
-    Checks if a PyMOL object exists.
-
-    Args:
-        name (str): The name of the object.
-
-    Returns:
-        bool: True if the object exists, False otherwise.
-    """
-    if not name:
-        return False
-    try:
-        return name in cmd.get_names("objects")
-    except Exception:  # noqa: BLE001
-        logger.debug("cmd.get_names failed; falling back to get_object_list", exc_info=True)
-        return name in cmd.get_object_list()
-
-
 @contextmanager
-def temp_pdb_export(selection: str, state: int | None = None):
+def temp_pdb_export(selection: str, state: int | None = None, label: str | None = None):
     """Save a PyMOL selection to a temporary PDB file, yield the path, then clean up."""
-    with tempfile.NamedTemporaryFile(suffix=".pdb", delete=False) as tmp:
-        tmp_path = Path(tmp.name)
-    try:
-        cmd.save(str(tmp_path), selection, state=state or cmd.get_state())
+    safe = "".join(c if (c.isalnum() or c in "-_") else "_" for c in (label or "structure"))
+    with tempfile.TemporaryDirectory(prefix="ct_export_") as tmpdir:
+        tmp_path = Path(tmpdir) / f"{safe or 'structure'}.pdb"
+        cmd.save(str(tmp_path), selection, state=state if state is not None else cmd.get_state())
         yield tmp_path
-    finally:
-        if tmp_path.exists():
-            try:
-                tmp_path.unlink()
-            except OSError:
-                logger.exception("Failed to remove temporary file: %s", tmp_path)
 
 
-def make_param_row(label_text, tooltip, spinbox):
+def notify(message: str) -> str:
+    """
+    Put a message on PyMOL's command line.
+    """
+    print(message)  # noqa: T201
+    return message
+
+
+def make_note_row(text: str, tooltip: str) -> QHBoxLayout:
+    """
+    A quiet grey caption with its info button pinned to the right.
+    """
+    label = QLabel(text)
+    label.setWordWrap(True)
+    label.setStyleSheet("color: palette(mid); font-size: 8pt;")
+    label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+    row = QHBoxLayout()
+    row.addWidget(label, 1)
+    row.addWidget(make_info_button(tooltip), 0, Qt.AlignRight | Qt.AlignTop)
+    return row
+
+
+def make_param_row(label_text: str, tooltip: str, spinbox: Any) -> QHBoxLayout:
     """Create a standard parameter row layout with label, info button, and spinbox."""
     row = QHBoxLayout()
     row.addWidget(QLabel(label_text))

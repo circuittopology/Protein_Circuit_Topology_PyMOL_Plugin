@@ -5,11 +5,15 @@ Created on Mon May 24 17:00:09 2021
 
 Function that creates a topological relations matrix plot for a single chain
 """
-import warnings
-
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import ListedColormap
+
+from functions.plots._display import show
+from functions.plots._palette import (
+    SINGLE_CHAIN_COLORS,
+    SINGLE_CHAIN_LABELS,
+    discrete_cmap,
+)
 
 
 def matrix_plot(mat: np.ndarray, protid: str) -> None:
@@ -20,28 +24,20 @@ def matrix_plot(mat: np.ndarray, protid: str) -> None:
         mat (numpy.ndarray): The topological relationship matrix.
         protid (str): Protein identifier.
     """
-
-    #create custom colormap
-    newcolors = np.array([[218/255, 219/255, 228/255,1], #grey -
-                      [131/255, 139/255, 197/255,1],    #purple S
-                      [172/255,200/255,247/255,1],       #blue P
-                      [174/255,213/255,129/255,1],         #mint green P-1
-                      [186/255, 155/255, 201/255,1],        #red purple - X
-                      [172/255, 200/255, 247/255,1],        #blue P
-                      [174/255, 213/255, 129/255,1],        #mint green
-                      [131/255,139/255, 197/255,1]])        #purple S
-    newcmp = ListedColormap(newcolors)
+    cmap, norm = discrete_cmap(SINGLE_CHAIN_COLORS)
 
     fig, ax = plt.subplots()
-    color = plt.get_cmap(newcmp, 8)
 
-    #plot data
-    pngmat = plt.imshow(mat,cmap=color,vmin = np.min(mat)-.5, vmax = np.max(mat)+.5)
+    pngmat = ax.imshow(mat, cmap=cmap, norm=norm, interpolation="nearest")
     ax.set_xlabel("Intramolecular contact #")
     ax.set_ylabel("Intramolecular contact #")
     ax.set_title(protid)
-    ax.tick_params(labelleft = True,labelbottom = True,bottom = False,left= False)
-    cbar = fig.colorbar(pngmat, ticks=np.arange(8))
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        cbar.ax.set_yticklabels(["-","S","P","P-1","X","CP","CP-1","CS"])
+    ax.tick_params(labelleft=True, labelbottom=True, bottom=False, left=False)
+
+    ticks = np.arange(len(SINGLE_CHAIN_COLORS)) + 0.5
+    cbar = fig.colorbar(pngmat, ax=ax, ticks=ticks, spacing="uniform")
+    cbar.ax.set_yticklabels(SINGLE_CHAIN_LABELS)
+    cbar.ax.tick_params(length=0)
+
+    cbar.set_label("Topological relation")
+    show(fig)

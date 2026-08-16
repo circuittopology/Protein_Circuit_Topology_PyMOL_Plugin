@@ -12,9 +12,9 @@ from functions.exporting.export_cmap3 import export_cmap3
 from functions.exporting.export_mat import export_mat
 from functions.importing.retrieve_chain import retrieve_chain
 from functions.plots.local_topology_plot import local_topology_plot
-from utils.config import CHECKBOX_WARN, LOCAL_CT_WARN, WARN_MSG
+from utils.config import CHECKBOX_WARN, LOCAL_CT_WARN
 from utils.helpers import resolve_output_path, temp_pdb_export
-from utils.non_polymer import has_non_polymer_atoms
+from utils.local_ct_report import report_empty_local_result
 from utils.validation import chain_selection, get_object_chains, object_exists, selection_has_atoms
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -28,10 +28,6 @@ def run_local_ct(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     Args:
         self: The main GUI class instance.
     """
-    # check for non-polymer atoms
-    if has_non_polymer_atoms():
-        QMessageBox.warning(self, "Warning", WARN_MSG)
-
     vals = self.get_local_values()
     # Retrieve imported file as a selected object in PyMOL
     curr_local_obj = self.local_dropdown_objects.currentText()
@@ -73,7 +69,7 @@ def run_local_ct(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
     local_neighbour = vals["exclude_neighbour"]
     base_file_typeless = f"{curr_local_obj}_chain_{curr_chain}"
     try:
-        with temp_pdb_export(selected_obj, state=cmd.get_state()) as tmp_path:
+        with temp_pdb_export(selected_obj, state=cmd.get_state(), label=curr_local_obj) as tmp_path:
             local_chain, protid = retrieve_chain(tmp_path)
     except Exception as e:
         logger.exception("Failed to export or parse local selection: %s", selected_obj)
@@ -110,6 +106,8 @@ def run_local_ct(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
         logger.exception("Local CT output failed for %s", selected_obj)
         QMessageBox.warning(self, "Error", f"Local CT output failed:\n{e}")
         return
+
+    report_empty_local_result(idx, mat, residue_id, selected_residue_id, contact)
 
     if export_cmap3_enabled or export_mat_enabled:
         if output_path is None:
