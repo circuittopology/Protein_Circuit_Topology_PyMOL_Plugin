@@ -56,7 +56,7 @@ Once installation is complete, open the plugin's GUI from:
   `sys.prefix`, then `conda` on `PATH`.
 - It runs, once:
   ```
-  <conda> env update --file requirements.yml --prefix <PyMOL's sys.prefix>
+  <conda> install --yes --prefix <PyMOL's sys.prefix> conda-forge::<each missing package>
   ```
 - **This updates PyMOL's own conda environment in place.** It does not create a new environment and
   does not touch any other environment on your system. Packages come from `conda-forge`.

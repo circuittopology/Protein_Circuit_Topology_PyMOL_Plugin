@@ -979,11 +979,11 @@ Prints instructions for manual installation of dependencies if automated install
 
 Convert a conda-style dependency entry into its package name.
 
-### `get_requirements(req_path)`
+### `requirement_specs(req_path)`
 
 **Module:** `initialization_checks.py`
 
-Parses the requirements.yml file to get a list of required packages.
+Parse requirements.yml into package name -> the exact spec the file declares.
 
 ### `check_installed_packages(requirements_list)`
 
@@ -1009,7 +1009,7 @@ Checks if conda is discoverable on the system PATH.
 
 Locate the conda executable that owns the running PyMOL environment.
 
-### `install_dependencies(reqs=REQUIREMENTS_FILE)`
+### `install_dependencies(reqs=REQUIREMENTS_FILE, missing=None)`
 
 **Module:** `initialization_checks.py`
 

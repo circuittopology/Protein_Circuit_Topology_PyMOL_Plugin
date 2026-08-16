@@ -88,7 +88,7 @@ def install_failed(reqs: Path = REQUIREMENTS_FILE) -> None:
         reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
     """
     try:
-        requirements_list = get_requirements(reqs)
+        requirements_list = list(requirement_specs(reqs))
     except (FileNotFoundError, ValueError):
         logger.exception("Error reading requirements")
         return
@@ -140,21 +140,21 @@ def _normalize_requirement_name(requirement: str) -> str | None:
     return requirement or None
 
 
-def get_requirements(req_path: Path) -> list[str]:
+def requirement_specs(req_path: Path) -> dict[str, str]:
     """
-    Parses the requirements.yml file to get a list of required packages.
+    Parse requirements.yml into package name -> the exact spec the file declares.
 
     Args:
         req_path (Path): Path to the requirements file.
 
     Returns:
-        list[str]: A list of package names.
+        dict[str, str]: package name -> spec string, in file order.
     """
     if not req_path.exists():
         msg = f"Requirements file not found: {req_path}"
         raise FileNotFoundError(msg)
 
-    packages = []
+    packages: dict[str, str] = {}
     in_dependencies = False
     try:
         with req_path.open(mode="r", encoding="utf-8") as file:
@@ -174,9 +174,10 @@ def get_requirements(req_path: Path) -> list[str]:
                         continue
 
                     if in_dependencies and stripped.startswith("-"):
-                        pack = _normalize_requirement_name(stripped.removeprefix("-").strip())
+                        raw = stripped.removeprefix("-").strip()
+                        pack = _normalize_requirement_name(raw)
                         if pack and pack not in packages:
-                            packages.append(pack)
+                            packages[pack] = raw
                 except Exception as e:
                     msg_0 = f"Error parsing requirements file at line {line_num}: {e}"
                     raise ValueError(msg_0) from e
@@ -268,18 +269,21 @@ def _find_conda_executable() -> Path | None:
     return None
 
 
-def install_dependencies(reqs: Path = REQUIREMENTS_FILE) -> bool:
+def install_dependencies(reqs: Path = REQUIREMENTS_FILE, missing: list[str] | None = None) -> bool:
     """
     Install plugin dependencies into PyMOL's own conda environment.
 
     Args:
         reqs (Path, optional): Path to the requirements file. Defaults to REQUIREMENTS_FILE.
+        missing (list[str], optional): Install only these packages. Defaults to every requirement.
 
     Returns:
         bool: True only if conda reports success (exit code 0), False otherwise.
     """
-    if not reqs.exists():
-        logger.error("Error: Requirements file not found: %s", reqs)
+    try:
+        specs_by_name = requirement_specs(reqs)
+    except (FileNotFoundError, ValueError):
+        logger.exception("Could not read the requirements file %s", reqs)
         return False
 
     conda_exe = _find_conda_executable()
@@ -287,9 +291,14 @@ def install_dependencies(reqs: Path = REQUIREMENTS_FILE) -> bool:
         logger.error("Conda executable not found - cannot install dependencies.")
         return False
 
-    reqs_fixed = str(reqs).replace("\\", "/")
-    command = [str(conda_exe), "env", "update", "--file", reqs_fixed, "--prefix", sys.prefix]
-    logger.info("Installing dependencies into %s using %s", sys.prefix, conda_exe)
+    wanted = list(specs_by_name) if missing is None else [n for n in missing if n in specs_by_name]
+    if not wanted:
+        logger.info("No missing dependencies to install.")
+        return True
+
+    specs = [specs_by_name[n] for n in wanted]
+    command = [str(conda_exe), "install", "--yes", "--prefix", str(sys.prefix), *specs]
+    logger.info("Installing %s into %s using %s", wanted, sys.prefix, conda_exe)
 
     try:
         result = subprocess.run(command, capture_output=True, text=True, check=False)  # noqa: S603

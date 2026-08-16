@@ -28,12 +28,12 @@ from initialization_checks import (
     PYMOL_ENV,
     REQUIREMENTS_FILE,
     check_installed_packages,
-    get_requirements,
     install_dependencies,
     install_failed,
     is_path_user,
     is_running_as_admin,
     register_pymol_functions,
+    requirement_specs,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -149,12 +149,12 @@ def __init_plugin__(app=None):  # noqa: ARG001, N807
         return
 
     # Log what needs installing.
-    requirements_list = get_requirements(req_path=REQUIREMENTS_FILE)
+    requirements_list = list(requirement_specs(req_path=REQUIREMENTS_FILE))
     _, packs = check_installed_packages(requirements_list)
     logger.info("Packages to install for ProteinCT plugin: %s", packs)
 
     # Install into PyMOL's own conda environment, then retry registration.
-    if install_dependencies():
+    if install_dependencies(missing=packs):
         importlib.invalidate_caches()
         if _try_register():
             return

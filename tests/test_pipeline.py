@@ -224,10 +224,10 @@ def test_requirements_covers_all_imports():
     from initialization_checks import (
         REQUIREMENTS_FILE,
         _is_package_available,
-        get_requirements,
+        requirement_specs,
     )
 
-    declared = get_requirements(REQUIREMENTS_FILE)
+    declared = list(requirement_specs(REQUIREMENTS_FILE))
     assert declared, "requirements.yml declared nothing"
 
     needed = {"numpy", "pandas", "matplotlib", "biopython"}
