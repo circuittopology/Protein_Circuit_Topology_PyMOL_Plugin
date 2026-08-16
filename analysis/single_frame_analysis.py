@@ -18,6 +18,7 @@ from functions.plots.stats_plot import stats_plot
 from utils.helpers import resolve_output_path, temp_pdb_export
 from utils.validation import (
     chain_selection,
+    count_object_states,
     get_object_chains,
     legalize_object_name,
     list_structure_files,
@@ -51,32 +52,54 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
         QMessageBox.warning(self, "Error", "No checkboxes for plotting or exporting have been ticked!")
         return
 
-    if traj_dir:
-        source_dir = Path(traj_dir)
-        frame_files = [Path(file_path) for file_path in getattr(self, "avail_dir_traj_files", [])]
-    elif pdb_dir:
-        source_dir = Path(pdb_dir)
-        try:
-            frame_files = list_structure_files(source_dir)
-            self.available_mol_files = frame_files
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to read input directory:\n{e}")
-            return
-    else:
-        QMessageBox.critical(self, "Error", "No input source selected (trajectory or directory).")
-        return
+    traj_obj = vals.get("trajectory_object")
+    traj_states = count_object_states(traj_obj) if traj_obj else 0
+    use_trajectory = traj_states > 1
 
-    if not frame_files:
-        QMessageBox.critical(self, "Error", "No PDB or CIF files are available for frame analysis.")
-        return
-
-    normalized_files = [file_path if file_path.is_absolute() else source_dir / file_path for file_path in frame_files]
     frame_idx = self.frame_selector_spinbox.value()
-    try:
-        full_path = selected_frame_file(normalized_files, frame_idx)
-    except Exception as e:
-        QMessageBox.critical(self, "Error", str(e))
-        return
+    full_path = None
+
+    if use_trajectory:
+        if not 1 <= frame_idx <= traj_states:
+            QMessageBox.critical(
+                self, "Error",
+                f"Frame {frame_idx} is out of range. '{traj_obj}' has {traj_states} frames.",
+            )
+            return
+        frame_label = f"{traj_obj}_frame_{frame_idx:0{len(str(traj_states))}d}"
+    else:
+        if pdb_dir:
+            source_dir = Path(pdb_dir)
+            try:
+                frame_files = list_structure_files(source_dir)
+                self.available_mol_files = frame_files
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to read input directory:\n{e}")
+                return
+        elif traj_dir:
+            source_dir = Path(traj_dir)
+            frame_files = [Path(file_path) for file_path in getattr(self, "avail_dir_traj_files", [])]
+        else:
+            QMessageBox.critical(
+                self, "Error",
+                "No input source. Load a trajectory, or choose a directory of structures.",
+            )
+            return
+
+        if not frame_files:
+            QMessageBox.critical(self, "Error", "No PDB or CIF files are available for frame analysis.")
+            return
+
+        normalized_files = [
+            file_path if file_path.is_absolute() else source_dir / file_path
+            for file_path in frame_files
+        ]
+        try:
+            full_path = selected_frame_file(normalized_files, frame_idx)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+            return
+        frame_label = full_path.stem
 
     output_path = None
     if export_cmap3_enabled or export_mat_enabled:
@@ -90,20 +113,20 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
     loaded_frame_obj = None
 
     try:
-        if traj_dir:
-            frame_obj = getattr(self, "protein_name", None)
-            if not isinstance(frame_obj, str) or not object_exists(frame_obj):
+        if use_trajectory:
+            frame_obj = traj_obj
+            if not object_exists(frame_obj):
                 msg = "The trajectory molecule is no longer available in PyMOL."
                 raise RuntimeError(msg)  # noqa: TRY301
             cmd.set("state", frame_idx, frame_obj)
             traj_frame_chains = get_object_chains(frame_obj)
 
             with temp_pdb_export(
-                polymer_selection(frame_obj), state=frame_idx, label=full_path.stem,
+                polymer_selection(frame_obj), state=frame_idx, label=frame_label,
             ) as tmp_path:
                 frame_chain, protid = retrieve_chain(tmp_path)
         else:
-            frame_obj = legalize_object_name(full_path.stem)
+            frame_obj = legalize_object_name(frame_label)
             cmd.load(str(full_path), frame_obj)
             loaded_frame_obj = frame_obj
             if not object_exists(frame_obj):
@@ -157,7 +180,7 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
                 if not selection_has_atoms(current_selection):
                     logger.warning("Skipping empty chain selection: %s", current_selection)
                     continue
-                with temp_pdb_export(current_selection, state=cmd.get_state(), label=frame_obj) as tmp_path:
+                with temp_pdb_export(current_selection, state=frame_idx, label=frame_label) as tmp_path:
                     curr_chain, _ = retrieve_chain(tmp_path)
                 temp_idx, temp_n, _, _ = get_cmap(
                     curr_chain,
@@ -168,7 +191,7 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
                 if temp_idx.size == 0:
                     logger.warning("No contacts found for frame chain %s; skipping contact-map export", c)
                     continue
-                cmap3_exports.append((temp_idx, f"{frame_obj}_chain_{c}", temp_n))
+                cmap3_exports.append((temp_idx, f"{frame_label}_chain_{c}", temp_n))
 
         if export_cmap3_enabled or export_mat_enabled:
             if output_path is None:
@@ -176,7 +199,7 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
             for temp_idx, chain_label, temp_n in cmap3_exports:
                 export_cmap3(temp_idx, chain_label, temp_n, output_path)
             if export_mat_enabled:
-                export_mat(idx, mat, frame_obj, output_path)
+                export_mat(idx, mat, frame_label, output_path)
     except Exception as e:
         logger.exception("Single-frame analysis failed")
         QMessageBox.warning(self, "Error", f"Single-frame analysis failed:\n{e}")

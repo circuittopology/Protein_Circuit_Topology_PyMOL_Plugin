@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -25,10 +26,12 @@ from utils.config import CHECKBOX_WARN
 from utils.helpers import resolve_output_path, temp_pdb_export
 from utils.validation import (
     chain_selection,
+    count_object_states,
     get_object_chains,
     legalize_object_name,
     list_structure_files,
     object_exists,
+    polymer_selection,
     selection_has_atoms,
 )
 
@@ -37,6 +40,31 @@ logger = logging.getLogger(__name__)
 
 # How many structure names to spell out before summarising the rest.
 _MAX_LISTED = 5
+
+
+@dataclass(frozen=True)
+class _WorkItem:
+    """
+    One unit of analysis, whether it came from a file or from a trajectory state.
+
+    label  what it is called in messages and in exported filenames.
+    obj    the PyMOL object to take chain selections from.
+    state  which coordinate state to read.
+    path   the file to parse.
+    """
+    label: str
+    obj: str
+    state: int
+    path: Path | None = None
+
+
+def _states_of(traj_obj: str, n_states: int) -> list[_WorkItem]:
+    """One work item per trajectory state, read straight from the loaded object."""
+    width = len(str(n_states))
+    return [
+        _WorkItem(label=f"{traj_obj}_frame_{state:0{width}d}", obj=traj_obj, state=state)
+        for state in range(1, n_states + 1)
+    ]
 
 # Slight rewrite to match their notebook code because we had bugs
 def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
@@ -64,23 +92,32 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
         QMessageBox.warning(self, "Error", CHECKBOX_WARN)
         return
 
-    if not multi_input_dir and not multi_traj_dir:
-        QMessageBox.warning(self, "Error", "No input directory selected!")
-        return
+    traj_obj = vals.get("trajectory_object")
+    traj_states = count_object_states(traj_obj) if traj_obj else 0
 
-    path = Path(multi_traj_dir or multi_input_dir)
-    try:
-        input_files = list_structure_files(path)
-    except Exception as e:
-        QMessageBox.warning(self, "Error", f"Failed to read input directory:\n{e}")
-        return
+    if traj_states > 1:
+        items = _states_of(traj_obj, traj_states)
+    else:
+        if not multi_input_dir and not multi_traj_dir:
+            QMessageBox.warning(self, "Error", "No input directory or loaded trajectory to analyse!")
+            return
 
-    if not input_files:
-        QMessageBox.warning(self, "Error",
-            f"No PDB or CIF files found in the selected directory: {path}."
-            f" If you are trying to analyze a trajectory, please first convert it to multiple PDB files.",
-        )
-        return
+        path = Path(multi_traj_dir or multi_input_dir)
+        try:
+            input_files = list_structure_files(path)
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to read input directory:\n{e}")
+            return
+
+        if not input_files:
+            QMessageBox.warning(self, "Error",
+                f"No PDB or CIF files found in the selected directory: {path}."
+                f" If you are trying to analyse a trajectory, load it with a PDB/CIF first - "
+                f"converting it to separate files is not required.",
+            )
+            return
+        items = [_WorkItem(label=legalize_object_name(f.stem), obj=legalize_object_name(f.stem),
+                           state=1, path=f) for f in input_files]
 
     output_dir = vals["output_directory"]
     output_path = None
@@ -89,7 +126,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
         if output_path is None:
             return
 
-    number_of_files = len(input_files)
+    number_of_files = len(items)
     psxlist = []
     p = []
     s = []
@@ -115,19 +152,27 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
             logger.info("Multi-file analysis was aborted.")
             return
 
-    for num, multi_full_path in enumerate(input_files, start=1):
-        multi_obj = legalize_object_name(multi_full_path.stem)
+    for num, item in enumerate(items, start=1):
+        multi_obj = item.obj
         try:
-            cmd.load(str(multi_full_path), multi_obj)
-            if not object_exists(multi_obj):
-                msg = f"PyMOL did not create the expected object: {multi_obj}"
-                raise RuntimeError(msg)  # noqa: TRY301
+            if item.path is not None:
+                cmd.load(str(item.path), multi_obj)
+                if not object_exists(multi_obj):
+                    msg = f"PyMOL did not create the expected object: {multi_obj}"
+                    raise RuntimeError(msg)  # noqa: TRY301
             multi_obj_chains = get_object_chains(multi_obj)
             if not multi_obj_chains:
                 msg = "No protein chains were found after loading."
                 raise ValueError(msg)  # noqa: TRY301
-            multi_chain, protid = retrieve_chain(multi_full_path)
-            logger.info("%s - %d/%d", multi_full_path, num, number_of_files)
+
+            if item.path is not None:
+                multi_chain, protid = retrieve_chain(item.path)
+            else:
+                with temp_pdb_export(
+                    polymer_selection(multi_obj), state=item.state, label=item.label,
+                ) as tmp_path:
+                    multi_chain, protid = retrieve_chain(tmp_path)
+            logger.info("%s - %d/%d", item.label, num, number_of_files)
 
             if len(multi_obj_chains) > 1:
                 multi_level = "model"
@@ -151,7 +196,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                     name for name, on in (("energy", multi_energy_filtering), ("length", multi_len_filtering))
                     if on
                 ]
-                skipped_filters.append((multi_obj, requested))
+                skipped_filters.append((item.label, requested))
                 logger.warning(
                     "%s has %d chains, so %s filtering does not apply and was not performed.",
                     multi_obj, len(multi_obj_chains), " and ".join(requested),
@@ -229,7 +274,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                     if not selection_has_atoms(current_selection):
                         logger.warning("Skipping empty chain selection: %s", current_selection)
                         continue
-                    with temp_pdb_export(current_selection, state=cmd.get_state(), label=multi_obj) as tmp_path:
+                    with temp_pdb_export(current_selection, state=item.state, label=item.label) as tmp_path:
                         curr_multi_chain, _ = retrieve_chain(tmp_path)
                     temp_i, temp_num, _, _ = get_cmap(
                         curr_multi_chain,
@@ -240,19 +285,19 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                     if temp_i.size == 0:
                         logger.warning("No contacts found for %s chain %s; skipping contact-map export", multi_obj, c)
                         continue
-                    temp_multi_f_base = f"{multi_obj}_chain_{c}"
+                    temp_multi_f_base = f"{item.label}_chain_{c}"
                     export_cmap3(temp_i, temp_multi_f_base, temp_num, output_path)
             if multi_export_mat:
                 if output_path is None:
                     return
-                export_mat(idx, mat, multi_obj, output_path)
+                export_mat(idx, mat, item.label, output_path)
 
             processed_count += 1
         except Exception:
-            logger.exception("Failed processing %s", multi_full_path)
+            logger.exception("Failed processing %s", item.label)
             skipped_count += 1
         finally:
-            if object_exists(multi_obj):
+            if item.path is not None and object_exists(multi_obj):
                 cmd.delete(multi_obj)
 
     if multi_export_psx:

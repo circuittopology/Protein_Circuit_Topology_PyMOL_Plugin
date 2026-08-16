@@ -47,4 +47,16 @@ number of contacts *C* from scaling in chain length.
 - Computational cost is driven by contact count, not residue count directly. Contact count grows sharply with
   the distance cut-off. Raising the cut-off from 4.5 Å to 8 Å is a 2.5× slowdown on the same protein.
 - Memory is nearly constant at ~43 MB regardless of the workload; nothing accumulates
-  across frames.
+  across frames. Whole-trajectory *colouring* is the one exception — see below.
+
+## Trajectory colouring memory
+Colouring a whole trajectory by contact type is the only operation whose memory grows with the
+trajectory. `cmd.split_states` creates one PyMOL object per state, all alive simultaneously, colours
+each, then `cmd.join_states` merges them into `<object>_topo`. Measured on 1UBQ (602 polymer atoms),
+resident set sampled at three points:
+
+| States | objects | after load | after `split_states` | after join + delete |
+|---|---|---|---|---|
+| 10 | 1 → 11 → 2 | 81.7 MB | 101.0 | 137.0 |
+| 50 | 1 → 51 → 2 | 119.1 MB | 202.3 | 378.0 |
+| 200 | 1 → 201 → 2 | 258.8 MB | 570.8 | 1279.1 |

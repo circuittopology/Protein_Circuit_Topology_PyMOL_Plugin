@@ -1,17 +1,16 @@
 # Protein Circuit Topology Plugin - Complete API Documentation
 
-**Total Callable Entry Points:** 166
-**Python Files With Callables:** 39
+**Total Callable Entry Points:** 168
+**Python Files With Callables:** 41
 
 ## Table of Contents
-
 1. [Calculating Functions](#calculating-functions) (6 functions)
-2. [Plotting Functions](#plotting-functions) (7 functions)
-3. [Importing Functions](#importing-functions) (1 functions)
+2. [Plotting Functions](#plotting-functions) (8 functions)
+3. [Importing Functions](#importing-functions) (2 functions)
 4. [Exporting Functions](#exporting-functions) (3 functions)
-5. [Analysis Functions](#analysis-functions) (9 functions)
-6. [Utility Functions](#utility-functions) (60 functions)
-7. [GUI Functions](#gui-functions) (69 functions)
+5. [Analysis Functions](#analysis-functions) (10 functions)
+6. [Utility Functions](#utility-functions) (61 functions)
+7. [GUI Functions](#gui-functions) (67 functions)
 8. [Initialization Functions](#initialization-functions) (11 functions)
 
 ## Calculating Functions
@@ -53,6 +52,12 @@ Filters contact indices based on sequence separation distance.
 Calculates local circuit topology statistics for each residue.
 
 ## Plotting Functions
+
+### `show(fig)`
+
+**Module:** `functions/plots/_display.py`
+
+Display a figure without blocking PyMOL, regardless of what ran before it.
 
 ### `discrete_cmap(colors)`
 
@@ -100,6 +105,12 @@ Plots the fraction of entangled contacts versus distance from
 
 Retrieves a specific chain from a PDB or MMCIF file.
 
+### `warn_about_numbering(chain, protid)`
+
+**Module:** `functions/importing/retrieve_chain.py`
+
+Report the two residue-numbering situations that contact detection handles imprecisely.
+
 ## Exporting Functions
 
 ### `export_cmap3(index, protid, numbering, output_dir)`
@@ -127,6 +138,12 @@ Exports the counts of Parallel (P), Series (S), and Cross (X) contacts (and othe
 **Module:** `analysis/local_ct_analysis.py`
 
 Runs the local circuit topology analysis based on user-selected parameters.
+
+### `_states_of(traj_obj, n_states)`
+
+**Module:** `analysis/multiple_file_analysis.py`
+
+One work item per trajectory state, read straight from the loaded object.
 
 ### `run_multi_analysis(self)`
 
@@ -286,6 +303,18 @@ Creates a small info button with a tooltip.
 
 Save a PyMOL selection to a temporary PDB file, yield the path, then clean up.
 
+### `notify(message)`
+
+**Module:** `utils/helpers.py`
+
+Put a message on PyMOL's command line.
+
+### `make_note_row(text, tooltip)`
+
+**Module:** `utils/helpers.py`
+
+A quiet grey caption with its info button pinned to the right.
+
 ### `make_param_row(label_text, tooltip, spinbox)`
 
 **Module:** `utils/helpers.py`
@@ -304,41 +333,23 @@ Show the CT folding score for a chain in a small, auto-sized pop-up dialog.
 
 Validates and creates the output directory. Returns the Path on success, None on failure.
 
-### `_suppression_owner(widget)`
+### `report_empty_local_result(idx, mat, residue_id, residue_number, contact)`
+
+**Module:** `utils/local_ct_report.py`
+
+Print a notice when the plot will highlight nothing; return "" when it will.
+
+### `non_polymer_counts(obj_name)`
 
 **Module:** `utils/non_polymer.py`
 
-Determine object that should hold the 'don't show again' flag.
+Residue-name histogram of the non-polymer atoms in one object. Empty when there are none.
 
-### `show_warning_dialog(self)`
-
-**Module:** `utils/non_polymer.py`
-
-Shows a warning dialog before removing non-polymer atoms.
-
-### `remove_non_polymer_atoms()`
+### `report_excluded_atoms(obj_name)`
 
 **Module:** `utils/non_polymer.py`
 
-Removes all non-polymer atoms from the PyMOL session.
-
-### `has_non_polymer_atoms()`
-
-**Module:** `utils/non_polymer.py`
-
-Checks if there are any non-polymer atoms in the PyMOL session.
-
-### `new_file_has_non_polymer_atoms(obj_name)`
-
-**Module:** `utils/non_polymer.py`
-
-Checks if a specific object contains non-polymer atoms.
-
-### `warn_if_non_polymer(parent, obj_name)`
-
-**Module:** `utils/non_polymer.py`
-
-Warn when a newly selected object carries non-polymer atoms (tab-agnostic).
+Log what analysis will ignore. Returns the message or empty string.
 
 ### `__init__(self, parent=None)`
 
@@ -386,13 +397,19 @@ Updates the residue range spinbox based on the currently selected chain.
 
 **Module:** `utils/topology.py`
 
-Calculates a topology vector representing the density of a specific contact type
+Per-residue participation in one class of contact-contact relation.
 
-### `color_by_topology(molecule_name, topology_vector, numbering, topology_type)`
+### `color_by_topology(molecule_name, topology_vector, numbering, topology_type, value_range=None)`
 
 **Module:** `utils/topology.py`
 
-Colors a PyMOL object based on a topology vector.
+Colour a PyMOL object by a topology vector
+
+### `_make_scale_bar(topo_obj, topology_type, color_name, min_val, max_val)`
+
+**Module:** `utils/topology.py`
+
+Put a labelled colour bar in the viewer so the numbers behind the colours are visible.
 
 ### `_refresh_objects(self)`
 
@@ -472,11 +489,17 @@ Return True when the named object exists in the current PyMOL session.
 
 Return an exact object selection for a PyMOL object name.
 
+### `polymer_selection(obj_name)`
+
+**Module:** `utils/validation.py`
+
+Return the analysable part of an object: its polymer atoms only (replaces the old 'remove non-polymer' step).
+
 ### `chain_selection(obj_name, chain_id)`
 
 **Module:** `utils/validation.py`
 
-Return a PyMOL selection for one chain of an object.
+Return a PyMOL selection for one polymer chain of an object.
 
 ### `selection_has_atoms(selection)`
 
@@ -488,7 +511,7 @@ Return True when a PyMOL selection currently contains atoms.
 
 **Module:** `utils/validation.py`
 
-Return chains for an existing object, or an empty list on failure.
+Return the polymer chains of an existing object, or an empty list on failure.
 
 ### `count_object_states(obj_name)`
 
@@ -640,6 +663,8 @@ Every setting this tab exposes.
 
 **Type:** `LocalTab` method
 
+Log what analysis will ignore, then refresh the chain/residue controls.
+
 ### `get_residue_range(self, obj_name=None)`
 
 **Module:** `tabs/local_tab.py`
@@ -669,14 +694,6 @@ Every setting this tab exposes.
 **Module:** `tabs/local_tab.py`
 
 **Type:** `LocalTab` method
-
-### `show_warning_dialog(self)`
-
-**Module:** `tabs/local_tab.py`
-
-**Type:** `LocalTab` method
-
-Shared with the Single-File tab.
 
 ### `update_local_list(self)`
 
@@ -874,6 +891,8 @@ Every setting this tab exposes.
 
 **Type:** `SingleFileTab` method
 
+Log what analysis will ignore. Non-polymer atoms need no action from the user.
+
 ### `update_output_widgets(self)`
 
 **Module:** `tabs/single_file_tab.py`
@@ -891,14 +910,6 @@ Every setting this tab exposes.
 **Module:** `tabs/single_file_tab.py`
 
 **Type:** `SingleFileTab` method
-
-### `show_warning_dialog(self)`
-
-**Module:** `tabs/single_file_tab.py`
-
-**Type:** `SingleFileTab` method
-
-Shared with the Local tab; the suppression flag lives on the parent dialog.
 
 ### `update_list(self)`
 
@@ -1004,4 +1015,4 @@ Install plugin dependencies into PyMOL's own conda environment.
 
 Register the plugin's core functions as PyMOL commands.
 
-*Last Updated: August 09, 2026*
+*Last Updated: August 16, 2026*

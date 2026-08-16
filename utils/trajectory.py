@@ -80,6 +80,9 @@ def select_xtc_file(self: Any) -> None:
                 raise RuntimeError(msg)  # noqa: TRY301
 
             report_excluded_atoms(protein_name)
+            set_frame_spinbox_bounds(
+                self.frame_selector_spinbox, cmd.count_states(object_selection(protein_name)),
+            )
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Failed to load trajectory file:\n{e}")
             return

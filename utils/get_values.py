@@ -82,6 +82,7 @@ def get_multiple_values(self: Any) -> dict[str, Any]:
     return {
         "directory": getattr(self, "selected_input_dir_multi", None),
         "traj_directory": getattr(self, "selected_traj_dir_multi", None),
+        "trajectory_object": getattr(self, "protein_name", None),
         "output_directory": getattr(self, "selected_output_dir_multi", None),
         "cutoff_distance": self.cutoff_distance_multi.value(),
         "cutoff_numcontacts": self.min_contacts_multi.value(),
