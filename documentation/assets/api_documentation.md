@@ -1,6 +1,6 @@
 # Protein Circuit Topology Plugin - Complete API Documentation
 
-**Total Callable Entry Points:** 169
+**Total Callable Entry Points:** 172
 **Python Files With Callables:** 41
 
 ## Table of Contents
@@ -11,7 +11,7 @@
 5. [Analysis Functions](#analysis-functions) (11 functions)
 6. [Utility Functions](#utility-functions) (61 functions)
 7. [GUI Functions](#gui-functions) (67 functions)
-8. [Initialization Functions](#initialization-functions) (11 functions)
+8. [Initialization Functions](#initialization-functions) (14 functions)
 
 ## Calculating Functions
 
@@ -1009,6 +1009,24 @@ Checks if conda is discoverable on the system PATH.
 
 Locate the conda executable that owns the running PyMOL environment.
 
+### `_installed_spec(package)`
+
+**Module:** `initialization_checks.py`
+
+Pin ``package`` to the version already installed in this prefix, read from conda-meta.
+
+### `_run_conda(command)`
+
+**Module:** `initialization_checks.py`
+
+Run a conda command, returning None if it could not be launched at all.
+
+### `_retry_without_broken_pins(command)`
+
+**Module:** `initialization_checks.py`
+
+Retry a conda command with a malformed ``conda-meta/pinned`` moved out of the way.
+
 ### `install_dependencies(reqs=REQUIREMENTS_FILE, missing=None)`
 
 **Module:** `initialization_checks.py`
@@ -1021,4 +1039,4 @@ Install plugin dependencies into PyMOL's own conda environment.
 
 Register the plugin's core functions as PyMOL commands.
 
-*Last Updated: August 16, 2026*
+*Last Updated: August 17, 2026*

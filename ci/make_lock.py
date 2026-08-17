@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -32,12 +33,12 @@ ENVIRONMENT = REPO / "ci" / "environment.yml"
 PROBE_ENV = "_ct_lock_probe"
 
 
-def conda_exe() -> str:
-    for name in ("mamba", "micromamba", "conda"):
+def conda_exe(prefer: tuple[str, ...] = ("mamba", "micromamba", "conda")) -> str:
+    for name in prefer:
         found = shutil.which(name)
         if found:
             return found
-    msg = "no conda/mamba/micromamba on PATH"
+    msg = f"none of {', '.join(prefer)} on PATH"
     raise RuntimeError(msg)
 
 
@@ -92,18 +93,32 @@ def urls_from_solve(packages: list[dict]) -> list[str]:
 
 
 def from_prefix(prefix: str) -> list[str]:
-    """Read an INSTALLED environment back out, with md5 checksums."""
+    """
+    Read an INSTALLED environment back out, with md5 checksums.
+
+    Ask conda itself rather than whatever conda_exe() prefers: mamba and micromamba print a
+    human-readable header and omit the checksums, and their header is not comment-prefixed, so
+    it lands inside the @EXPLICIT block and makes the lock unusable.
+    """
     proc = subprocess.run(
-        [conda_exe(), "list", "--explicit", "--md5", "--prefix", prefix],
+        [conda_exe(("conda", "mamba", "micromamba")),
+         "list", "--explicit", "--md5", "--prefix", prefix],
         capture_output=True, text=True, check=False,
     )
     if proc.returncode != 0:
         msg = f"conda list failed for {prefix}: {proc.stderr.strip()[-400:]}"
         raise RuntimeError(msg)
-    return [
-        line.strip() for line in proc.stdout.splitlines()
-        if line.strip() and not line.startswith(("#", "@"))
-    ]
+
+    # Keep only package URLs, so no tool's header can leak into the lock.
+    entries = [line.strip() for line in proc.stdout.splitlines() if "://" in line]
+    if not entries:
+        msg = f"no package URLs in `conda list --explicit` output for {prefix}"
+        raise RuntimeError(msg)
+    # conda appends the hash straight onto the URL as "#<hex>"; conda-lock style is "#md5=<hex>".
+    checksummed = re.compile(r"#(md5=)?[0-9a-f]{32,64}$")
+    if not all(checksummed.search(entry) for entry in entries):
+        print("WARNING: output carries no checksums; the lock will be URL-only", file=sys.stderr)
+    return entries
 
 
 def render(entries: list[str], subdir: str) -> str:

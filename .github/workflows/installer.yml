@@ -129,6 +129,14 @@ jobs:
           "$PYBIN" -m ensurepip --default-pip || true
           "$PYBIN" -m pip install --quiet --disable-pip-version-check pytest
 
+      - name: Report what the bundle already provides
+        run: |
+          "$PYBIN" -c "
+          import importlib.util as u
+          for m in ('numpy','pandas','matplotlib','Bio','PyQt5'):
+              print(f'{m:12}', 'present' if u.find_spec(m) else 'MISSING')
+          "
+
       - name: Build the release ZIP
         run: |
           bash ci/build_plugin_zip.sh plugin.zip

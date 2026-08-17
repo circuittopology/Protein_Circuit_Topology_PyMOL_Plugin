@@ -112,7 +112,15 @@ def install_failed(reqs: Path = REQUIREMENTS_FILE) -> None:
         "To install them, open a system terminal (e.g. Anaconda Prompt) where conda is "
         "available and run the following, then restart PyMOL:",
     )
-    logger.info('conda install --prefix "%s" %s', sys.prefix, specs)
+    logger.info('conda install --yes --prefix "%s" %s', sys.prefix, specs)
+
+    pinned = Path(sys.prefix) / "conda-meta" / "pinned"
+    if pinned.is_file():
+        logger.info(
+            "If conda reports 'InvalidMatchSpec', %s contains a malformed line - the Linux "
+            "PyMOL bundle ships 'pymol >=', which conda rejects on every operation in this "
+            "environment. Delete that line and retry.", pinned,
+        )
     logger.info(
         "If PyMOL is installed system-wide, run that command from an elevated/administrator "
         "terminal, or reinstall PyMOL for your user only.",
@@ -269,6 +277,66 @@ def _find_conda_executable() -> Path | None:
     return None
 
 
+def _installed_spec(package: str) -> str | None:
+    """
+    Pin ``package`` to the version already installed in this prefix, read from conda-meta.
+
+    Args:
+        package (str): conda package name, e.g. "pymol".
+
+    Returns:
+        str | None: e.g. ``"pymol==3.1.6.1"``, or None if conda has no record of it.
+    """
+    for record in sorted((Path(sys.prefix) / "conda-meta").glob(f"{package}-*.json")):
+        name, version, _build = record.stem.rsplit("-", 2)
+        if name == package:
+            return f"{package}=={version}"
+    return None
+
+
+def _run_conda(command: list[str]) -> subprocess.CompletedProcess | None:
+    """Run a conda command, returning None if it could not be launched at all."""
+    try:
+        return subprocess.run(command, capture_output=True, text=True, check=False)  # noqa: S603
+    except OSError:
+        logger.exception("Error occurred while running conda")
+        return None
+
+
+def _retry_without_broken_pins(command: list[str]) -> subprocess.CompletedProcess | None:
+    """
+    Retry a conda command with a malformed ``conda-meta/pinned`` moved out of the way.
+
+    Returns:
+        The retried result, or None if there was no pinned file to move or it could not be moved.
+    """
+    pinned = Path(sys.prefix) / "conda-meta" / "pinned"
+    if not pinned.is_file():
+        return None
+
+    moved = pinned.with_suffix(".proteinct-retry")
+    logger.warning(
+        "Conda rejected %s because it contains a malformed pin. Retrying the install with "
+        "that file moved aside temporarily; it will be restored afterwards.", pinned,
+    )
+    try:
+        pinned.replace(moved)
+    except OSError:
+        logger.exception("Could not move %s aside, so the install cannot be retried", pinned)
+        return None
+
+    try:
+        return _run_conda(command)
+    finally:
+        try:
+            moved.replace(pinned)
+        except OSError:
+            logger.exception(
+                "Could not restore %s from %s - rename it back by hand to leave PyMOL's "
+                "environment exactly as it was.", pinned, moved,
+            )
+
+
 def install_dependencies(reqs: Path = REQUIREMENTS_FILE, missing: list[str] | None = None) -> bool:
     """
     Install plugin dependencies into PyMOL's own conda environment.
@@ -296,15 +364,29 @@ def install_dependencies(reqs: Path = REQUIREMENTS_FILE, missing: list[str] | No
         logger.info("No missing dependencies to install.")
         return True
 
+    pins = [spec for spec in (_installed_spec("python"), _installed_spec("pymol")) if spec]
+    guards = ["--freeze-installed"]
+    if _installed_spec("pymol") is None:
+        logger.info("No conda record of pymol to pin; using the classic solver instead.")
+        guards.append("--solver=classic")
+    if _installed_spec("python") is None:
+        pins.append(f"python={sys.version_info.major}.{sys.version_info.minor}")
+
     specs = [specs_by_name[n] for n in wanted]
-    command = [str(conda_exe), "install", "--yes", "--prefix", str(sys.prefix), *specs]
+    command = [
+        str(conda_exe), "install", "--yes", *guards,
+        "--prefix", str(sys.prefix), *pins, *specs,
+    ]
     logger.info("Installing %s into %s using %s", wanted, sys.prefix, conda_exe)
 
-    try:
-        result = subprocess.run(command, capture_output=True, text=True, check=False)  # noqa: S603
-    except OSError:
-        logger.exception("Error occurred while running conda")
+    result = _run_conda(command)
+    if result is None:
         return False
+
+    if result.returncode != 0 and "InvalidMatchSpec" in (result.stderr or ""):
+        retried = _retry_without_broken_pins(command)
+        if retried is not None:
+            result = retried
 
     if result.stdout:
         logger.info("Installation output: %s", result.stdout)

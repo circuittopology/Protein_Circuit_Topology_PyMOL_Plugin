@@ -56,7 +56,8 @@ Once installation is complete, open the plugin's GUI from:
   `sys.prefix`, then `conda` on `PATH`.
 - It runs, once:
   ```
-  <conda> install --yes --prefix <PyMOL's sys.prefix> conda-forge::<each missing package>
+  <conda> install --yes --freeze-installed --prefix <PyMOL's sys.prefix> \
+      python==<installed version> pymol==<installed version> conda-forge::<each missing package>
   ```
 - **This updates PyMOL's own conda environment in place.** It does not create a new environment and
   does not touch any other environment on your system. Packages come from `conda-forge`.
@@ -69,9 +70,12 @@ Once installation is complete, open the plugin's GUI from:
 ### Manual installation
 If you would rather not let the plugin touch your environment, install the dependencies yourself **before** loading the plugin. It only auto-installs what is missing.
 ```bash
-# Into PyMOL's own environment. Find the prefix with:  python -c "import sys; print(sys.prefix)"
-conda install --prefix <PyMOL's sys.prefix> -c conda-forge \
-    "numpy>=1.23,<2" "pandas>=2.0,<3" "matplotlib>=3.7,<4" "biopython>=1.80,<2"
+# Find the prefix and the versions to pin:
+#   python -c "import sys, pymol; print(sys.prefix, sys.version.split()[0], pymol.cmd.get_version()[0])"
+conda install --yes --freeze-installed --prefix <PyMOL's sys.prefix> \
+    python==<installed version> pymol==<installed version> \
+    "conda-forge::numpy>=1.23,<2" "conda-forge::pandas>=2.0,<3" \
+    "conda-forge::matplotlib>=3.7,<4" "conda-forge::biopython>=1.80,<2"
 ```
 
 For a bit-for-bit reproduction of the environment the reference outputs were generated in, use the
