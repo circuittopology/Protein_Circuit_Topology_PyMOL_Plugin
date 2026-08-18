@@ -1,6 +1,6 @@
 # Protein Circuit Topology Plugin - Complete API Documentation
 
-**Total Callable Entry Points:** 172
+**Total Callable Entry Points:** 177
 **Python Files With Callables:** 41
 
 ## Table of Contents
@@ -8,8 +8,8 @@
 2. [Plotting Functions](#plotting-functions) (8 functions)
 3. [Importing Functions](#importing-functions) (2 functions)
 4. [Exporting Functions](#exporting-functions) (3 functions)
-5. [Analysis Functions](#analysis-functions) (11 functions)
-6. [Utility Functions](#utility-functions) (61 functions)
+5. [Analysis Functions](#analysis-functions) (14 functions)
+6. [Utility Functions](#utility-functions) (63 functions)
 7. [GUI Functions](#gui-functions) (67 functions)
 8. [Initialization Functions](#initialization-functions) (14 functions)
 
@@ -175,11 +175,29 @@ Toggles the enabled state of the frame selector and run button.
 
 Delete PyMOL objects/selections, ignoring names that do not exist.
 
+### `_analyse_chains(target_obj, contact_type, vals, state)`
+
+**Module:** `analysis/visualization.py`
+
+Run the circuit topology analysis for every chain of a single-state object.
+
+### `_shared_bounds(analyses)`
+
+**Module:** `analysis/visualization.py`
+
+One set of bucket bounds covering every chain and frame, so colours are comparable.
+
+### `_apply_colours(analyses, contact_type, bounds)`
+
+**Module:** `analysis/visualization.py`
+
+Paint each analysed chain against the shared scale.
+
 ### `_color_chains_by_topology(target_obj, contact_type, vals, state, *, scale_bar=True)`
 
 **Module:** `analysis/visualization.py`
 
-Colors each chain of a single-state object by its circuit topology.
+Analyse and colour every chain of a single-state object against one shared scale.
 
 ### `_color_every_state(state_objs, contact_type, vals, split_prefix)`
 
@@ -405,17 +423,29 @@ Updates the residue range spinbox based on the currently selected chain.
 
 Per-residue participation in one class of contact-contact relation.
 
-### `color_by_topology(molecule_name, topology_vector, numbering, topology_type, value_range=None)`
+### `bucket_bounds(topology_vector, n_buckets=BUCKETS)`
 
 **Module:** `utils/topology.py`
 
-Colour a PyMOL object by a topology vector
+Upper bounds of the colour buckets, taken from the quantiles of the non-zero values.
 
-### `make_scale_bar(topo_obj, topology_type, color_name, min_val, max_val)`
+### `_shade(topology_type, level, of)`
 
 **Module:** `utils/topology.py`
 
-Put a labelled colour bar in the viewer so the numbers behind the colours are visible.
+Register and name the colour for one bucket, blended from white towards the hue.
+
+### `color_by_topology(molecule_name, topology_vector, numbering, topology_type, bounds=None)`
+
+**Module:** `utils/topology.py`
+
+Colour a PyMOL object by a topology vector, in discrete levels.
+
+### `make_scale_bar(topo_obj, topology_type, bounds)`
+
+**Module:** `utils/topology.py`
+
+Put a stepped, labelled colour bar in the viewer so the numbers behind the colours show.
 
 ### `_refresh_objects(self)`
 
@@ -1039,4 +1069,4 @@ Install plugin dependencies into PyMOL's own conda environment.
 
 Register the plugin's core functions as PyMOL commands.
 
-*Last Updated: August 17, 2026*
+*Last Updated: August 18, 2026*

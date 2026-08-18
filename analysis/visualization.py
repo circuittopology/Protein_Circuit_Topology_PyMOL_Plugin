@@ -1,15 +1,20 @@
 import logging
 from typing import Any
 
+import numpy as np
 from pymol import cmd
 from PyQt5.QtWidgets import QMessageBox
 
 from functions.calculating.get_cmap import get_cmap
 from functions.calculating.get_matrix import get_matrix
 from functions.importing.retrieve_chain import retrieve_chain
-from functions.plots._palette import PYMOL_CONTACT_COLORS
 from utils.helpers import temp_pdb_export
-from utils.topology import color_by_topology, get_topology_vector, make_scale_bar
+from utils.topology import (
+    bucket_bounds,
+    color_by_topology,
+    get_topology_vector,
+    make_scale_bar,
+)
 from utils.validation import (
     chain_selection,
     count_object_states,
@@ -32,28 +37,30 @@ def _safe_delete(*names: str) -> None:
             logger.debug("Cleanup delete failed for %s", name, exc_info=True)
 
 
-def _color_chains_by_topology(
-    target_obj: str, contact_type: str, vals: dict[str, Any], state: int, *, scale_bar: bool = True,
-) -> tuple[int, tuple[float, float] | None]:
+def _analyse_chains(
+    target_obj: str, contact_type: str, vals: dict[str, Any], state: int,
+) -> list[tuple[str, Any, Any]]:
     """
-    Colors each chain of a single-state object by its circuit topology.
+    Run the circuit topology analysis for every chain of a single-state object.
+
+    Kept separate from the colouring so that every chain - and every frame of a trajectory -
+    can be measured first and then coloured against one shared scale.
 
     Args:
-        target_obj (str): Name of the PyMOL object to color.
+        target_obj (str): Name of the PyMOL object to analyse.
         contact_type (str): The type of contact to visualize ('P', 'S', 'X').
         vals (dict): Visualization parameters from ``get_vis_vals``.
         state (int): The coordinate state to export and analyze.
 
     Returns:
-        (chains coloured, the (low, high) range spanning them) - the range is None when nothing
-        was coloured.
+        (chain selection, residue numbering, topology vector) for each chain that produced
+        contacts. Chains that produced none are skipped, with a warning.
     """
     vis_dist = vals["cutoff_distance"]
     vis_numcontacts = vals["cutoff_numcontacts"]
     vis_neighbour = vals["exclude_neighbour"]
 
-    colored = 0
-    low = high = None
+    analyses: list[tuple[str, Any, Any]] = []
     for chain_id in get_object_chains(target_obj):
         current_selection = chain_selection(target_obj, chain_id)
         if not selection_has_atoms(current_selection):
@@ -77,52 +84,77 @@ def _color_chains_by_topology(
             logger.warning(
                 "Cannot create topology matrix for chain %s, so visualization for this chain cannot be performed!", chain_id)
             continue
-        logger.info("Coloring %s based on chain %s ...", target_obj, chain_id)
+        logger.info("Analysing %s, chain %s ...", target_obj, chain_id)
         top_vec = get_topology_vector(mat=mat, index=idx, topology_type=contact_type, numbering=numbering)
         if top_vec is None:
             logger.warning("Invalid contact type for chain %s. Skipping visualization...", chain_id)
             continue
-        used = color_by_topology(
-            molecule_name=current_selection,
-            topology_vector=top_vec,
+        analyses.append((current_selection, numbering, top_vec))
+
+    return analyses
+
+
+def _shared_bounds(analyses: list[tuple[str, Any, Any]]) -> list[float]:
+    """One set of bucket bounds covering every chain and frame, so colours are comparable."""
+    if not analyses:
+        return []
+    return bucket_bounds(np.concatenate([vector for _, _, vector in analyses]))
+
+
+def _apply_colours(
+    analyses: list[tuple[str, Any, Any]], contact_type: str, bounds: list[float],
+) -> None:
+    """Paint each analysed chain against the shared scale."""
+    for selection, numbering, vector in analyses:
+        color_by_topology(
+            molecule_name=selection,
+            topology_vector=vector,
             numbering=numbering,
             topology_type=contact_type,
+            bounds=bounds,
         )
-        if used is not None:
-            low = used[0] if low is None else min(low, used[0])
-            high = used[1] if high is None else max(high, used[1])
-        colored += 1
 
-    if scale_bar and low is not None:
-        make_scale_bar(target_obj, contact_type, PYMOL_CONTACT_COLORS[contact_type], low, high)
-    return colored, (None if low is None else (low, high))
+
+def _color_chains_by_topology(
+    target_obj: str, contact_type: str, vals: dict[str, Any], state: int, *, scale_bar: bool = True,
+) -> tuple[int, list[float]]:
+    """
+    Analyse and colour every chain of a single-state object against one shared scale.
+
+    Returns:
+        (chains coloured, the bucket bounds used).
+    """
+    analyses = _analyse_chains(target_obj, contact_type, vals, state)
+    bounds = _shared_bounds(analyses)
+    _apply_colours(analyses, contact_type, bounds)
+
+    if scale_bar and bounds:
+        make_scale_bar(target_obj, contact_type, bounds)
+    return len(analyses), bounds
 
 
 def _color_every_state(
     state_objs: list[str], contact_type: str, vals: dict[str, Any], split_prefix: str,
-) -> tuple[int, tuple[float, float] | None]:
+) -> tuple[int, list[float]]:
     """Colour each per-state object, quietly and without repainting the scene N times."""
     cmd.disable(f"{split_prefix}*")
     cmd.set("suspend_updates", 1)
-    colored_states = 0
-    overall: tuple[float, float] | None = None
+    per_state: list[list[tuple[str, Any, Any]]] = []
     try:
         for state_obj in state_objs:
             try:
-                count, used = _color_chains_by_topology(
-                    state_obj, contact_type, vals, state=1, scale_bar=False,
-                )
-                if count > 0:
-                    colored_states += 1
-                if used is not None:
-                    overall = used if overall is None else (
-                        min(overall[0], used[0]), max(overall[1], used[1]),
-                    )
+                per_state.append(_analyse_chains(state_obj, contact_type, vals, state=1))
             except Exception:  # noqa: PERF203
-                logger.exception("Failed to color state object %s; skipping it.", state_obj)
+                logger.exception("Failed to analyse state object %s; skipping it.", state_obj)
+                per_state.append([])
+
+        bounds = _shared_bounds([one for analyses in per_state for one in analyses])
+        for analyses in per_state:
+            _apply_colours(analyses, contact_type, bounds)
     finally:
         cmd.set("suspend_updates", 0)
-    return colored_states, overall
+
+    return sum(1 for analyses in per_state if analyses), bounds
 
 
 def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals: dict[str, Any], n_states: int) -> None:
@@ -173,7 +205,7 @@ def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals:
         QMessageBox.warning(self, "Error", "Splitting the trajectory produced no per-state objects.")
         return
 
-    colored_states, overall = _color_every_state(state_objs, contact_type, vals, split_prefix)
+    colored_states, bounds = _color_every_state(state_objs, contact_type, vals, split_prefix)
 
     if colored_states == 0:
         _safe_delete(f"{split_prefix}*")
@@ -206,8 +238,8 @@ def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals:
         return
 
     _safe_delete(f"{split_prefix}*")
-    if overall is not None:
-        make_scale_bar(result_obj, contact_type, PYMOL_CONTACT_COLORS[contact_type], *overall)
+    if bounds:
+        make_scale_bar(result_obj, contact_type, bounds)
     cmd.disable(selected_obj)
     cmd.set("all_states", 0)
     cmd.frame(1)
