@@ -1,6 +1,6 @@
 # Protein Circuit Topology Plugin - Complete API Documentation
 
-**Total Callable Entry Points:** 177
+**Total Callable Entry Points:** 179
 **Python Files With Callables:** 41
 
 ## Table of Contents
@@ -9,7 +9,7 @@
 3. [Importing Functions](#importing-functions) (2 functions)
 4. [Exporting Functions](#exporting-functions) (3 functions)
 5. [Analysis Functions](#analysis-functions) (14 functions)
-6. [Utility Functions](#utility-functions) (63 functions)
+6. [Utility Functions](#utility-functions) (65 functions)
 7. [GUI Functions](#gui-functions) (67 functions)
 8. [Initialization Functions](#initialization-functions) (14 functions)
 
@@ -429,11 +429,23 @@ Per-residue participation in one class of contact-contact relation.
 
 Upper bounds of the colour buckets, taken from the quantiles of the non-zero values.
 
-### `_shade(topology_type, level, of)`
+### `register_shades()`
 
 **Module:** `utils/topology.py`
 
-Register and name the colour for one bucket, blended from white towards the hue.
+Define every shade colour, blended from white towards each contact-type hue (once per session).
+
+### `_shade_levels(n_bounds)`
+
+**Module:** `utils/topology.py`
+
+Pick `n_bounds` shades spread across the registered range, so the top is always full.
+
+### `_shade_fraction(level, of)`
+
+**Module:** `utils/topology.py`
+
+How far towards the hue a given level sits. Level 0 is white; the rest start at MIN_SHADE.
 
 ### `color_by_topology(molecule_name, topology_vector, numbering, topology_type, bounds=None)`
 

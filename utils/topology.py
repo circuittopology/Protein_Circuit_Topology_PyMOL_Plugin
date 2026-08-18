@@ -81,15 +81,27 @@ def bucket_bounds(topology_vector: np.ndarray, n_buckets: int = BUCKETS) -> list
     return sorted(set(bounds))
 
 
-def _shade(topology_type: str, level: int, of: int) -> str:
-    """Register and name the colour for one bucket, blended from white towards the hue."""
-    base = PYMOL_CONTACT_COLORS[topology_type]
-    fraction = MIN_SHADE + (1.0 - MIN_SHADE) * (level / max(of - 1, 1))
-    rgb = np.asarray(to_rgb(VIEWER_CONTACT_COLORS[topology_type]))
-    name = f"{base}_{level}"
-    cmd.set_color(name, (1.0 - fraction * (1.0 - rgb)).tolist())
+def register_shades() -> None:
+    """Define every shade colour, blended from white towards each contact-type hue (once per session)."""
+    for topology_type, hue in VIEWER_CONTACT_COLORS.items():
+        rgb = np.asarray(to_rgb(hue))
+        for level in range(BUCKETS):
+            fraction = MIN_SHADE + (1.0 - MIN_SHADE) * (level / max(BUCKETS - 1, 1))
+            cmd.set_color(f"{PYMOL_CONTACT_COLORS[topology_type]}{level}", (1.0 - fraction * (1.0 - rgb)).tolist())
 
-    return name
+
+def _shade_levels(n_bounds: int) -> list[int]:
+    """Pick `n_bounds` shades spread across the registered range, so the top is always full."""
+    if n_bounds <= 1:
+        return [BUCKETS - 1]
+    return [round(i * (BUCKETS - 1) / (n_bounds - 1)) for i in range(n_bounds)]
+
+
+def _shade_fraction(level: int, of: int) -> float:
+    """How far towards the hue a given level sits. Level 0 is white; the rest start at MIN_SHADE."""
+    if level <= 0:
+        return 0.0
+    return MIN_SHADE + (1.0 - MIN_SHADE) * ((level - 1) / max(of - 1, 1))
 
 
 def color_by_topology(
@@ -121,48 +133,58 @@ def color_by_topology(
     if bounds is None:
         bounds = bucket_bounds(topology_vector)
 
-    residual_values = {str(res): float(val) for res, val in zip(numbering, topology_vector, strict=True)}
-    scope = f"({molecule_name}) and polymer"
-    cmd.alter(scope, "b = residual_values.get(str(resi), 0.0)", space={"residual_values": residual_values})
+    scope = f"{molecule_name} and polymer"
 
-    cmd.color("white", scope)
-
-    low = 0.0
-    for level, high in enumerate(bounds):
-        name = _shade(topology_type, level, len(bounds))
-        limit = "" if level == len(bounds) - 1 else f" and b < {high + 0.5}"
-        cmd.color(name, f"({scope}) and b > {low}{limit}")
-        low = high
-
-    if bounds:
-        logger.info(
-            "Coloured %s by %s topology in %d levels, bounds %s (0 stays white, top is %s).",
-            molecule_name, topology_type, len(bounds),
-            [int(b) for b in bounds], VIEWER_CONTACT_COLORS[topology_type],
-        )
-    else:
+    if not bounds:
+        cmd.color("white", scope)
         logger.info("No %s relations anywhere in %s; left white.", topology_type, molecule_name)
+        return bounds
+
+    hue = PYMOL_CONTACT_COLORS[topology_type]
+    cmd.set_color(hue, to_rgb(VIEWER_CONTACT_COLORS[topology_type]))
+
+    values = np.asarray(topology_vector, dtype=float)
+    level = np.searchsorted(np.asarray(bounds, dtype=float), values, side="left") + 1
+    level = np.where(values > 0, np.minimum(level, len(bounds)), 0)
+    shade = [_shade_fraction(int(lv), len(bounds)) for lv in level]
+    per_residue = {
+        str(res): (float(count), float(frac))
+        for res, count, frac in zip(numbering, values, shade, strict=True)
+    }
+    cmd.alter(scope, "b, q = per_residue.get(str(resi), (0.0, 0.0))",
+              space={"per_residue": per_residue})
+    cmd.spectrum("q", f"white_{hue}", selection=scope, minimum=0.0, maximum=1.0)
+
+    logger.info(
+        "Coloured %s by %s topology in %d levels, bounds %s.",
+        molecule_name, topology_type, len(bounds), [int(b) for b in bounds],
+    )
 
     return bounds
 
 
 def make_scale_bar(topo_obj: str, topology_type: str, bounds: list[float]) -> str | None:
-    """Put a stepped, labelled colour bar in the viewer so the numbers behind the colours show."""
+    """
+    Put a stepped, labelled colour bar in the viewer so the numbers behind the colours show.
+
+    Stepped because the colouring is, so what the legend shows is what the structure got.
+    """
     if not bounds:
         return None
 
-    ramp_name = f"{topo_obj}_{topology_type}_scale"
+    register_shades()
+    ramp_name = f"{topo_obj}_scale"
     stops: list[float] = [0.0]
     colours: list[str] = ["white"]
     low = 0.0
-    for level, high in enumerate(bounds):
-        name = f"{PYMOL_CONTACT_COLORS[topology_type]}_{level}"
+
+    for level, high in zip(_shade_levels(len(bounds)), bounds, strict=True):
+        name = f"{PYMOL_CONTACT_COLORS[topology_type]}{level}"
         stops += [low + 1e-3, float(high)]
         colours += [name, name]
         low = float(high)
 
     try:
-        cmd.delete(ramp_name)
         cmd.ramp_new(ramp_name, topo_obj, stops, colours)
     except Exception:
         logger.debug("Could not create the scale bar %s", ramp_name, exc_info=True)

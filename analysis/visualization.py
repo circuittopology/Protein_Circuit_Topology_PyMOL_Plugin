@@ -186,7 +186,7 @@ def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals:
 
     result_obj = f"{selected_obj}_topo"
     split_prefix = f"{selected_obj}_ct_"
-    _safe_delete(f"{split_prefix}*", result_obj)
+    _safe_delete(f"{split_prefix}*", f"{result_obj}_scale", result_obj)
     before = set(cmd.get_object_list())
 
     polymer_src = f"{selected_obj}_polymer_src"
@@ -222,7 +222,7 @@ def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals:
             raise RuntimeError(msg)  # noqa: TRY301
     except Exception:
         logger.exception("join_states failed; falling back to coloring the current state only.")
-        _safe_delete(result_obj, f"{split_prefix}*")
+        _safe_delete(f"{result_obj}_scale", result_obj, f"{split_prefix}*")
         QMessageBox.warning(
             self, "Falling back to current state",
             (
@@ -283,12 +283,12 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
         return
 
     result_obj = f"{selected_obj}_topo"
-    _safe_delete(result_obj)
     try:
-        cmd.create(result_obj, polymer_selection(selected_obj))
         if not object_exists(result_obj):
-            msg = f"PyMOL did not create the copy '{result_obj}'"
-            raise RuntimeError(msg)  # noqa: TRY301
+            cmd.create(result_obj, polymer_selection(selected_obj))
+            if not object_exists(result_obj):
+                msg = f"PyMOL did not create the copy '{result_obj}'"
+                raise RuntimeError(msg)  # noqa: TRY301
         _color_chains_by_topology(result_obj, contact_type, vals, state=cmd.get_state())
     except Exception as e:
         logger.exception("Visualization failed for %s", selected_obj)
