@@ -1,6 +1,6 @@
 from typing import Any
 
-from utils.config import CONTACT_MAP
+from utils.config import CONTACT_MAP, ENERGY_FILTER_MODES, LENGTH_FILTER_MODES
 
 
 def get_vis_vals(self: Any) -> dict[str, Any]:
@@ -77,8 +77,8 @@ def get_multiple_values(self: Any) -> dict[str, Any]:
     """
     len_filtering = self.checkbox_length_filtering.isChecked()
     energy_filtering = self.checkbox_energy_filtering.isChecked()
-    len_dropdown = self.dropdown_length_filter_mode.currentText()
-    energy_dropdown = self.dropdown_energy_mode.currentText()
+    len_dropdown = LENGTH_FILTER_MODES.get(self.dropdown_length_filter_mode.currentText())
+    energy_dropdown = ENERGY_FILTER_MODES.get(self.dropdown_energy_mode.currentText())
     return {
         "directory": getattr(self, "selected_input_dir_multi", None),
         "traj_directory": getattr(self, "selected_traj_dir_multi", None),

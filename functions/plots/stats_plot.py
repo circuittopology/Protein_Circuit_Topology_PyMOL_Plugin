@@ -12,7 +12,8 @@ import numpy as np
 
 from functions.plots._display import show
 
-_contact_count = 3
+SINGLE_CHAIN_LABELS = ("Parallel", "Series", "Cross")
+MULTI_CHAIN_LABELS = ("Parallel", "Series", "Cross", "I2", "I3", "I4", "T2", "T3", "L")
 
 def stats_plot(entangled: np.ndarray, psx: Sequence[float], protid: str) -> None:
     """
@@ -21,24 +22,24 @@ def stats_plot(entangled: np.ndarray, psx: Sequence[float], protid: str) -> None
 
     Args:
         entangled (numpy.ndarray): Array of entangled contact fractions.
-        psx (Sequence[float]): List of contact type counts (P, S, X, etc.).
+        psx (Sequence[float]): A statistics row as returned by get_matrix.
         protid (str): Protein identifier.
     """
-    psx = psx[1:]
+    counts = list(psx[1:])
+    if len(counts) == len(MULTI_CHAIN_LABELS):
+        labels = MULTI_CHAIN_LABELS
+    else:
+        counts = counts[:len(SINGLE_CHAIN_LABELS)]
+        labels = SINGLE_CHAIN_LABELS[:len(counts)]
+
     fig,axes= plt.subplots(1,2)
     ax1, ax2 = axes
     ax1.plot(entangled)
-    ax2.pie(psx,autopct = autopct_funct, pctdistance=1.25)
+    ax2.pie(counts,autopct = autopct_funct, pctdistance=1.25)
     ax1.set_xlabel("Distance from diagonal")
     ax1.set_ylabel("Fraction entangled")
     fig.suptitle(protid)
-    base_labels = ["Parallel","Series","Cross"]
-    if len(psx) > _contact_count:
-        extra_labels = ["I2", "I3", "I4", "T2", "T3", "L"]
-        legend_labels = base_labels + extra_labels
-    else:
-        legend_labels = base_labels[:len(psx)]
-    ax2.legend(legend_labels, bbox_to_anchor=(.5, -0.5, 0.5, 0.5))
+    ax2.legend(labels, bbox_to_anchor=(.5, -0.5, 0.5, 0.5))
     show(fig)
 
 def autopct_funct(pct: float) -> str:

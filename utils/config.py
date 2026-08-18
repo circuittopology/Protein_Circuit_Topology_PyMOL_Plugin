@@ -35,3 +35,14 @@ CONTACT_MAP = {
     "Inverse parallel (IP)": "IP",
     "Cross (X)": "X",
 }
+
+LENGTH_FILTER_MODES = {
+    "equality (=)": "=",
+    "less than (<)": "<",
+    "greater than (>)": ">",
+}
+
+ENERGY_FILTER_MODES = {
+    "Attractive / stabilising (+)": "+",
+    "Repulsive / destabilising (−)": "-",  # noqa: RUF001
+}

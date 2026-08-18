@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from utils.config import ENERGY_FILTER_MODES, LENGTH_FILTER_MODES
 from utils.helpers import make_info_button, make_param_row
 
 
@@ -201,7 +202,7 @@ def _build_multi_filters_group(self: Any) -> QGroupBox:
     self.filtering_distance_spin.setRange(0, 1000)
     self.filtering_distance_spin.setValue(0)
     self.dropdown_length_filter_mode = QComboBox()
-    self.dropdown_length_filter_mode.addItems(["equality (=)", "less than (<)", "greater than (>)"])
+    self.dropdown_length_filter_mode.addItems(LENGTH_FILTER_MODES)
     self.filtering_distance_label.hide()
     self.filtering_distance_spin.hide()
     self.dropdown_length_filter_mode.hide()
@@ -227,7 +228,7 @@ def _build_multi_filters_group(self: Any) -> QGroupBox:
 
     self.checkbox_energy_filtering = QCheckBox("Enable energy filtering")
     self.dropdown_energy_mode = QComboBox()
-    self.dropdown_energy_mode.addItems(["Attractive / stabilising (+)", "Repulsive / destabilising (−)"])  # noqa: RUF001
+    self.dropdown_energy_mode.addItems(ENERGY_FILTER_MODES)
     self.dropdown_energy_mode.hide()
     energy_row = QHBoxLayout()
     energy_row.addWidget(self.checkbox_energy_filtering)
