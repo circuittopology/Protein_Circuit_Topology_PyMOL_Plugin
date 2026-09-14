@@ -141,7 +141,11 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
 
         if len(traj_frame_chains) > 1:
             frame_level = "model"
-            logger.info("This trajectory object has multiple chains. Performing multi-chain CT analysis...")
+            logger.info(
+                "%s has %d chains. Whole-model analysis: inter-chain contact pairs are included and relations "
+                "involving contact pairs of different chains use the I/T/L vocabulary.",
+                frame_label, len(traj_frame_chains),
+            )
         else:
             frame_level = "chain"
 
@@ -151,6 +155,7 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
             cutoff_distance=frame_dist,
             cutoff_numcontacts=frame_numcontacts,
             exclude_neighbour=frame_neighbour,
+            include_hydrogens=vals["include_hydrogens"],
         )
         if idx.size == 0:
             QMessageBox.warning(self, "Warning", "No residue contacts were found for the selected frame.")
@@ -170,8 +175,8 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
                 matrix_plot_model(mat=mat, protid=protid)
 
         if stats_plot_enabled:
-            entangled = get_stats(mat=mat)
-            stats_plot(entangled, frame_psx, protid)
+            px_fraction = get_stats(mat=mat)
+            stats_plot(px_fraction, frame_psx, protid)
 
         cmap3_exports = []
         if export_cmap3_enabled:
@@ -187,6 +192,7 @@ def run_single_frame_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR
                     cutoff_distance=frame_dist,
                     cutoff_numcontacts=frame_numcontacts,
                     exclude_neighbour=frame_neighbour,
+                    include_hydrogens=vals["include_hydrogens"],
                 )
                 if temp_idx.size == 0:
                     logger.warning("No contacts found for frame chain %s; skipping contact-map export", c)

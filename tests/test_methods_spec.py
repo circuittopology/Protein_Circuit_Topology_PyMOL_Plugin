@@ -1,5 +1,5 @@
 """
-Executable version of documentation/METHODS.md.
+Executable version of the "Methods specification" section of documentation/CircuitTopologyManual.pdf.
 
 Several of these tests pin behaviour that is IMPERFECT and inherited 1:1 from the reference ProteinCT
 implementation. Deliberately not "fixed": the plugin's outputs must agree with ProteinCT's, thus changing
@@ -7,6 +7,7 @@ the arithmetic would break it. The plugin's contribution here is that affected s
 and reported instead of being silently mishandled.
 """
 from itertools import pairwise
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -14,6 +15,9 @@ from conftest import INPUTS, PARAMS, write_gapped_pdb
 
 from functions.calculating.get_cmap import get_cmap
 from functions.importing.retrieve_chain import retrieve_chain, warn_about_numbering
+
+# The only structure in the repository with deposited hydrogens (NMR entry, upstream submodule).
+HYDROGEN_PDB = Path(__file__).parent / "upstream" / "input_files" / "pdb" / "1aa7.pdb"
 
 
 def _chain(path):
@@ -27,14 +31,26 @@ def test_waters_and_hetero_residues_are_dropped_at_parse_time():
     assert all(res.id[0] == " " for res in chain), "a hetero-flagged residue survived"
 
 
-def test_hydrogens_are_not_filtered_out():
-    """Contact detection uses ALL atoms present, not heavy atoms only."""
-    import inspect
+@pytest.mark.skipif(not HYDROGEN_PDB.is_file(), reason="upstream submodule not initialised")
+def test_hydrogens_are_ignored_by_default_and_counted_on_request():
+    """Contact detection uses heavy atoms; hydrogens only count with include_hydrogens=True."""
+    chain, _ = _chain(HYDROGEN_PDB)
+    assert any(atom.element == "H" for atom in chain.get_atoms()), "fixture lost its hydrogens"
 
-    source = inspect.getsource(get_cmap)
-    assert "element" not in source and "hydrogen" not in source.lower(), (
-        "get_cmap now filters by element; METHODS.md says it does not"
-    )
+    heavy, _, _, _ = get_cmap(chain, level="chain", **PARAMS)
+    every, _, _, _ = get_cmap(chain, level="chain", include_hydrogens=True, **PARAMS)
+
+    assert len(heavy) < len(every), "counting hydrogens should add contacts on 1AA7"
+    assert {tuple(c) for c in heavy} <= {tuple(c) for c in every}, "hydrogens should only ever add contacts"
+
+
+def test_hydrogen_free_structures_are_unaffected_by_the_hydrogen_setting():
+    """On deposited X-ray structures without hydrogens both settings are identical."""
+    for stem in ("1crn", "1ubq", "1aki"):
+        chain, _ = _chain(INPUTS / f"{stem}.pdb")
+        heavy, _, _, _ = get_cmap(chain, level="chain", **PARAMS)
+        every, _, _, _ = get_cmap(chain, level="chain", include_hydrogens=True, **PARAMS)
+        assert np.array_equal(heavy, every), f"{stem}: hydrogen setting changed a hydrogen-free result"
 
 
 def test_the_contact_criterion_counts_atom_pairs_per_residue_pair():
@@ -71,7 +87,7 @@ def test_a_chain_break_is_reported(tmp_path):
 
 def test_a_clean_structure_reports_nothing():
     """No false alarms on an ordinary complete structure."""
-    for stem in ("1crn", "1ubq"):
+    for stem in ("1crn", "1ubq", "1aki"):
         chain, protid = _chain(INPUTS / f"{stem}.pdb")
         assert warn_about_numbering(chain, protid) == [], f"{stem} triggered a spurious warning"
 
@@ -82,7 +98,7 @@ def test_protid_carries_the_chain_id_at_chain_level():
     assert chain.id == "A"
 
 
-@pytest.mark.parametrize("stem", ["1crn", "1ubq"])
+@pytest.mark.parametrize("stem", ["1crn", "1ubq", "1aki"])
 def test_chain_level_returns_two_column_contacts(stem):
     """Single-chain analysis yields (residue_i, residue_j); model level adds chain columns."""
     chain, _ = _chain(INPUTS / f"{stem}.pdb")

@@ -18,5 +18,5 @@ def report_empty_local_result(idx, mat, residue_id, residue_number, contact) -> 
     return notify(
         f"Circuit Topology: residue {residue_number} takes part in {rows.size} contact(s) and has no "
         f"{contact} relations, so the local topology plot will not highlight anything. Try a "
-        f"different contact type, or a larger cut-off distance.",
+        f"different relation type, or a larger cut-off distance.",
     )

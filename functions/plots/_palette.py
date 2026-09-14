@@ -7,9 +7,9 @@ SINGLE_CHAIN_COLORS = (
     "#2a78d6",  # 2  P      parallel
     "#86b6ef",  # 3  P-1    inverse parallel
     "#0b0b0b",  # 4  X      cross
-    "#eb6834",  # 5  CP     concurrent parallel
-    "#f59a6b",  # 6  CP-1   concurrent inverse parallel
-    "#9085e9",  # 7  CS     concurrent series
+    "#eb6834",  # 5  CP     concerted parallel
+    "#f59a6b",  # 6  CP-1   concerted inverse parallel
+    "#9085e9",  # 7  CS     concerted series
 )
 SINGLE_CHAIN_LABELS = ("-", "S", "P", "P-1", "X", "CP", "CP-1", "CS")
 

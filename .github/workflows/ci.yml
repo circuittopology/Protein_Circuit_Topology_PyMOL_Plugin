@@ -95,6 +95,7 @@ jobs:
         run: |
           pymol -cqy reproduce.pml
           test -f reproduce_out/csv/psxresults.csv
+          test -f reproduce_out/figures/paper/fig5_cartoon_1aki_S.png
 
       - name: Upload the reproduction output
         if: always()

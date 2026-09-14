@@ -12,7 +12,16 @@ NON_POLYMER_NOTE = "Waters, ions and ligands are excluded automatically."
 NON_POLYMER_INFO = (
     "Circuit Topology analyses polymer atoms only. Waters, ions, ligands and other non-polymer "
     "atoms are excluded automatically at analysis time, and nucleic-acid and UNK residues are "
-    "dropped when the chain is parsed."
+    "dropped when the chain is parsed. Hydrogen atoms are ignored by default so that X-ray, NMR "
+    "and MD inputs are comparable; tick 'Count hydrogen atoms' in the contact-map parameters for "
+    "ProteinCT-identical results on hydrogen-bearing files."
+)
+HYDROGEN_LABEL = "Count hydrogen atoms (ProteinCT-identical)"
+HYDROGEN_INFO = (
+    "Off (default): only heavy atoms enter the atom-atom contact criterion, so a model with "
+    "hydrogens gives the same contacts as the same model without them. "
+    "On: every atom present is counted, exactly as the reference ProteinCT implementation does. "
+    "Hydrogen-bearing files (NMR entries, MD frames) then yield more contacts."
 )
 LOCAL_CT_WARN = (
     "To use local Circuit Topology, please select the desired object from the dropdown menu first!"

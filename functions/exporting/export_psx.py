@@ -3,7 +3,7 @@ Created on Mon May 24 17:00:09 2021
 
 @author: DuaneM
 
-For exporting amount of PSX contacts to a csv file.
+For exporting the P, S, X relation counts to a csv file.
 also checks whether data came from model or single chain contact map
 """
 import logging
@@ -20,7 +20,7 @@ PSX_FILENAME = "psxresults.csv"
 
 def export_psx(psxlist: Sequence[Sequence[object]], output_dir: Path) -> None:
     """
-    Exports the counts of Parallel (P), Series (S), and Cross (X) contacts (and others) to a CSV file.
+    Exports the counts of Parallel (P), Series (S) and Cross (X) relations (and, for multi-chain models, I/T/L) to a CSV file.
 
     A batch run accumulates every input's row into one psxlist and calls this once, so a single
     output file is correct - there is nothing to disambiguate with a per-input name.

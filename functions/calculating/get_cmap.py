@@ -19,15 +19,33 @@ if TYPE_CHECKING:
     from Bio.PDB.Atom import Atom
     from Bio.PDB.Residue import Residue
 
+# Elements ignored by the default (heavy-atom) contact criterion.
+_HYDROGENS = {"H", "D"}
 
-def get_cmap(  # noqa: PLR0915
+
+def _atoms_for_search(atoms: "list[Atom]", include_hydrogens: bool) -> "list[Atom]":
+    """Heavy atoms only, unless the caller asked for ProteinCT-identical all-atom counting."""
+    if include_hydrogens:
+        return atoms
+    return [atom for atom in atoms if atom.element not in _HYDROGENS]
+
+
+def get_cmap(  # noqa: PLR0913, PLR0915, PLR0917
             chain: Chain | Model,
             level: str = "chain",
             cutoff_distance: float = 4.5,
             cutoff_numcontacts: int = 5,
-            exclude_neighbour: int = 3) -> tuple[np.ndarray, np.ndarray, str, list[str]]:
+            exclude_neighbour: int = 3,
+            include_hydrogens: bool = False) -> tuple[np.ndarray, np.ndarray, str, list[str]]:
     """
     Creates a residue-residue contact map (as a list of contacts) for a single chain or a whole model.
+
+    Two residues are in contact when at least `cutoff_numcontacts` atom-atom pairs lie within
+    `cutoff_distance`. Hydrogen atoms are ignored by default, so models with and without hydrogens
+    give the same contacts; `include_hydrogens=True` counts every atom present, which is what the
+    reference ProteinCT implementation does. At level 'model' the whole model is searched, so
+    inter-chain contact pairs are included, and the neighbour exclusion is applied on the
+    concatenated residue index (it therefore also spans a chain boundary).
 
     Args:
         chain (Bio.PDB.Chain.Chain or Bio.PDB.Model.Model): The chain or model object to analyze.
@@ -35,6 +53,7 @@ def get_cmap(  # noqa: PLR0915
         cutoff_distance (float, optional): Maximum distance (in Angstroms) between atoms to consider a contact. Defaults to 4.5.
         cutoff_numcontacts (int, optional): Minimum number of atomic contacts required to define a residue-residue contact. Defaults to 5.
         exclude_neighbour (int, optional): Minimum sequence separation (in residues) to consider a contact. Defaults to 3.
+        include_hydrogens (bool, optional): Count hydrogen (and deuterium) atoms in the atom-atom criterion. Defaults to False (heavy atoms only).
 
     Returns:
         tuple: A tuple containing:
@@ -46,7 +65,7 @@ def get_cmap(  # noqa: PLR0915
     if level == "chain":
 
         #Unpack chain object into atoms and residues
-        atom_list = cast("list[Atom]", Selection.unfold_entities(chain,"A"))
+        atom_list = _atoms_for_search(cast("list[Atom]", Selection.unfold_entities(chain,"A")), include_hydrogens)
         res_list = cast("list[Residue]", Selection.unfold_entities(chain,"R"))
 
         res_names, numbering = [], []
@@ -90,7 +109,8 @@ def get_cmap(  # noqa: PLR0915
     #same as single chain analysis but unpacks whole model instead of single chain
     if level == "model":
 
-        atom_list_model = cast("list[Atom]", Selection.unfold_entities(chain.get_parent(),"A"))
+        atom_list_model = _atoms_for_search(
+            cast("list[Atom]", Selection.unfold_entities(chain.get_parent(),"A")), include_hydrogens)
         res_list_model = cast("list[Residue]", Selection.unfold_entities(chain.get_parent(),"R"))
 
         ns = NeighborSearch(atom_list_model)

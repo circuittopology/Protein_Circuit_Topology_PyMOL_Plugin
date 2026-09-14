@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils.topology import get_topology_vector
+from utils.relations import get_relation_type_vector
 
 
 def get_folding_score(
@@ -11,8 +11,8 @@ def get_folding_score(
     """
     Calculate the folding score based on the given relations, using topology data.
 
-    The score is the sum of the mean per-residue densities for parallel,
-    series, and crossover contact types.
+    The score is the sum of the mean per-residue participation in Parallel,
+    Series and Cross relations.
 
     Args:
         mat (np.ndarray): The topological relationship matrix.
@@ -22,12 +22,12 @@ def get_folding_score(
     Returns:
         float: The calculated folding score.
     """
-    parallel_relations = get_topology_vector(mat, index, "P", numbering)
-    series_relations = get_topology_vector(mat, index, "S", numbering)
-    crossover_relations = get_topology_vector(mat, index, "X", numbering)
+    parallel_relations = get_relation_type_vector(mat, index, "P", numbering)
+    series_relations = get_relation_type_vector(mat, index, "S", numbering)
+    cross_relations = get_relation_type_vector(mat, index, "X", numbering)
 
     avg_parallel = np.mean(parallel_relations) if len(parallel_relations) > 0 else 0.0
     avg_series = np.mean(series_relations) if len(series_relations) > 0 else 0.0
-    avg_crossover = np.mean(crossover_relations) if len(crossover_relations) > 0 else 0.0
+    avg_cross = np.mean(cross_relations) if len(cross_relations) > 0 else 0.0
 
-    return float(avg_parallel + avg_series + avg_crossover)
+    return float(avg_parallel + avg_series + avg_cross)

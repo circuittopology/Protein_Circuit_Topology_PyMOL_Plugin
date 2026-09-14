@@ -16,7 +16,7 @@ from conftest import (
     configure_single_file,
 )
 
-CASES = ["1crn", "1ubq"]
+CASES = ["1aki", "1crn", "1ubq"]
 
 
 def _load(cmd, stem: str) -> str:
@@ -118,7 +118,7 @@ def test_pymol_integration_commands(pymol_clean):
     from functions.calculating.get_matrix import get_matrix
     from functions.importing.retrieve_chain import retrieve_chain
     from utils.folding_score import get_folding_score
-    from utils.topology import color_by_topology, get_topology_vector
+    from utils.relations import color_by_relation, get_relation_type_vector
 
     obj = _load(pymol_clean, "1ubq")
     chain, protid = retrieve_chain(INPUTS / "1ubq.pdb")
@@ -126,20 +126,20 @@ def test_pymol_integration_commands(pymol_clean):
     mat, _psx, _ = get_matrix(idx, protid)
 
     for kind in ("P", "S", "X"):
-        vec = get_topology_vector(mat, idx, kind, numbering)
+        vec = get_relation_type_vector(mat, idx, kind, numbering)
         assert vec is not None, f"no topology vector for {kind}"
         assert len(vec) == len(numbering), f"{kind}: {len(vec)} values for {len(numbering)} residues"
         assert np.all(np.asarray(vec) >= 0)
 
-    assert get_topology_vector(mat, idx, "NOPE", numbering) is None
+    assert get_relation_type_vector(mat, idx, "NOPE", numbering) is None
 
     score = get_folding_score(mat, idx, numbering)
     assert isinstance(score, float)
     assert score > 0, "1UBQ should have a non-zero folding score"
 
-    vec = get_topology_vector(mat, idx, "X", numbering)
+    vec = get_relation_type_vector(mat, idx, "X", numbering)
     assert vec is not None
-    color_by_topology(molecule_name=obj, topology_vector=vec, numbering=numbering, topology_type="X")
+    color_by_relation(molecule_name=obj, relation_vector=vec, numbering=numbering, relation_type="X")
     bfactors = []
     pymol_clean.iterate(obj, "bfactors.append(b)", space={"bfactors": bfactors})
     assert bfactors, "no atoms to read B-factors from"

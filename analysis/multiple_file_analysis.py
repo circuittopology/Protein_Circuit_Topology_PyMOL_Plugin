@@ -176,7 +176,11 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
 
             if len(multi_obj_chains) > 1:
                 multi_level = "model"
-                logger.info("The object %s has multiple chains. Performing multi-chain CT analysis...", multi_obj)
+                logger.info(
+                    "%s has %d chains. Whole-model analysis: inter-chain contact pairs are included and relations "
+                    "involving contact pairs of different chains use the I/T/L vocabulary.",
+                    multi_obj, len(multi_obj_chains),
+                )
             else:
                 multi_level = "chain"
 
@@ -186,6 +190,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                 cutoff_distance=cutoff_dist_multi,
                 cutoff_numcontacts=multi_num_contacts,
                 exclude_neighbour=multi_neighbours,
+                include_hydrogens=vals["include_hydrogens"],
             )
             if idx.size == 0:
                 skipped_count += 1
@@ -252,7 +257,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                 adj_psx.append({"L": psx_result[-1]})
                 psxlist.append(adj_psx)
 
-            entangled = get_stats(mat)
+            px_fraction = get_stats(mat)
 
             if multi_matrix_plot:
                 if multi_level == "chain":
@@ -264,7 +269,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                 circuit_plot(index=idx, protid=protid, numbering=numbering)
 
             if multi_stats_plot:
-                stats_plot(entangled, psx_result, protid)
+                stats_plot(px_fraction, psx_result, protid)
 
             if multi_export_cmap3:
                 if output_path is None:
@@ -281,6 +286,7 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                         cutoff_distance=cutoff_dist_multi,
                         cutoff_numcontacts=multi_num_contacts,
                         exclude_neighbour=multi_neighbours,
+                        include_hydrogens=vals["include_hydrogens"],
                     )
                     if temp_i.size == 0:
                         logger.warning("No contacts found for %s chain %s; skipping contact-map export", multi_obj, c)
@@ -317,16 +323,17 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
         if not p:
             QMessageBox.warning(self, "Warning", "No PSX results were available to plot.")
         else:
-            plt.rcParams.update({"font.size": 14})
-            time = range(len(p))
-            plt.plot(time, p, label="P", color=CONTACT_COLORS["P"], linewidth=1.5)
-            plt.plot(time, s, label="S", color=CONTACT_COLORS["S"], linewidth=1.5)
-            plt.plot(time, x, label="X", color=CONTACT_COLORS["X"], linewidth=1.5)
-            plt.xlabel("Frame #")
-            plt.ylabel("Number of contacts")
-            plt.legend()
-            plt.title(f"P,S,X contacts over {len(p)} frames")
-            plt.show()
+            with plt.rc_context({"font.size": 14}):
+                time = range(len(p))
+                plt.figure()
+                plt.plot(time, p, label="P", color=CONTACT_COLORS["P"], linewidth=1.5)
+                plt.plot(time, s, label="S", color=CONTACT_COLORS["S"], linewidth=1.5)
+                plt.plot(time, x, label="X", color=CONTACT_COLORS["X"], linewidth=1.5)
+                plt.xlabel("Frame #")
+                plt.ylabel("Number of relations")
+                plt.legend()
+                plt.title(f"P, S, X relations over {len(p)} frames")
+                plt.show()
 
     message = f"Processed {processed_count} of {number_of_files} files."
     if skipped_count:

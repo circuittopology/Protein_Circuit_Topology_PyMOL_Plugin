@@ -17,6 +17,7 @@ def get_vis_vals(self: Any) -> dict[str, Any]:
         "cutoff_distance": self.cutoff_distance_spin.value(),
         "cutoff_numcontacts": self.min_contacts_spin.value(),
         "exclude_neighbour": self.exclude_neighbor_spin.value(),
+        "include_hydrogens": self.checkbox_hydrogens.isChecked(),
     }
 
 def get_values(self: Any) -> dict[str, Any]:
@@ -34,6 +35,7 @@ def get_values(self: Any) -> dict[str, Any]:
         "cutoff_distance": self.cutoff_distance_spin.value(),
         "cutoff_numcontacts": self.min_contacts_spin.value(),
         "exclude_neighbour": self.exclude_neighbor_spin.value(),
+        "include_hydrogens": self.checkbox_hydrogens.isChecked(),
         "circuit_plot": self.checkbox_circuit_plot.isChecked(),
         "folding_score": self.checkbox_folding_score.isChecked(),
         "matrix_plot": self.checkbox_matrix_plot.isChecked(),
@@ -57,6 +59,7 @@ def get_local_values(self: Any) -> dict[str, Any]:
         "cutoff_distance": self.cutoff_distance_local.value(),
         "cutoff_numcontacts": self.min_contacts_local.value(),
         "exclude_neighbour": self.exclude_neighbor_local.value(),
+        "include_hydrogens": self.checkbox_hydrogens_local.isChecked(),
         "local_topology_plot": self.checkbox_local_ct_plot.isChecked(),
         "res_id": self.box_res_id.value(),
         "contact_type": contact_type,
@@ -87,6 +90,7 @@ def get_multiple_values(self: Any) -> dict[str, Any]:
         "cutoff_distance": self.cutoff_distance_multi.value(),
         "cutoff_numcontacts": self.min_contacts_multi.value(),
         "exclude_neighbour": self.exclude_neighbor_multi.value(),
+        "include_hydrogens": self.checkbox_hydrogens_multi.isChecked(),
         "circuit_plot": self.checkbox_circuit_multi.isChecked(),
         "matrix_plot": self.checkbox_matrix_multi.isChecked(),
         "stats_plot": self.checkbox_stats_multi.isChecked(),

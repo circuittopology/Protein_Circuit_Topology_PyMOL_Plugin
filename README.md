@@ -9,10 +9,11 @@ This repository contains a PyMOL plugin for analyzing protein circuit topology (
 - **User-friendly GUI** – An intuitive graphical interface that simplifies interaction with the underlying ProteinCT tool, removing the need for scripting.
 - **Full PyMOL integration** – Seamless interaction with PyMOL's API for loading, visualizing, and analyzing protein structures directly within PyMOL.
 - **Automatic dependency installation** – On first launch the plugin attempts to install its required Python packages automatically.
-- **Supported file formats** – Works with PDB, CIF, and XTC files.
+- **Supported file formats** – PDB/mmCIF structures and XTC, DCD, TRR or NC trajectories.
 - **Single & multi-file analysis** – Analyze individual structures, single frames, or batch-process multiple files at once.
-- **Visualization** - generate circuit and matrix plots, visualize CT contacts on PyMOL's objects.
-- **Export capabilities** – Export contact maps, matrices, and per-structure counts to common formats.
+- **Visualization** - generate circuit and matrix plots, and colour PyMOL objects by each residue's participation in Series (S), Parallel (P) and Cross (X) relations.
+- **Export capabilities** – Export contact maps, relation matrices, and per-structure P, S, X relation counts as CSV.
+- **Explicit contact criterion** – 4.5 Å, at least 5 atom-atom pairs, more than 3 residues apart, heavy atoms only by default; a "Count hydrogen atoms (ProteinCT-identical)" option reproduces the reference implementation on hydrogen-bearing files. Multi-chain objects are analysed as a whole model: inter-chain contact pairs are included and relations involving them use the I/T/L vocabulary (see the manual's Methods specification).
 
 ## Installation
 
@@ -90,8 +91,11 @@ conda create --name proteinct --file ci/conda-lock-<platform>.txt
 pymol -cqy reproduce.pml
 ```
 
-Runs the full pipeline on the bundled example structures and **compares every CSV it produces against
-the committed reference outputs** in `tests/data/expected/`, exiting non-zero if any number moved.
+Runs the full pipeline on the bundled example structures (1AKI, the lysozyme example of the paper; 1CRN;
+1UBQ), **compares every CSV it produces against the committed reference outputs** in `tests/data/expected/`,
+checks the CT folding scores, and writes the paper's figures (Figs. 3, 4, 5 and 7) with enlarged fonts to
+`reproduce_out/figures/paper/`. It exits non-zero if any number moved. See [REPRODUCING_GUIDE.md](REPRODUCING_GUIDE.md)
+for the Docker and conda routes.
 
 ## Performance
 Wall time, memory and trajectory disk usage, with the hardware stated:
@@ -111,10 +115,14 @@ If you use this plugin in your research, please cite the following article:
 >
 > Matīss Dimiņš, Alexander Bazba, Ádám Mogyorósi, Ella Kennon, Tomás Díaz Fiol, Leïla Aïkili Hagen, Vahid Sheikhassani, Vasily Akulov, Alireza Mashaghi\*
 
+The version described in the paper is release **v0.0.3**:
+<https://github.com/circuittopology/Protein_Circuit_Topology_PyMOL_Plugin/releases/tag/v0.0.3>
+(commit `<COMMIT_SHA>`; repository archive on Zenodo `<DOI_REPO_v0.0.3>`, release artefacts on Zenodo `<DOI_ARTEFACTS_v0.0.3>`).
+
 <details>
 <summary>Abstract</summary>
 
-Circuit Topology (CT) is a fundamental property of folded polymer chains and provides a unique and powerful topological framework for analysis of proteins, with applications in functional annotation, disease marker identification, protein engineering, and drug development. While an open-source Python-based implementation of the framework, called ProteinCT, exists, its usability is limited for researchers unfamiliar with scripting environments. Here, we present the ProteinCT tool as a plugin for the molecular visualization platform PyMOL, packaged together with a graphical user interface (GUI), easy automatic installation, and novel features developed through strong integration with PyMOL's application programming interface (API). Our plugin packs the existing ProteinCT tool and its features into a .zip plugin for PyMOL that can be easily imported and automatically installed. A clear and visually intuitive GUI is included as part of the plugin. Our solution aims to connect the underlying functionality of the ProteinCT tool with PyMOL. This will provide protein researchers a tool for analysing protein topology. By analysing a representative protein trajectory, it is verified that the original functionality of the ProteinCT tool is retained in this plugin; that the GUI is functional, easy to use, and visually clear; and that additional functionality has been seamlessly integrated with PyMOL's API, thus making protein circuit topology widely accessible to a broad range of users in structural biology and related fields.
+Circuit Topology (CT) provides a fundamental framework for analysing folded polymer chains, with applications in functional annotation, protein engineering and drug development. We present a protein CT analysis plugin for PyMOL v3.1.6.1 with a graphical user interface (GUI), automatic installation, and novel features developed through integration with PyMOL's application programming interface (API). The plugin integrates various previously developed CT methodologies for studying structured proteins and their complexes as well as the dynamics of disordered proteins. Analysis of a representative protein and a molecular dynamics trajectory demonstrates the plugin's three analysis modes and their outputs. The plugin reproduces the reference ProteinCT implementation exactly on the structures tested, and is distributed with a versioned release, a pinned environment and a one-command reproduction of every static result reported here.
 
 </details>
 

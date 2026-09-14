@@ -3,7 +3,8 @@ Created on Mon May 24 17:00:09 2021
 
 @author: DuaneM
 
-Function for calculating the percentage of entangled contacts further along the diagonal
+Function for calculating the fraction of Parallel and Cross (non-Series) relations along each
+diagonal of the relation matrix. ProteinCT calls this the "entangled" fraction.
 """
 import logging
 
@@ -17,26 +18,28 @@ _diag = 2
 
 def get_stats(mat: np.ndarray) -> np.ndarray:
     """
-    Calculates the percentage of entangled contacts (Parallel and Cross) further along the diagonal.
+    Calculates the fraction of Parallel and Cross (non-Series) relations on each diagonal of the
+    relation matrix, i.e. as a function of the distance between two contact pairs in the contact list.
+    This is the quantity ProteinCT calls the "entangled" fraction.
 
     Args:
         mat (numpy.ndarray): The topological relationship matrix.
 
     Returns:
-        numpy.ndarray: An array containing the percentage of entangled contacts for each diagonal.
+        numpy.ndarray: One value per diagonal, the fraction of P + X relations on it.
     """
     if mat.shape == (0,0):
         logger.error("Error - mat empty")
         return np.array([0])
-    #Calculates amount of overlapping(entangled), P and X, contacts across the diagonal
-    entangled = np.zeros([len(mat),1])
+    # One minus the share of Series-type relations (Series and concerted series) on each diagonal
+    px_fraction = np.zeros([len(mat),1])
     if mat.max() == _max_mat:
         for i in range(len(mat)-1):
             diag = np.diag(mat,k=i)
-            entangled[i] = 1 - (sum(diag == 1)+ sum(diag == _max_mat))/len(diag)
+            px_fraction[i] = 1 - (sum(diag == 1)+ sum(diag == _max_mat))/len(diag)
     else:
         for i in range(len(mat)-1):
             diag = np.diag(mat,k=i)
-            entangled[i] = 1 - (sum(diag == _diag)/len(diag))
+            px_fraction[i] = 1 - (sum(diag == _diag)/len(diag))
 
-    return entangled
+    return px_fraction
