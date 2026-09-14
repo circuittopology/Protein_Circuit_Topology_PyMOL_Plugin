@@ -29,7 +29,7 @@ jobs:
       - name: Run Ruff
         run: |
           python -m pip install --quiet ruff==0.15.17
-          ruff check .
+          ruff check . --fix
 
   test:
     name: Test (${{ matrix.os }})

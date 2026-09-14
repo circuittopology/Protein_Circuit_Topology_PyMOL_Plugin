@@ -30,7 +30,7 @@ def _atoms_for_search(atoms: "list[Atom]", include_hydrogens: bool) -> "list[Ato
     return [atom for atom in atoms if atom.element not in _HYDROGENS]
 
 
-def get_cmap(  # noqa: PLR0913, PLR0915, PLR0917
+def get_cmap(  # noqa: PLR0913, PLR0915
             chain: Chain | Model,
             level: str = "chain",
             cutoff_distance: float = 4.5,
