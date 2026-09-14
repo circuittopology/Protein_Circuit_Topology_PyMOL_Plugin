@@ -1,10 +1,10 @@
 # Protein Circuit Topology Plugin - Complete API Documentation
 
-**Total Callable Entry Points:** 179
+**Total Callable Entry Points:** 180
 **Python Files With Callables:** 41
 
 ## Table of Contents
-1. [Calculating Functions](#calculating-functions) (6 functions)
+1. [Calculating Functions](#calculating-functions) (7 functions)
 2. [Plotting Functions](#plotting-functions) (8 functions)
 3. [Importing Functions](#importing-functions) (2 functions)
 4. [Exporting Functions](#exporting-functions) (3 functions)
@@ -21,11 +21,19 @@
 
 Applies an energy filter to an existing residue contact map based on a potential matrix.
 
-### `get_cmap(chain, level='chain', cutoff_distance=4.5, cutoff_numcontacts=5, exclude_neighbour=3)`
+### `_atoms_for_search(atoms, include_hydrogens)`
+
+**Module:** `functions/calculating/get_cmap.py`
+
+Heavy atoms only, unless the caller asked for ProteinCT-identical all-atom counting.
+
+### `get_cmap(chain, level='chain', cutoff_distance=4.5, cutoff_numcontacts=5, exclude_neighbour=3, include_hydrogens=False)`
 
 **Module:** `functions/calculating/get_cmap.py`
 
 Creates a residue-residue contact map (as a list of contacts) for a single chain or a whole model.
+
+Two residues are in contact when at least `cutoff_numcontacts` atom-atom pairs lie within `cutoff_distance`. Hydrogen atoms are ignored by default, so models with and without hydrogens give the same contacts; `include_hydrogens=True` counts every atom present, which is what the reference ProteinCT implementation does. At level 'model' the whole model is searched, so inter-chain contact pairs are included, and the neighbour exclusion is applied on the concatenated residue index (it therefore also spans a chain boundary).
 
 ### `get_matrix(index, protid)`
 
@@ -33,11 +41,13 @@ Creates a residue-residue contact map (as a list of contacts) for a single chain
 
 Creates a topological relationship matrix for a residue contact map.
 
+Single chain (two-column index): every pair of contact pairs is classified as Series (S), Parallel (P, P-1), Cross (X) or one of the concerted classes (CP, CP-1, CS). Whole model (four-column index, chain IDs attached): P, S and X are assigned only to two intra-chain contact pairs of the same chain. Pairs involving inter-chain contact pairs use the multi-chain vocabulary of Heidari et al. (2022): Independent (I) when the two contact pairs involve disjoint sets of chains, Tandem (T) when they share exactly one chain, and Loop (L) when both connect the same two chains; the subscript in the statistics (I2, I3, I4, T2, T3) is the number of chains involved.
+
 ### `get_stats(mat)`
 
 **Module:** `functions/calculating/get_stats.py`
 
-Calculates the percentage of entangled contacts (Parallel and Cross) further along the diagonal.
+Calculates the fraction of Parallel and Cross (non-Series) relations on each diagonal of the relation matrix, i.e. as a function of the distance between two contact pairs in the contact list. This is the quantity ProteinCT calls the "entangled" fraction.
 
 ### `length_filter(index, distance, mode='<')`
 
@@ -87,11 +97,13 @@ Plots the topological relationship matrix for a single chain.
 
 Plots the topological relationship matrix for a whole model (multiple chains).
 
-### `stats_plot(entangled, psx, protid)`
+### `stats_plot(px_fraction, psx, protid)`
 
 **Module:** `functions/plots/stats_plot.py`
 
-Plots the fraction of entangled contacts versus distance from
+Plots the fraction of Parallel and Cross (non-Series) relations versus distance from the diagonal of the relation matrix, and a pie chart of the relation types.
+
+ProteinCT calls the left-hand quantity the "entangled" fraction; it is a statement about relation types, not about geometric entanglement.
 
 ### `autopct_funct(pct)`
 
@@ -129,7 +141,9 @@ Exports the topological relationship matrix to a CSV file.
 
 **Module:** `functions/exporting/export_psx.py`
 
-Exports the counts of Parallel (P), Series (S), and Cross (X) contacts (and others) to a CSV file.
+Exports the counts of Parallel (P), Series (S) and Cross (X) relations (and, for multi-chain models, I/T/L) to a CSV file.
+
+A batch run accumulates every input's row into one psxlist and calls this once, so a single output file is correct - there is nothing to disambiguate with a per-input name.
 
 ## Analysis Functions
 
@@ -137,7 +151,7 @@ Exports the counts of Parallel (P), Series (S), and Cross (X) contacts (and othe
 
 **Module:** `analysis/local_ct_analysis.py`
 
-Runs the local circuit topology analysis based on user-selected parameters.
+Runs the local circuit topology analysis based on user-selected parameters. Handles data retrieval, calculation, plotting, and exporting.
 
 ### `_states_of(traj_obj, n_states)`
 
@@ -149,13 +163,13 @@ One work item per trajectory state, read straight from the loaded object.
 
 **Module:** `analysis/multiple_file_analysis.py`
 
-Runs the multi-file circuit topology analysis.
+Runs the multi-file circuit topology analysis. Iterates through files in the selected directory, performs analysis, and generates plots/exports.
 
 ### `run_standard_analysis(self)`
 
 **Module:** `analysis/single_file_analysis.py`
 
-Runs the standard single-file circuit topology analysis.
+Runs the standard single-file circuit topology analysis. Handles data retrieval, calculation, plotting, and exporting.
 
 ### `run_single_frame_analysis(self)`
 
@@ -175,11 +189,13 @@ Toggles the enabled state of the frame selector and run button.
 
 Delete PyMOL objects/selections, ignoring names that do not exist.
 
-### `_analyse_chains(target_obj, contact_type, vals, state)`
+### `_analyse_chains(target_obj, relation_type, vals, state)`
 
 **Module:** `analysis/visualization.py`
 
 Run the circuit topology analysis for every chain of a single-state object.
+
+Kept separate from the colouring so that every chain - and every frame of a trajectory - can be measured first and then coloured against one shared scale.
 
 ### `_shared_bounds(analyses)`
 
@@ -187,35 +203,35 @@ Run the circuit topology analysis for every chain of a single-state object.
 
 One set of bucket bounds covering every chain and frame, so colours are comparable.
 
-### `_apply_colours(analyses, contact_type, bounds)`
+### `_apply_colours(analyses, relation_type, bounds)`
 
 **Module:** `analysis/visualization.py`
 
 Paint each analysed chain against the shared scale.
 
-### `_color_chains_by_topology(target_obj, contact_type, vals, state, *, scale_bar=True)`
+### `_color_chains_by_topology(target_obj, relation_type, vals, state, *, scale_bar=True)`
 
 **Module:** `analysis/visualization.py`
 
 Analyse and colour every chain of a single-state object against one shared scale.
 
-### `_color_every_state(state_objs, contact_type, vals, split_prefix)`
+### `_color_every_state(state_objs, relation_type, vals, split_prefix)`
 
 **Module:** `analysis/visualization.py`
 
 Colour each per-state object, quietly and without repainting the scene N times.
 
-### `_visualize_trajectory(self, contact_type, selected_obj, vals, n_states)`
+### `_visualize_trajectory(self, relation_type, selected_obj, vals, n_states)`
 
 **Module:** `analysis/visualization.py`
 
 Colors every state of a trajectory object by its own circuit topology.
 
-### `visualize_molecule(self, contact_type)`
+### `visualize_molecule(self, relation_type)`
 
 **Module:** `analysis/visualization.py`
 
-Visualizes the circuit topology on the selected molecule in PyMOL by coloring residues based on contact density.
+Visualizes the circuit topology on the selected molecule in PyMOL by colouring residues by their participation in the selected relation type.
 
 ## Utility Functions
 
@@ -271,7 +287,7 @@ Shared helper: open a directory dialog and store the result.
 
 **Module:** `utils/directory.py`
 
-Opens directory dialog to select the input directory containing PDBs for multi-file analysis.
+Opens directory dialog to select the input directory containing PDBs for multi-file analysis. Updates the frame selector spinbox based on the number of PDB files found.
 
 ### `set_label_text_elided(file_path, label)`
 
@@ -284,6 +300,8 @@ Sets the text of a QLabel to an elided version of the file path if it's too long
 **Module:** `utils/folding_score.py`
 
 Calculate the folding score based on the given relations, using topology data.
+
+The score is the sum of the mean per-residue participation in Parallel, Series and Cross relations.
 
 ### `get_vis_vals(self)`
 
@@ -363,6 +381,8 @@ Validates and creates the output directory. Returns the Path on success, None on
 
 Print a notice when the plot will highlight nothing; return "" when it will.
 
+`residue_id` is a POSITION into `numbering`; `residue_number` is what the user typed.
+
 ### `non_polymer_counts(obj_name)`
 
 **Module:** `utils/non_polymer.py`
@@ -405,59 +425,61 @@ Re-read PyMOL's object list and emit `changed` if it moved.
 
 Stop polling. Called from CTDialog.closeEvent so a hidden dialog leaves no live timer.
 
+### `get_relation_type_vector(mat, index, relation_type, numbering)`
+
+**Module:** `utils/relations.py`
+
+Per-residue participation in one class of contact-contact relation.
+
+### `bucket_bounds(relation_vector, n_buckets=BUCKETS)`
+
+**Module:** `utils/relations.py`
+
+Upper bounds of the colour buckets, taken from the quantiles of the non-zero values. Zero is excluded because it gets its own white level and never shares a bucket.
+
+### `register_shades()`
+
+**Module:** `utils/relations.py`
+
+Define every shade colour, blended from white towards each relation-type hue (once per session).
+
+### `_shade_levels(n_bounds)`
+
+**Module:** `utils/relations.py`
+
+Pick `n_bounds` shades spread across the registered range, so the top is always full.
+
+### `_shade_fraction(level, of)`
+
+**Module:** `utils/relations.py`
+
+How far towards the hue a given level sits. Level 0 is white; the rest start at MIN_SHADE.
+
+### `color_by_relation(molecule_name, relation_vector, numbering, relation_type, bounds=None)`
+
+**Module:** `utils/relations.py`
+
+Colour a PyMOL object by a relation vector, in discrete levels.
+
+### `make_scale_bar(topo_obj, relation_type, bounds)`
+
+**Module:** `utils/relations.py`
+
+Put a stepped, labelled colour bar in the viewer so the numbers behind the colours show.
+
+Stepped because the colouring is, so what the legend shows is what the structure got.
+
 ### `get_residue_range(self, obj_name)`
 
 **Module:** `utils/residues.py`
 
-Retrieves the residue range for each chain in the specified object.
+Retrieves the residue range for each chain in the specified object. Updates the chain combo box and residue range spinbox.
 
 ### `update_residue_range(self)`
 
 **Module:** `utils/residues.py`
 
 Updates the residue range spinbox based on the currently selected chain.
-
-### `get_topology_vector(mat, index, topology_type, numbering)`
-
-**Module:** `utils/topology.py`
-
-Per-residue participation in one class of contact-contact relation.
-
-### `bucket_bounds(topology_vector, n_buckets=BUCKETS)`
-
-**Module:** `utils/topology.py`
-
-Upper bounds of the colour buckets, taken from the quantiles of the non-zero values.
-
-### `register_shades()`
-
-**Module:** `utils/topology.py`
-
-Define every shade colour, blended from white towards each contact-type hue (once per session).
-
-### `_shade_levels(n_bounds)`
-
-**Module:** `utils/topology.py`
-
-Pick `n_bounds` shades spread across the registered range, so the top is always full.
-
-### `_shade_fraction(level, of)`
-
-**Module:** `utils/topology.py`
-
-How far towards the hue a given level sits. Level 0 is white; the rest start at MIN_SHADE.
-
-### `color_by_topology(molecule_name, topology_vector, numbering, topology_type, bounds=None)`
-
-**Module:** `utils/topology.py`
-
-Colour a PyMOL object by a topology vector, in discrete levels.
-
-### `make_scale_bar(topo_obj, topology_type, bounds)`
-
-**Module:** `utils/topology.py`
-
-Put a stepped, labelled colour bar in the viewer so the numbers behind the colours show.
 
 ### `_refresh_objects(self)`
 
@@ -469,25 +491,25 @@ Ask the shared object model to re-poll. Fallback to update_list().
 
 **Module:** `utils/trajectory.py`
 
-Opens a file dialog to select a structure file (PDB or CIF) for trajectory analysis.
+Opens a file dialog to select a structure file (PDB or CIF) for trajectory analysis. Loads the file into PyMOL.
 
 ### `select_xtc_file(self)`
 
 **Module:** `utils/trajectory.py`
 
-Opens a file dialog to select a trajectory file (XTC, DCD, TRR, NC).
+Opens a file dialog to select a trajectory file (XTC). Loads the trajectory into PyMOL and reports the non-polymer atoms the analysis will ignore.
 
 ### `export_frames_from_traj(self)`
 
 **Module:** `utils/trajectory.py`
 
-Exports each frame of the loaded trajectory as a separate PDB file.
+Exports each frame of the loaded trajectory as a separate PDB file. Prompts the user for confirmation and an output directory.
 
 ### `update_output_widgets_multi(self)`
 
 **Module:** `utils/updates.py`
 
-Updates the visibility of output widgets in the multi-file analysis
+Updates the visibility of output widgets in the multi-file analysis tab based on checkbox states.
 
 ### `update_output_widgets_local(self)`
 
@@ -629,11 +651,19 @@ Attempt to register plugin functions and add the GUI menu item.
 
 Initialize the plugin within PyMOL.
 
+Invoked by PyMOL when the plugin is loaded. The flow is:
+1. Register PyMOL commands if dependencies are already present.
+2. Otherwise, if PyMOL is installed system-wide and this session lacks administrator/root privileges, show guidance and stop (a writable environment is required to install).
+3. Install the missing dependencies into PyMOL's own conda environment.
+4. Invalidate the import cache and re-register. If the freshly installed packages are not importable in this live session, ask the user to restart PyMOL.
+
 ### `run_plugin_gui()`
 
 **Module:** `__init__.py`
 
 Create or raise the plugin GUI dialog.
+
+This function is bound as the menu action entrypoint and returns the singleton dialog instance so callers (and tests) can interact with it.
 
 ### `__init__(self, parent=None)`
 
@@ -769,7 +799,7 @@ Log what analysis will ignore, then refresh the chain/residue controls.
 
 **Module:** `tabs/local_tab.py`
 
-Initializes the 'Local Circuit Topology' tab in the GUI.
+Initializes the 'Local Circuit Topology' tab in the GUI. Sets up widgets for file selection, parameter input, analysis options, and exporting.
 
 ### `__init__(self, dialog, parent=None)`
 
@@ -887,7 +917,7 @@ Legacy name still called by helper code; routes through the shared model.
 
 **Module:** `tabs/multiple_file_tab.py`
 
-Initializes the 'Multi-File Analysis' tab in the GUI.
+Initializes the 'Multi-File Analysis' tab in the GUI. Sets up widgets for directory selection, trajectory handling, parameter input, analysis options, and exporting.
 
 ### `__init__(self, dialog, parent=None)`
 
@@ -993,7 +1023,7 @@ Log what analysis will ignore. Non-polymer atoms need no action from the user.
 
 **Module:** `tabs/single_file_tab.py`
 
-Initializes the 'Single-File Analysis' tab in the GUI.
+Initializes the 'Single-File Analysis' tab in the GUI. Sets up widgets for file selection, parameter input, analysis options, visualization, and exporting.
 
 ## Initialization Functions
 
@@ -1008,6 +1038,8 @@ Checks if a given path is within the user's home directory.
 **Module:** `initialization_checks.py`
 
 Returns True if the current process has administrator / root privileges.
+
+On Windows this calls IsUserAnAdmin(); on POSIX it checks effective uid == 0. Returns False on any error so callers can treat the result conservatively.
 
 ### `install_failed(reqs=REQUIREMENTS_FILE)`
 
@@ -1081,4 +1113,6 @@ Install plugin dependencies into PyMOL's own conda environment.
 
 Register the plugin's core functions as PyMOL commands.
 
-*Last Updated: August 18, 2026*
+This function imports the plugin's modular command wrappers and extends the PyMOL `cmd` object so that the commands become available to users as top-level PyMOL commands.
+
+*Last Updated: September 14, 2026 (plugin v0.0.3)*

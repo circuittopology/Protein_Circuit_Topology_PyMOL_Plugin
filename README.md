@@ -9,7 +9,7 @@ This repository contains a PyMOL plugin for analyzing protein circuit topology (
 - **User-friendly GUI** – An intuitive graphical interface that simplifies interaction with the underlying ProteinCT tool, removing the need for scripting.
 - **Full PyMOL integration** – Seamless interaction with PyMOL's API for loading, visualizing, and analyzing protein structures directly within PyMOL.
 - **Automatic dependency installation** – On first launch the plugin attempts to install its required Python packages automatically.
-- **Supported file formats** – PDB/mmCIF structures and XTC, DCD, TRR or NC trajectories.
+- **Supported file formats** – PDB/mmCIF structures and XTC trajectories.
 - **Single & multi-file analysis** – Analyze individual structures, single frames, or batch-process multiple files at once.
 - **Visualization** - generate circuit and matrix plots, and colour PyMOL objects by each residue's participation in Series (S), Parallel (P) and Cross (X) relations.
 - **Export capabilities** – Export contact maps, relation matrices, and per-structure P, S, X relation counts as CSV.

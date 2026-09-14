@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 SELECT_PLACEHOLDER = "Select a file."
 STRUCTURE_SUFFIXES = {".pdb", ".cif"}
-TRAJECTORY_SUFFIXES = {".xtc", ".dcd", ".trr", ".nc"}
+TRAJECTORY_SUFFIXES = {".xtc"}
 
 
 def is_placeholder_object(obj_name: str | None) -> bool:
@@ -126,7 +126,7 @@ def validate_trajectory_file(path_like: str | Path) -> Path:
         msg = f"The selected trajectory path is not a file: {path}"
         raise ValueError(msg)
     if path.suffix.lower() not in TRAJECTORY_SUFFIXES:
-        msg = "Please select an XTC, DCD, TRR, or NC trajectory file."
+        msg = "Please select an XTC trajectory file."
         raise ValueError(msg)
     return path
 
