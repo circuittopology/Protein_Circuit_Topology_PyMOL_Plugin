@@ -93,7 +93,7 @@ register_pymol_functions()
 
 NEEDED = (
     "retrieve_chain", "get_cmap", "get_matrix", "get_stats", "local_ct",
-    "get_relation_type_vector", "color_by_relation_type", "get_folding_score",
+    "get_relation_type_vector", "color_by_relation", "get_folding_score",
     "circuit_plot", "matrix_plot", "stats_plot", "local_topology_plot",
     "export_cmap3", "export_mat", "export_psx",
 )
