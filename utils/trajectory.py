@@ -60,13 +60,13 @@ def select_mol_file(self: Any) -> None:
 # Gets the trajectory file
 def select_xtc_file(self: Any) -> None:
     """
-    Opens a file dialog to select a trajectory file (XTC, DCD, TRR, NC).
-    Loads the trajectory into PyMOL and removes non-polymer atoms.
+    Opens a file dialog to select a trajectory file (XTC).
+    Loads the trajectory into PyMOL and reports the non-polymer atoms the analysis will ignore.
 
     Args:
         self: The main GUI class instance.
     """
-    fname, _ = QFileDialog.getOpenFileName(self, "Select trajectory file", "", "Trajectory files (*.xtc *.dcd *.trr *.nc)")
+    fname, _ = QFileDialog.getOpenFileName(self, "Select trajectory file", "", "Trajectory files (*.xtc)")
     if fname:
         protein_name = getattr(self, "protein_name", None)
         if not isinstance(protein_name, str) or not object_exists(protein_name):

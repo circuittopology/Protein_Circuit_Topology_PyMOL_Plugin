@@ -17,6 +17,15 @@ def get_matrix(index: np.ndarray, protid: str) -> tuple[np.ndarray, list, dict]:
     """
     Creates a topological relationship matrix for a residue contact map.
 
+    Single chain (two-column index): every pair of contact pairs is classified as Series (S),
+    Parallel (P, P-1), Cross (X) or one of the concerted classes (CP, CP-1, CS).
+    Whole model (four-column index, chain IDs attached): P, S and X are assigned only to two
+    intra-chain contact pairs of the same chain. Pairs involving inter-chain contact pairs use the
+    multi-chain vocabulary of Heidari et al. (2022): Independent (I) when the two contact pairs
+    involve disjoint sets of chains, Tandem (T) when they share exactly one chain, and Loop (L)
+    when both connect the same two chains; the subscript in the statistics (I2, I3, I4, T2, T3)
+    is the number of chains involved.
+
     Args:
         index (numpy.ndarray): Array containing contact indices.
         protid (str): Protein identifier.

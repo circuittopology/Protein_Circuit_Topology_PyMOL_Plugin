@@ -20,7 +20,7 @@ def local_ct(index: np.ndarray, mat: np.ndarray, numbering: Sequence[int] | np.n
 
     Returns:
         dict: A dictionary where keys are residue indices and values are dictionaries containing
-              counts of 'P' (Parallel), 'IP' (Inverse Parallel), 'X' (Cross), and 'S' (Series) contacts.
+              counts of 'P' (Parallel), 'IP' (Inverse Parallel), 'X' (Cross), and 'S' (Series) relations.
     """
     localct = {}
     for i in range(len(numbering)):

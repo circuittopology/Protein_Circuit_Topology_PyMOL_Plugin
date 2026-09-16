@@ -17,7 +17,7 @@ EXPECTED_COMMANDS = (
     "circuit_plot", "matrix_plot", "stats_plot", "matrix_plot_model", "local_topology_plot",
     "get_cmap", "get_matrix", "get_stats", "energy_cmap", "length_filter", "local_ct",
     "retrieve_chain", "export_psx", "export_cmap3", "export_mat",
-    "get_topology_vector", "color_by_topology", "get_folding_score",
+    "get_relation_type_vector", "color_by_relation", "get_folding_score",
 )
 
 _ANSWERS = {

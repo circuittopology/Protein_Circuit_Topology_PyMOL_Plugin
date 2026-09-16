@@ -1,15 +1,22 @@
 # Reproducing the published results
-Every CSV produced is compared against the reference outputs committed in `tests/data/expected/`, and the run **exits non-zero if any value moved**.
+`reproduce.pml` analyses the three bundled structures (1AKI, the paper's lysozyme example; 1CRN; 1UBQ)
+with the default contact criterion (4.5 Å, at least 5 atom-atom pairs, more than 3 residues apart,
+heavy atoms only). Every CSV produced is compared against the reference outputs committed in
+`tests/data/expected/`, the CT folding scores are checked against pinned values, and the run
+**exits non-zero if any value moved**. It also writes the figures of the paper (Figs. 3, 4, 5 and 7,
+all 1AKI) with enlarged fonts to `<output>/figures/paper/`.
+
+The version described in the paper is the `v0.0.3` tag; replace the tag below to reproduce another release.
 
 ## 1. Run with one command via Docker
 ```bash
-docker run --rm ghcr.io/circuittopology/proteinct-plugin:<tag>
+docker run --rm ghcr.io/circuittopology/proteinct-plugin:v0.0.3
 ```
 
 To keep the artefacts:
 ```bash
 mkdir out
-docker run --rm -v "$PWD/out:/out" -e CT_OUTDIR=/out ghcr.io/circuittopology/proteinct-plugin:<tag>
+docker run --rm -v "$PWD/out:/out" -e CT_OUTDIR=/out ghcr.io/circuittopology/proteinct-plugin:v0.0.3
 ```
 
 The image is built by [`.github/workflows/capsule.yml`](.github/workflows/capsule.yml) from [`capsule/Dockerfile`](capsule/Dockerfile).  

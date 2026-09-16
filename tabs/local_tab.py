@@ -15,7 +15,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from utils.config import NON_POLYMER_INFO, NON_POLYMER_NOTE
+from utils.config import HYDROGEN_INFO, HYDROGEN_LABEL, NON_POLYMER_INFO, NON_POLYMER_NOTE
 from utils.helpers import make_info_button, make_note_row, make_param_row
 
 
@@ -160,6 +160,13 @@ def _build_local_params_group(self: Any) -> QGroupBox:
         "Number of neighboring residues to exclude (range: 1 - 10)",
         self.exclude_neighbor_local))
 
+    self.checkbox_hydrogens_local = QCheckBox(HYDROGEN_LABEL)
+    hydrogen_row = QHBoxLayout()
+    hydrogen_row.addWidget(self.checkbox_hydrogens_local)
+    hydrogen_row.addWidget(make_info_button(HYDROGEN_INFO))
+    hydrogen_row.addStretch()
+    params_lay.addLayout(hydrogen_row)
+
     return params_grp
 
 
@@ -169,7 +176,7 @@ def _build_local_analysis_group(self: Any) -> QGroupBox:
 
     self.dropdown_contact_type = QComboBox()
     self.dropdown_contact_type.addItems(["Series (S)", "Parallel (P)", "Inverse parallel (IP)", "Cross (X)"])
-    analysis_lay.addWidget(QLabel("Contact type:"))
+    analysis_lay.addWidget(QLabel("Relation type:"))
     analysis_lay.addWidget(self.dropdown_contact_type)
 
     self.chain_combo_box = QComboBox()

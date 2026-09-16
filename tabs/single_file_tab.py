@@ -15,7 +15,13 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from utils.config import NON_POLYMER_INFO, NON_POLYMER_NOTE, TRAJECTORY_COLOR_INFO
+from utils.config import (
+    HYDROGEN_INFO,
+    HYDROGEN_LABEL,
+    NON_POLYMER_INFO,
+    NON_POLYMER_NOTE,
+    TRAJECTORY_COLOR_INFO,
+)
 from utils.helpers import make_info_button, make_note_row, make_param_row
 
 
@@ -150,6 +156,13 @@ def _build_params_group(self: Any) -> QGroupBox:
         "Number of neighboring residues to exclude (range: 1 - 10)",
         self.exclude_neighbor_spin))
 
+    self.checkbox_hydrogens = QCheckBox(HYDROGEN_LABEL)
+    hydrogen_row = QHBoxLayout()
+    hydrogen_row.addWidget(self.checkbox_hydrogens)
+    hydrogen_row.addWidget(make_info_button(HYDROGEN_INFO))
+    hydrogen_row.addStretch()
+    params_lay.addLayout(hydrogen_row)
+
     return params_grp
 
 
@@ -167,7 +180,7 @@ def _build_plot_group(self: Any) -> QGroupBox:
 
 
 def _build_vis_group(self: Any) -> QGroupBox:
-    vis_grp = QGroupBox("Visualize Circuit Topology by contact type")
+    vis_grp = QGroupBox("Visualize Circuit Topology by relation type")
     vis_lay = QVBoxLayout(vis_grp)
 
     info_row = QHBoxLayout()
@@ -233,8 +246,8 @@ def _build_folding_group(self: Any) -> QGroupBox:
     self.checkbox_folding_score = QCheckBox("Enable Folding Score")
     fold_lay_adj = QHBoxLayout()
     fold_lay_adj.addWidget(make_info_button(
-        """Quantifies how well a protein structure is compact and stable
-        based on its contact patterns""",
+        """Sum of the mean per-residue participation in Parallel, Series and Cross relations.
+        Computed per chain from intra-chain contact pairs; larger values indicate a more compact topology.""",
     ))
     fold_lay_adj.addStretch()
     fold_lay_adj.addWidget(self.checkbox_folding_score)

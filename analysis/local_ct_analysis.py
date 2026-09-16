@@ -82,6 +82,7 @@ def run_local_ct(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
             cutoff_distance=local_dist,
             cutoff_numcontacts=local_numcontacts,
             exclude_neighbour=local_neighbour,
+            include_hydrogens=vals["include_hydrogens"],
         )
         if idx.size == 0:
             QMessageBox.warning(self, "Warning", "No residue contacts were found with the current parameters.")

@@ -447,9 +447,9 @@ def register_pymol_functions():
     from functions.exporting.export_mat import export_mat
     cmd.extend("export_mat", export_mat)
 
-    from utils.topology import color_by_topology, get_topology_vector
-    cmd.extend("get_topology_vector", get_topology_vector)
-    cmd.extend("color_by_topology", color_by_topology)
+    from utils.relations import color_by_relation, get_relation_type_vector
+    cmd.extend("get_relation_type_vector", get_relation_type_vector)
+    cmd.extend("color_by_relation", color_by_relation)
     from utils.folding_score import get_folding_score
     cmd.extend("get_folding_score", get_folding_score)
 

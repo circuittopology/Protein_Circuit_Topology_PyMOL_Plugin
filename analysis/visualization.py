@@ -9,10 +9,10 @@ from functions.calculating.get_cmap import get_cmap
 from functions.calculating.get_matrix import get_matrix
 from functions.importing.retrieve_chain import retrieve_chain
 from utils.helpers import temp_pdb_export
-from utils.topology import (
+from utils.relations import (
     bucket_bounds,
-    color_by_topology,
-    get_topology_vector,
+    color_by_relation,
+    get_relation_type_vector,
     make_scale_bar,
 )
 from utils.validation import (
@@ -38,7 +38,7 @@ def _safe_delete(*names: str) -> None:
 
 
 def _analyse_chains(
-    target_obj: str, contact_type: str, vals: dict[str, Any], state: int,
+    target_obj: str, relation_type: str, vals: dict[str, Any], state: int,
 ) -> list[tuple[str, Any, Any]]:
     """
     Run the circuit topology analysis for every chain of a single-state object.
@@ -48,7 +48,7 @@ def _analyse_chains(
 
     Args:
         target_obj (str): Name of the PyMOL object to analyse.
-        contact_type (str): The type of contact to visualize ('P', 'S', 'X').
+        relation_type (str): The relation type to visualize ('P', 'S', 'X').
         vals (dict): Visualization parameters from ``get_vis_vals``.
         state (int): The coordinate state to export and analyze.
 
@@ -75,6 +75,7 @@ def _analyse_chains(
             cutoff_distance=vis_dist,
             cutoff_numcontacts=vis_numcontacts,
             exclude_neighbour=vis_neighbour,
+            include_hydrogens=vals["include_hydrogens"],
         )
         if idx.size == 0:
             logger.warning("No contacts found for chain %s. Skipping visualization...", chain_id)
@@ -82,12 +83,12 @@ def _analyse_chains(
         mat, psx, _ = get_matrix(idx, protid)
         if psx == [protid, 0, 0, 0]:
             logger.warning(
-                "Cannot create topology matrix for chain %s, so visualization for this chain cannot be performed!", chain_id)
+                "Cannot create the relation matrix for chain %s, so visualization for this chain cannot be performed!", chain_id)
             continue
         logger.info("Analysing %s, chain %s ...", target_obj, chain_id)
-        top_vec = get_topology_vector(mat=mat, index=idx, topology_type=contact_type, numbering=numbering)
+        top_vec = get_relation_type_vector(mat=mat, index=idx, relation_type=relation_type, numbering=numbering)
         if top_vec is None:
-            logger.warning("Invalid contact type for chain %s. Skipping visualization...", chain_id)
+            logger.warning("Invalid relation type for chain %s. Skipping visualization...", chain_id)
             continue
         analyses.append((current_selection, numbering, top_vec))
 
@@ -102,21 +103,21 @@ def _shared_bounds(analyses: list[tuple[str, Any, Any]]) -> list[float]:
 
 
 def _apply_colours(
-    analyses: list[tuple[str, Any, Any]], contact_type: str, bounds: list[float],
+    analyses: list[tuple[str, Any, Any]], relation_type: str, bounds: list[float],
 ) -> None:
     """Paint each analysed chain against the shared scale."""
     for selection, numbering, vector in analyses:
-        color_by_topology(
+        color_by_relation(
             molecule_name=selection,
-            topology_vector=vector,
+            relation_vector=vector,
             numbering=numbering,
-            topology_type=contact_type,
+            relation_type=relation_type,
             bounds=bounds,
         )
 
 
 def _color_chains_by_topology(
-    target_obj: str, contact_type: str, vals: dict[str, Any], state: int, *, scale_bar: bool = True,
+    target_obj: str, relation_type: str, vals: dict[str, Any], state: int, *, scale_bar: bool = True,
 ) -> tuple[int, list[float]]:
     """
     Analyse and colour every chain of a single-state object against one shared scale.
@@ -124,17 +125,17 @@ def _color_chains_by_topology(
     Returns:
         (chains coloured, the bucket bounds used).
     """
-    analyses = _analyse_chains(target_obj, contact_type, vals, state)
+    analyses = _analyse_chains(target_obj, relation_type, vals, state)
     bounds = _shared_bounds(analyses)
-    _apply_colours(analyses, contact_type, bounds)
+    _apply_colours(analyses, relation_type, bounds)
 
     if scale_bar and bounds:
-        make_scale_bar(target_obj, contact_type, bounds)
+        make_scale_bar(target_obj, relation_type, bounds)
     return len(analyses), bounds
 
 
 def _color_every_state(
-    state_objs: list[str], contact_type: str, vals: dict[str, Any], split_prefix: str,
+    state_objs: list[str], relation_type: str, vals: dict[str, Any], split_prefix: str,
 ) -> tuple[int, list[float]]:
     """Colour each per-state object, quietly and without repainting the scene N times."""
     cmd.disable(f"{split_prefix}*")
@@ -143,27 +144,27 @@ def _color_every_state(
     try:
         for state_obj in state_objs:
             try:
-                per_state.append(_analyse_chains(state_obj, contact_type, vals, state=1))
+                per_state.append(_analyse_chains(state_obj, relation_type, vals, state=1))
             except Exception:  # noqa: PERF203
                 logger.exception("Failed to analyse state object %s; skipping it.", state_obj)
                 per_state.append([])
 
         bounds = _shared_bounds([one for analyses in per_state for one in analyses])
         for analyses in per_state:
-            _apply_colours(analyses, contact_type, bounds)
+            _apply_colours(analyses, relation_type, bounds)
     finally:
         cmd.set("suspend_updates", 0)
 
     return sum(1 for analyses in per_state if analyses), bounds
 
 
-def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals: dict[str, Any], n_states: int) -> None:
+def _visualize_trajectory(self: Any, relation_type: str, selected_obj: str, vals: dict[str, Any], n_states: int) -> None:
     """
     Colors every state of a trajectory object by its own circuit topology.
 
     Args:
         self: The main GUI class instance (used as the dialog parent).
-        contact_type (str): The type of contact to visualize ('P', 'S', 'X').
+        relation_type (str): The relation type to visualize ('P', 'S', 'X').
         selected_obj (str): Name of the trajectory object.
         vals (dict): Visualization parameters from ``get_vis_vals``.
         n_states (int): Number of states in ``selected_obj``.
@@ -174,7 +175,7 @@ def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals:
         (
             f"'{selected_obj}' is a trajectory with {n_states} states.\n\n"
             f"Coloring it runs the full Circuit Topology analysis for every state and chain, "
-            f"colors each frame by its own {contact_type} topology.\n\n"
+            f"colors each frame by its own participation in {relation_type} relations.\n\n"
             f"This may take a while and use significant memory for long trajectories. Continue?"
         ),
         QMessageBox.Yes | QMessageBox.No,
@@ -205,7 +206,7 @@ def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals:
         QMessageBox.warning(self, "Error", "Splitting the trajectory produced no per-state objects.")
         return
 
-    colored_states, bounds = _color_every_state(state_objs, contact_type, vals, split_prefix)
+    colored_states, bounds = _color_every_state(state_objs, relation_type, vals, split_prefix)
 
     if colored_states == 0:
         _safe_delete(f"{split_prefix}*")
@@ -227,11 +228,12 @@ def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals:
             self, "Falling back to current state",
             (
                 f"The colored states could not be merged into a single object on this PyMOL build, "
-                f"so only the current state of '{selected_obj}' will be colored by {contact_type} topology."
+                f"so only the current state of '{selected_obj}' will be colored by its "
+                f"participation in {relation_type} relations."
             ),
         )
         try:
-            _color_chains_by_topology(selected_obj, contact_type, vals, state=cmd.get_state())
+            _color_chains_by_topology(selected_obj, relation_type, vals, state=cmd.get_state())
         except Exception as e:
             logger.exception("Fallback current-state coloring failed for %s", selected_obj)
             QMessageBox.warning(self, "Error", f"Visualization failed:\n{e}")
@@ -239,7 +241,7 @@ def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals:
 
     _safe_delete(f"{split_prefix}*")
     if bounds:
-        make_scale_bar(result_obj, contact_type, bounds)
+        make_scale_bar(result_obj, relation_type, bounds)
     cmd.disable(selected_obj)
     cmd.set("all_states", 0)
     cmd.frame(1)
@@ -248,20 +250,22 @@ def _visualize_trajectory(self: Any, contact_type: str, selected_obj: str, vals:
     QMessageBox.information(
         self, "Done",
         (
-            f"Colored {colored_states} of {len(state_objs)} states by {contact_type} topology.\n\n"
+            f"Colored {colored_states} of {len(state_objs)} states by participation in "
+            f"{relation_type} relations.\n\n"
             f"Created '{result_obj}'. The original '{selected_obj}' has been hidden. Delete '{result_obj}' to clean up."
         ),
     )
 
 
 # Function that only visualizes the topology on the molecule inside PyMOL
-def visualize_molecule(self: Any, contact_type: str) -> None:
+def visualize_molecule(self: Any, relation_type: str) -> None:
     """
-    Visualizes the circuit topology on the selected molecule in PyMOL by coloring residues based on contact density.
+    Visualizes the circuit topology on the selected molecule in PyMOL by colouring residues by their
+    participation in the selected relation type.
 
     Args:
         self: The main GUI class instance.
-        contact_type (str): The type of contact to visualize ('P', 'S', 'X').
+        relation_type (str): The relation type to visualize ('P', 'S', 'X').
     """
     vals = self.get_vis_vals()
     selected_obj = self.dropdown_objects.currentText()
@@ -279,7 +283,7 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
 
     n_states = count_object_states(selected_obj)
     if n_states > 1:
-        _visualize_trajectory(self, contact_type, selected_obj, vals, n_states)
+        _visualize_trajectory(self, relation_type, selected_obj, vals, n_states)
         return
 
     result_obj = f"{selected_obj}_topo"
@@ -289,7 +293,7 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
             if not object_exists(result_obj):
                 msg = f"PyMOL did not create the copy '{result_obj}'"
                 raise RuntimeError(msg)  # noqa: TRY301
-        _color_chains_by_topology(result_obj, contact_type, vals, state=cmd.get_state())
+        _color_chains_by_topology(result_obj, relation_type, vals, state=cmd.get_state())
     except Exception as e:
         logger.exception("Visualization failed for %s", selected_obj)
         _safe_delete(result_obj)
@@ -298,6 +302,6 @@ def visualize_molecule(self: Any, contact_type: str) -> None:
 
     cmd.disable(selected_obj)
     logger.info(
-        "Coloured '%s' by %s topology. '%s' keeps its original B-factors.",
-        result_obj, contact_type, selected_obj,
+        "Coloured '%s' by %s relations. '%s' keeps its original B-factors.",
+        result_obj, relation_type, selected_obj,
     )

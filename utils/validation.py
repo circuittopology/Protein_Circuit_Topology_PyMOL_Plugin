@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 
 from pymol import cmd
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 SELECT_PLACEHOLDER = "Select a file."
 STRUCTURE_SUFFIXES = {".pdb", ".cif"}
-TRAJECTORY_SUFFIXES = {".xtc", ".dcd", ".trr", ".nc"}
+TRAJECTORY_SUFFIXES = {".xtc"}
 
 
 def is_placeholder_object(obj_name: str | None) -> bool:
@@ -126,13 +127,21 @@ def validate_trajectory_file(path_like: str | Path) -> Path:
         msg = f"The selected trajectory path is not a file: {path}"
         raise ValueError(msg)
     if path.suffix.lower() not in TRAJECTORY_SUFFIXES:
-        msg = "Please select an XTC, DCD, TRR, or NC trajectory file."
+        msg = "Please select an XTC trajectory file."
         raise ValueError(msg)
     return path
 
 
+def natural_key(path: Path) -> tuple[str | int, ...]:
+    """Sort key that reads runs of digits as numbers, so frame2 comes before frame10."""
+    return tuple(
+        int(part) if part.isdigit() else part.lower()
+        for part in re.split(r"(\d+)", path.name)
+    )
+
+
 def list_structure_files(directory: str | Path) -> list[Path]:
-    """Return sorted PDB/CIF files from a directory."""
+    """Return the PDB/CIF files of a directory, ordered by name with numbers read as numbers."""
     path = Path(directory)
     if not path.exists():
         msg = f"The input directory does not exist: {path}"
@@ -141,8 +150,9 @@ def list_structure_files(directory: str | Path) -> list[Path]:
         msg = f"The input path is not a directory: {path}"
         raise ValueError(msg)
     return sorted(
-        file_path for file_path in path.iterdir()
-        if file_path.is_file() and file_path.suffix.lower() in STRUCTURE_SUFFIXES
+        (file_path for file_path in path.iterdir()
+         if file_path.is_file() and file_path.suffix.lower() in STRUCTURE_SUFFIXES),
+        key=natural_key,
     )
 
 

@@ -1,10 +1,11 @@
 # Executable capsule for the Protein Circuit Topology PyMOL plugin.
 #
-# Run with one command to reproduce:
-#     docker run --rm ghcr.io/circuittopology/proteinct-plugin:<tag>
+# Run with one command to reproduce (v0.0.3 is the release described in the paper;
+# every tag of the repository is published under the same name):
+#     docker run --rm ghcr.io/circuittopology/proteinct-plugin:v0.0.3
 #
-# To save outputs:
-#     docker run --rm -v "$PWD/out:/out" -e CT_OUTDIR=/out ghcr.io/circuittopology/proteinct-plugin:<tag>
+# To save outputs (CSVs, figures incl. figures/paper/, session.pse):
+#     docker run --rm -v "$PWD/out:/out" -e CT_OUTDIR=/out ghcr.io/circuittopology/proteinct-plugin:v0.0.3
 FROM mambaorg/micromamba:1.5.8
 
 USER root

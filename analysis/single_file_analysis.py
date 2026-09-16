@@ -83,7 +83,10 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
 
     if len(chains) > 1:
         level = "model"
-        logger.info("The supplied object has multiple chains. Performing multi-chain CT analysis...")
+        logger.info(
+            "%s has %d chains. Whole-model analysis: inter-chain contact pairs are included and relations "
+            "involving contact pairs of different chains use the I/T/L vocabulary.", selected_obj, len(chains),
+        )
     else:
         level = "chain"
 
@@ -94,6 +97,7 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
             cutoff_distance=single_dist,
             cutoff_numcontacts=single_numcontacts,
             exclude_neighbour=single_neighbour,
+            include_hydrogens=vals["include_hydrogens"],
         )
         if idx.size == 0:
             QMessageBox.warning(self, "Warning", "No residue contacts were found with the current parameters.")
@@ -136,6 +140,7 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                     cutoff_distance=single_dist,
                     cutoff_numcontacts=single_numcontacts,
                     exclude_neighbour=single_neighbour,
+                    include_hydrogens=vals["include_hydrogens"],
                 )
                 if i.size == 0:
                     logger.warning("No contacts found for chain %s; skipping chain-level work", c)
@@ -145,7 +150,7 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                 if folding_score_enabled:
                     # To handle incomplete chains
                     if psx == [p, 0, 0, 0]:
-                        logger.warning("Cannot create topology matrix for chain %s, so folding score cannot be calculated!", c)
+                        logger.warning("Cannot create the relation matrix for chain %s, so folding score cannot be calculated!", c)
                         continue
 
                     logger.info("Calculating folding score for chain %s ...", c)

@@ -9,7 +9,6 @@ import pytest
 from conftest import INPUTS, PARAMS
 
 UPSTREAM = Path(__file__).parent / "upstream"
-UPSTREAM_SHA = "37e89951613d0bff5c33aafba666027c55c8dbda"
 
 _AVAILABLE = (UPSTREAM / "functions" / "calculating" / "get_cmap.py").is_file()
 
@@ -36,7 +35,10 @@ if _AVAILABLE:
 else:
     up_get_cmap = up_get_matrix = up_get_stats = up_circuit_plot = None
 
-CASES = ["1crn", "1ubq", "1pnj"]
+CASES = ["1aki", "1crn", "1ubq", "1pnj"]
+
+# NMR entry with deposited hydrogens: the one input where the hydrogen setting changes the result.
+HYDROGEN_CASE = UPSTREAM / "input_files" / "pdb" / "1aa7.pdb"
 
 
 def _pdb(stem: str) -> Path:
@@ -162,3 +164,20 @@ def _numbering_for(stem: str):
 
     chain, _ = retrieve_chain(_pdb(stem))
     return get_cmap(chain, level="chain", **PARAMS)[1]
+
+
+@pytest.mark.skipif(not HYDROGEN_CASE.is_file(), reason="upstream input_files/pdb/1aa7.pdb not available")
+def test_counting_hydrogens_reproduces_upstream_on_a_hydrogen_bearing_structure():
+    """Upstream counts every atom present. The plugin does too when asked, and drops hydrogens by default."""
+    from functions.calculating.get_cmap import get_cmap
+    from functions.importing.retrieve_chain import retrieve_chain
+
+    chain, _ = retrieve_chain(HYDROGEN_CASE)
+    assert any(atom.element == "H" for atom in chain.get_atoms()), "1AA7 should carry hydrogens"
+
+    theirs = np.asarray(up_get_cmap(chain, level="chain", **PARAMS)[0])
+    parity = np.asarray(get_cmap(chain, level="chain", include_hydrogens=True, **PARAMS)[0])
+    default = np.asarray(get_cmap(chain, level="chain", **PARAMS)[0])
+
+    assert np.array_equal(parity, theirs), "include_hydrogens=True must reproduce upstream on 1AA7"
+    assert len(default) < len(theirs), "the heavy-atom default should yield fewer contacts on 1AA7"

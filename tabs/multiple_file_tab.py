@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from utils.config import ENERGY_FILTER_MODES, LENGTH_FILTER_MODES
+from utils.config import ENERGY_FILTER_MODES, HYDROGEN_INFO, HYDROGEN_LABEL, LENGTH_FILTER_MODES
 from utils.helpers import make_info_button, make_param_row
 
 
@@ -161,6 +161,13 @@ def _build_multi_params_group(self: Any) -> QGroupBox:
         "Number of neighbouring residues to ignore.",
         self.exclude_neighbor_multi))
 
+    self.checkbox_hydrogens_multi = QCheckBox(HYDROGEN_LABEL)
+    hydrogen_row = QHBoxLayout()
+    hydrogen_row.addWidget(self.checkbox_hydrogens_multi)
+    hydrogen_row.addWidget(make_info_button(HYDROGEN_INFO))
+    hydrogen_row.addStretch()
+    params_lay.addLayout(hydrogen_row)
+
     return params_grp
 
 
@@ -264,12 +271,13 @@ def _build_multi_export_group(self: Any) -> QGroupBox:
     export_lay = QVBoxLayout(export_grp)
     self.checkbox_export_cmap3_multi = QCheckBox("Contact map (.csv)")
     self.checkbox_export_matrix_multi = QCheckBox("Relations matrix (.csv)")
-    self.checkbox_export_psx_multi = QCheckBox("P,S,X list (.csv)")
+    self.checkbox_export_psx_multi = QCheckBox("P,S,X relation counts (.csv)")
     self.checkbox_export_psx_multi.setToolTip(
-        "Counts the number of Parallel (P), Series (S), and Cross (X) contacts per residue in each file. P,S,X list only applies to multiple-file analysis. For per-frame analysis, ticking this option will have no effect.")
+        "Counts the Parallel (P), Series (S) and Cross (X) relations between contact pairs in each file or frame "
+        "(one row per structure). Applies to multiple-file analysis only; it has no effect on per-frame analysis.")
     for cb in (self.checkbox_export_cmap3_multi, self.checkbox_export_matrix_multi, self.checkbox_export_psx_multi):
         export_lay.addWidget(cb)
-    self.checkbox_plot_psx = QCheckBox("P,S,X contacts plotted over time")
+    self.checkbox_plot_psx = QCheckBox("P,S,X relations plotted over time")
     self.checkbox_plot_psx.setToolTip("Informative only for protein trajectories")
     self.checkbox_plot_psx.setEnabled(False)
     self.checkbox_export_psx_multi.toggled.connect(self.checkbox_plot_psx.setEnabled)
