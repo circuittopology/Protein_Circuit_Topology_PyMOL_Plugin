@@ -83,7 +83,7 @@ def _analyse_chains(
         mat, psx, _ = get_matrix(idx, protid)
         if psx == [protid, 0, 0, 0]:
             logger.warning(
-                "Cannot create topology matrix for chain %s, so visualization for this chain cannot be performed!", chain_id)
+                "Cannot create the relation matrix for chain %s, so visualization for this chain cannot be performed!", chain_id)
             continue
         logger.info("Analysing %s, chain %s ...", target_obj, chain_id)
         top_vec = get_relation_type_vector(mat=mat, index=idx, relation_type=relation_type, numbering=numbering)
@@ -175,7 +175,7 @@ def _visualize_trajectory(self: Any, relation_type: str, selected_obj: str, vals
         (
             f"'{selected_obj}' is a trajectory with {n_states} states.\n\n"
             f"Coloring it runs the full Circuit Topology analysis for every state and chain, "
-            f"colors each frame by its own {relation_type} topology.\n\n"
+            f"colors each frame by its own participation in {relation_type} relations.\n\n"
             f"This may take a while and use significant memory for long trajectories. Continue?"
         ),
         QMessageBox.Yes | QMessageBox.No,
@@ -228,7 +228,8 @@ def _visualize_trajectory(self: Any, relation_type: str, selected_obj: str, vals
             self, "Falling back to current state",
             (
                 f"The colored states could not be merged into a single object on this PyMOL build, "
-                f"so only the current state of '{selected_obj}' will be colored by {relation_type} topology."
+                f"so only the current state of '{selected_obj}' will be colored by its "
+                f"participation in {relation_type} relations."
             ),
         )
         try:
@@ -249,7 +250,8 @@ def _visualize_trajectory(self: Any, relation_type: str, selected_obj: str, vals
     QMessageBox.information(
         self, "Done",
         (
-            f"Colored {colored_states} of {len(state_objs)} states by {relation_type} topology.\n\n"
+            f"Colored {colored_states} of {len(state_objs)} states by participation in "
+            f"{relation_type} relations.\n\n"
             f"Created '{result_obj}'. The original '{selected_obj}' has been hidden. Delete '{result_obj}' to clean up."
         ),
     )
@@ -300,6 +302,6 @@ def visualize_molecule(self: Any, relation_type: str) -> None:
 
     cmd.disable(selected_obj)
     logger.info(
-        "Coloured '%s' by %s topology. '%s' keeps its original B-factors.",
+        "Coloured '%s' by %s relations. '%s' keeps its original B-factors.",
         result_obj, relation_type, selected_obj,
     )

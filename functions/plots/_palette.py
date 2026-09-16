@@ -24,13 +24,7 @@ MODEL_COLORS = (
 )
 MODEL_LABELS = ("-", "P", "S", "X", "I", "T", "L")
 
-CONTACT_COLORS = {
-    "P": SINGLE_CHAIN_COLORS[2],
-    "S": SINGLE_CHAIN_COLORS[1],
-    "X": SINGLE_CHAIN_COLORS[4],
-}
-
-VIEWER_CONTACT_COLORS = {
+RELATION_TYPE_COLORS = {
     "P": "#4d9bf0",
     "S": "#b98cf5",
     "X": "#f9b11f",

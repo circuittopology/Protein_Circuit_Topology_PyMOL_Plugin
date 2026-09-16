@@ -17,7 +17,7 @@ from functions.exporting.export_cmap3 import export_cmap3
 from functions.exporting.export_mat import export_mat
 from functions.exporting.export_psx import export_psx
 from functions.importing.retrieve_chain import retrieve_chain
-from functions.plots._palette import CONTACT_COLORS
+from functions.plots._palette import RELATION_TYPE_COLORS
 from functions.plots.circuit_plot import circuit_plot
 from functions.plots.matrix_plot import matrix_plot
 from functions.plots.matrix_plot_model import matrix_plot_model
@@ -326,9 +326,9 @@ def run_multi_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
             with plt.rc_context({"font.size": 14}):
                 time = range(len(p))
                 plt.figure()
-                plt.plot(time, p, label="P", color=CONTACT_COLORS["P"], linewidth=1.5)
-                plt.plot(time, s, label="S", color=CONTACT_COLORS["S"], linewidth=1.5)
-                plt.plot(time, x, label="X", color=CONTACT_COLORS["X"], linewidth=1.5)
+                plt.plot(time, p, label="P", color=RELATION_TYPE_COLORS["P"], linewidth=1.5)
+                plt.plot(time, s, label="S", color=RELATION_TYPE_COLORS["S"], linewidth=1.5)
+                plt.plot(time, x, label="X", color=RELATION_TYPE_COLORS["X"], linewidth=1.5)
                 plt.xlabel("Frame #")
                 plt.ylabel("Number of relations")
                 plt.legend()

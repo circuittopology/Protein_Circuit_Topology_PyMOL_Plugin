@@ -1,4 +1,4 @@
-"""Tests for utils.trajectory.export_frames_from_traj."""
+"""Tests for utils.trajectory.export_frames_from_traj and the ordering of per-frame input folders."""
 import hashlib
 import re
 from pathlib import Path
@@ -86,3 +86,25 @@ def test_a_loaded_trajectory_is_analysed_without_exporting_any_frames(traj_case,
         with temp_pdb_export(polymer_selection(case.name), state=state, label="probe") as tmp:
             seen.add(ca_coords_hash(tmp))
     assert len(seen) == 4, "temp_pdb_export returns the same coordinates for every state"
+
+
+def test_input_folder_is_ordered_by_frame_number(tmp_path):
+    """A folder of per-frame structures is analysed in simulation order, padded or not."""
+    from utils.validation import list_structure_files
+
+    unpadded = [1, 2, 9, 10, 11, 100]
+    for frame in unpadded:
+        (tmp_path / f"frame{frame}.pdb").write_text("END\n")
+
+    assert [p.name for p in list_structure_files(tmp_path)] == [
+        f"frame{frame}.pdb" for frame in unpadded
+    ]
+
+    padded = tmp_path / "padded"
+    padded.mkdir()
+    for frame in range(1, 13):
+        (padded / f"frame_{frame:02d}.pdb").write_text("END\n")
+
+    assert [p.name for p in list_structure_files(padded)] == [
+        f"frame_{frame:02d}.pdb" for frame in range(1, 13)
+    ]

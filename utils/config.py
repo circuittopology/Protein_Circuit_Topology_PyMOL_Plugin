@@ -31,9 +31,9 @@ CHECKBOX_WARN = (
 )
 TRAJECTORY_COLOR_INFO = (
     "Coloring applies to the selected PyMOL object. If that object is a trajectory\n"
-    "(more than one state), this will color EVERY state: the topology analysis is run\n"
-    "for each frame, each frame is colored by its own S/P/X topology, and the frames\n"
-    "are merged into a single multi-state object named '<object>_topo'.\n"
+    "(more than one state), this will color EVERY state: the analysis is run for each\n"
+    "frame, each frame is colored by its own participation in S/P/X relations, and the\n"
+    "frames are merged into a single multi-state object named '<object>_topo'.\n"
     "The original object is hidden; delete '<object>_topo' to clean up.\n"
     "NOTE: For long trajectories this can take a while and use significant memory."
 )

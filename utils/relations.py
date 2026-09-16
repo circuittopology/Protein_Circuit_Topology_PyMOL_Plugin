@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib.colors import to_rgb
 from pymol import cmd
 
-from functions.plots._palette import PYMOL_CONTACT_COLORS, VIEWER_CONTACT_COLORS
+from functions.plots._palette import PYMOL_CONTACT_COLORS, RELATION_TYPE_COLORS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ def bucket_bounds(relation_vector: np.ndarray, n_buckets: int = BUCKETS) -> list
 
 def register_shades() -> None:
     """Define every shade colour, blended from white towards each relation-type hue (once per session)."""
-    for relation_type, hue in VIEWER_CONTACT_COLORS.items():
+    for relation_type, hue in RELATION_TYPE_COLORS.items():
         rgb = np.asarray(to_rgb(hue))
         for level in range(BUCKETS):
             fraction = MIN_SHADE + (1.0 - MIN_SHADE) * (level / max(BUCKETS - 1, 1))
@@ -141,7 +141,7 @@ def color_by_relation(
         return bounds
 
     hue = PYMOL_CONTACT_COLORS[relation_type]
-    cmd.set_color(hue, to_rgb(VIEWER_CONTACT_COLORS[relation_type]))
+    cmd.set_color(hue, to_rgb(RELATION_TYPE_COLORS[relation_type]))
 
     values = np.asarray(relation_vector, dtype=float)
     level = np.searchsorted(np.asarray(bounds, dtype=float), values, side="left") + 1

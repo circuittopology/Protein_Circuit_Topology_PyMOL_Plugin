@@ -11,9 +11,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from functions.plots._display import show
+from functions.plots._palette import RELATION_TYPE_COLORS
 
 SINGLE_CHAIN_LABELS = ("Parallel", "Series", "Cross")
 MULTI_CHAIN_LABELS = ("Parallel", "Series", "Cross", "I2", "I3", "I4", "T2", "T3", "L")
+
+
+def wedge_colors(count: int) -> list[str]:
+    """Colours for the pie, in the order Parallel, Series, Cross, then the multi-chain classes."""
+    base = [RELATION_TYPE_COLORS[relation] for relation in ("P", "S", "X")]
+    extra = [f"C{n}" for n in range(3, 3 + max(count - len(base), 0))]
+    return (base + extra)[:count]
 
 def stats_plot(px_fraction: np.ndarray, psx: Sequence[float], protid: str) -> None:
     """
@@ -38,7 +46,7 @@ def stats_plot(px_fraction: np.ndarray, psx: Sequence[float], protid: str) -> No
     fig,axes= plt.subplots(1,2)
     ax1, ax2 = axes
     ax1.plot(px_fraction)
-    ax2.pie(counts,autopct = autopct_funct, pctdistance=1.25)
+    ax2.pie(counts, colors=wedge_colors(len(counts)), autopct=autopct_funct, pctdistance=1.25)
     ax1.set_xlabel("Distance from diagonal")
     ax1.set_ylabel("Fraction of P + X relations")
     fig.suptitle(protid)

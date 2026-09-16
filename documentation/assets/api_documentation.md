@@ -1,15 +1,15 @@
 # Protein Circuit Topology Plugin - Complete API Documentation
 
-**Total Callable Entry Points:** 180
+**Total Callable Entry Points:** 182
 **Python Files With Callables:** 41
 
 ## Table of Contents
 1. [Calculating Functions](#calculating-functions) (7 functions)
-2. [Plotting Functions](#plotting-functions) (8 functions)
+2. [Plotting Functions](#plotting-functions) (9 functions)
 3. [Importing Functions](#importing-functions) (2 functions)
 4. [Exporting Functions](#exporting-functions) (3 functions)
 5. [Analysis Functions](#analysis-functions) (14 functions)
-6. [Utility Functions](#utility-functions) (65 functions)
+6. [Utility Functions](#utility-functions) (66 functions)
 7. [GUI Functions](#gui-functions) (67 functions)
 8. [Initialization Functions](#initialization-functions) (14 functions)
 
@@ -96,6 +96,12 @@ Plots the topological relationship matrix for a single chain.
 **Module:** `functions/plots/matrix_plot_model.py`
 
 Plots the topological relationship matrix for a whole model (multiple chains).
+
+### `wedge_colors(count)`
+
+**Module:** `functions/plots/stats_plot.py`
+
+Colours for the pie, in the order Parallel, Series, Cross, then the multi-chain classes.
 
 ### `stats_plot(px_fraction, psx, protid)`
 
@@ -607,11 +613,17 @@ Validate a PDB/CIF file path and return it as a Path.
 
 Validate a supported trajectory file path and return it as a Path.
 
+### `natural_key(path)`
+
+**Module:** `utils/validation.py`
+
+Sort key that reads runs of digits as numbers, so frame2 comes before frame10.
+
 ### `list_structure_files(directory)`
 
 **Module:** `utils/validation.py`
 
-Return sorted PDB/CIF files from a directory.
+Return the PDB/CIF files of a directory, ordered by name with numbers read as numbers.
 
 ### `set_frame_spinbox_bounds(spinbox, file_count)`
 
@@ -1115,4 +1127,4 @@ Register the plugin's core functions as PyMOL commands.
 
 This function imports the plugin's modular command wrappers and extends the PyMOL `cmd` object so that the commands become available to users as top-level PyMOL commands.
 
-*Last Updated: September 14, 2026 (plugin v0.0.3)*
+*Last Updated: September 16, 2026 (plugin v0.0.3)*

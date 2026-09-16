@@ -84,7 +84,7 @@ import numpy as np
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import to_rgb
 
-from functions.plots._palette import VIEWER_CONTACT_COLORS, discrete_cmap
+from functions.plots._palette import RELATION_TYPE_COLORS, discrete_cmap
 from initialization_checks import register_pymol_functions
 from utils.config import CONTACT_MAP
 from utils.relations import _shade_fraction
@@ -216,6 +216,18 @@ def save_paper(name):
     paper_files.append(out)
     return out
 
+
+def trim_white(path, pad=14):
+    """Crop a ray-traced PNG to its content, so the structure fills the panel."""
+    img = mimg.imread(str(path))
+    ink = (img[:, :, :3] < 0.99).any(axis=2)
+    rows, cols = np.flatnonzero(ink.any(axis=1)), np.flatnonzero(ink.any(axis=0))
+    if rows.size == 0 or cols.size == 0:
+        return img
+    top, bottom = max(int(rows[0]) - pad, 0), min(int(rows[-1]) + pad + 1, img.shape[0])
+    left, right = max(int(cols[0]) - pad, 0), min(int(cols[-1]) + pad + 1, img.shape[1])
+    return img[top:bottom, left:right]
+
 RELATIONS = {code: label for label, code in CONTACT_MAP.items()}
 
 with plt.rc_context(PAPER_RC):
@@ -272,21 +284,34 @@ with plt.rc_context(PAPER_RC):
         if not render.is_file():
             fail(2, f"{render.name} was not written")
 
-        rgb = np.asarray(to_rgb(VIEWER_CONTACT_COLORS[rtype]))
+        rgb = np.asarray(to_rgb(RELATION_TYPE_COLORS[rtype]))
         cells = ["white"] + [tuple(1 - _shade_fraction(k, len(bounds)) * (1 - rgb))
                              for k in range(1, len(bounds) + 1)]
         cmap, norm = discrete_cmap(cells)
 
-        fig = plt.figure(figsize=(7.7, 5.25))
-        ax = fig.add_axes([0, 0, 0.86, 1])
-        ax.imshow(mimg.imread(str(render)))
+        edges = [0, *[int(b) for b in bounds]]
+        labels = ["0"] + [f"{edges[k - 1] + 1}–{edges[k]}" for k in range(1, len(edges))]
+
+        panel = trim_white(render)
+        rows, cols = panel.shape[:2]
+        fig_w = 6.5
+        panel_h = fig_w * rows / cols
+        bar_block = 1.15  # inches under the panel for the bar, its labels and its caption
+        fig_h = panel_h + bar_block
+
+        fig = plt.figure(figsize=(fig_w, fig_h))
+        ax = fig.add_axes([0.0, bar_block / fig_h, 1.0, panel_h / fig_h])
+        ax.imshow(panel)
         ax.axis("off")
-        cax = fig.add_axes([0.885, 0.12, 0.035, 0.76])
+
+        cax = fig.add_axes([0.05, 0.54 * bar_block / fig_h, 0.90, 0.16 * bar_block / fig_h])
         cbar = fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), cax=cax,
-                            ticks=range(1, len(bounds) + 2), spacing="uniform")
-        cbar.ax.set_yticklabels(["0", *[str(int(b)) for b in bounds]])
-        cbar.ax.tick_params(length=0, labelsize=20)
-        cbar.set_label(f"{name} relations per residue", fontsize=20)
+                            orientation="horizontal", spacing="uniform",
+                            ticks=[cell + 0.5 for cell in range(len(cells))])
+        cbar.ax.set_xticklabels(labels)
+        cbar.ax.tick_params(length=0, labelsize=15)
+        cbar.outline.set_linewidth(0.8)
+        cbar.set_label(f"{name} relations per residue", fontsize=17, labelpad=8)
         save_paper(f"fig5_cartoon_{PAPER}_{rtype}.png")
     cmd.enable("all")
 python end

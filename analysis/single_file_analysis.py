@@ -150,7 +150,7 @@ def run_standard_analysis(self: Any) -> None:  # noqa: PLR0911, PLR0912, PLR0915
                 if folding_score_enabled:
                     # To handle incomplete chains
                     if psx == [p, 0, 0, 0]:
-                        logger.warning("Cannot create topology matrix for chain %s, so folding score cannot be calculated!", c)
+                        logger.warning("Cannot create the relation matrix for chain %s, so folding score cannot be calculated!", c)
                         continue
 
                     logger.info("Calculating folding score for chain %s ...", c)
