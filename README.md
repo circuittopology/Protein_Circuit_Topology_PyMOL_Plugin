@@ -117,7 +117,7 @@ If you use this plugin in your research, please cite the following article:
 
 The version described in the paper is release **v0.0.3**:
 <https://github.com/circuittopology/Protein_Circuit_Topology_PyMOL_Plugin/releases/tag/v0.0.3>
-(commit `<COMMIT_SHA>`; repository archive on Zenodo `<DOI_REPO_v0.0.3>`, release artefacts on Zenodo `<DOI_ARTEFACTS_v0.0.3>`).
+(commit `e8d62319709aa98cdeb0f34fdb6233b02cc7dafe`; repository archive on Zenodo `10.5281/zenodo.22843034`, release artefacts on Zenodo `10.5281/zenodo.22843283`).
 
 <details>
 <summary>Abstract</summary>
