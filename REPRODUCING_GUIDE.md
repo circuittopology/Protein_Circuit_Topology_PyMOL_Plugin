@@ -6,17 +6,17 @@ heavy atoms only). Every CSV produced is compared against the reference outputs 
 **exits non-zero if any value moved**. It also writes the figures of the paper (Figs. 3, 4, 5 and 7,
 all 1AKI) with enlarged fonts to `<output>/figures/paper/`.
 
-The version described in the paper is the `v0.0.3` tag; replace the tag below to reproduce another release.
+The version described in the paper is the `v0.0.4` tag; replace the tag below to reproduce another release.
 
 ## 1. Run with one command via Docker
 ```bash
-docker run --rm ghcr.io/circuittopology/proteinct-plugin:v0.0.3
+docker run --rm ghcr.io/circuittopology/proteinct-plugin:v0.0.4
 ```
 
 To keep the artefacts:
 ```bash
 mkdir out
-docker run --rm -v "$PWD/out:/out" -e CT_OUTDIR=/out ghcr.io/circuittopology/proteinct-plugin:v0.0.3
+docker run --rm -v "$PWD/out:/out" -e CT_OUTDIR=/out ghcr.io/circuittopology/proteinct-plugin:v0.0.4
 ```
 
 The image is built by [`.github/workflows/capsule.yml`](.github/workflows/capsule.yml) from [`capsule/Dockerfile`](capsule/Dockerfile).  

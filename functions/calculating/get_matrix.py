@@ -17,14 +17,16 @@ def get_matrix(index: np.ndarray, protid: str) -> tuple[np.ndarray, list, dict]:
     """
     Creates a topological relationship matrix for a residue contact map.
 
-    Single chain (two-column index): every pair of contact pairs is classified as Series (S),
-    Parallel (P, P-1), Cross (X) or one of the concerted classes (CP, CP-1, CS).
-    Whole model (four-column index, chain IDs attached): P, S and X are assigned only to two
-    intra-chain contact pairs of the same chain. Pairs involving inter-chain contact pairs use the
-    multi-chain vocabulary of Heidari et al. (2022): Independent (I) when the two contact pairs
-    involve disjoint sets of chains, Tandem (T) when they share exactly one chain, and Loop (L)
-    when both connect the same two chains; the subscript in the statistics (I2, I3, I4, T2, T3)
-    is the number of chains involved.
+    Single chain (two-column index): the relation between every two contact pairs is Series (S),
+    Parallel (P, P-1), Cross (X) or one of the concerted types (CP, CP-1, CS).
+    Whole model (four-column index, chain IDs attached): a relation is S, P or X only when both
+    contact pairs lie within one and the same chain. Every other relation, i.e. one in which at least
+    one contact pair joins two chains, uses the multi-chain vocabulary of Heidari et al. (2022) as
+    adapted in ProteinCT: Independent (I) when the two contact pairs share no chain, Tandem (T) when
+    they share a chain but cannot be joined into a closed path along chains and contacts, and Loop (L)
+    when they can, which for two contact pairs means both join the same two chains. The digit in the
+    statistics labels (I2, I3, I4, T2, T3) is the number of chains the two contact pairs span, the
+    superscript of Heidari et al.'s notation.
 
     Args:
         index (numpy.ndarray): Array containing contact indices.

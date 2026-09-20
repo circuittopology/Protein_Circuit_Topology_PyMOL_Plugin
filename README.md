@@ -115,9 +115,9 @@ If you use this plugin in your research, please cite the following article:
 >
 > Matīss Dimiņš, Alexander Bazba, Ádám Mogyorósi, Ella Kennon, Tomás Díaz Fiol, Leïla Aïkili Hagen, Vahid Sheikhassani, Vasily Akulov, Alireza Mashaghi\*
 
-The version described in the paper is release **v0.0.3**:
-<https://github.com/circuittopology/Protein_Circuit_Topology_PyMOL_Plugin/releases/tag/v0.0.3>
-(commit `<COMMIT_SHA>`; repository archive on Zenodo `<DOI_REPO_v0.0.3>`, release artefacts on Zenodo `<DOI_ARTEFACTS_v0.0.3>`).
+The version described in the paper is release **v0.0.4**:
+<https://github.com/circuittopology/Protein_Circuit_Topology_PyMOL_Plugin/releases/tag/v0.0.4>
+(commit `<COMMIT_SHA>`; repository archive on Zenodo `<DOI_REPO_v0.0.4>`, release artefacts on Zenodo `<DOI_ARTEFACTS_v0.0.4>`).
 
 <details>
 <summary>Abstract</summary>
